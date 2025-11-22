@@ -67,7 +67,7 @@
 - ✅ Configurar protección con CRON_SECRET
 - ✅ Configurar Vercel Cron (vercel.json)
 - ✅ Health check endpoint (GET /api/cron/process-tweets)
-- ⏳ Error notifications (pendiente)
+- ✅ Error notifications (CronLog model + admin interface)
 
 ---
 
@@ -99,6 +99,7 @@ xbot/
 ├── app/
 │   ├── admin/
 │   │   ├── bot/page.tsx           ✅ Bot control
+│   │   ├── cron-logs/page.tsx     ✅ Cron job monitoring
 │   │   ├── deliveries/page.tsx    ✅ Deliveries monitoring
 │   │   ├── layout.tsx             ✅ Admin layout
 │   │   ├── mint-links/page.tsx    ✅ Mint links management
@@ -111,6 +112,7 @@ xbot/
 │   │   │   │   ├── start/route.ts       ✅
 │   │   │   │   ├── status/route.ts      ✅
 │   │   │   │   └── stop/route.ts        ✅
+│   │   │   ├── cron-logs/route.ts       ✅
 │   │   │   ├── deliveries/route.ts      ✅
 │   │   │   ├── mint-links/
 │   │   │   │   ├── import/route.ts      ✅
@@ -123,7 +125,9 @@ xbot/
 │   │   │   └── bot-twitter/
 │   │   │       ├── route.ts             ✅
 │   │   │       └── callback/route.ts    ✅
-│   │   └── claim/deliveries/route.ts    ✅
+│   │   ├── claim/deliveries/route.ts    ✅
+│   │   └── cron/
+│   │       └── process-tweets/route.ts  ✅
 │   ├── claim/page.tsx             ✅ User claim page
 │   ├── globals.css
 │   ├── layout.tsx

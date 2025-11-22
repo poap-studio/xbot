@@ -9,6 +9,7 @@ import { searchNewEligibleTweets } from '@/lib/twitter/search';
 import { processSingleTweet } from '@/lib/bot/service';
 import { validateBotConfiguration } from '@/lib/bot/service';
 import { updateLastRun } from '@/lib/bot/status';
+import prisma from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300; // 5 minutes
@@ -18,6 +19,9 @@ export const maxDuration = 300; // 5 minutes
  * Protected endpoint for Vercel Cron
  */
 export async function POST(request: NextRequest) {
+  const startTime = Date.now();
+  let cronLog;
+
   try {
     // Verify cron secret for security
     const authHeader = request.headers.get('authorization');
@@ -25,6 +29,15 @@ export async function POST(request: NextRequest) {
 
     if (!cronSecret) {
       console.error('CRON_SECRET not configured');
+      // Log error
+      await prisma.cronLog.create({
+        data: {
+          status: 'error',
+          errorMessage: 'CRON_SECRET not configured',
+          completedAt: new Date(),
+          executionTime: Date.now() - startTime,
+        },
+      });
       return NextResponse.json(
         { error: 'Cron configuration error' },
         { status: 500 }
@@ -33,6 +46,15 @@ export async function POST(request: NextRequest) {
 
     if (authHeader !== `Bearer ${cronSecret}`) {
       console.error('Invalid cron authorization');
+      // Log unauthorized attempt
+      await prisma.cronLog.create({
+        data: {
+          status: 'error',
+          errorMessage: 'Unauthorized access attempt',
+          completedAt: new Date(),
+          executionTime: Date.now() - startTime,
+        },
+      });
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
@@ -41,11 +63,33 @@ export async function POST(request: NextRequest) {
 
     console.log('🕐 Cron job started:', new Date().toISOString());
 
+    // Create log entry
+    cronLog = await prisma.cronLog.create({
+      data: {
+        status: 'success', // Will be updated if errors occur
+      },
+    });
+
     // Validate bot configuration
     try {
       await validateBotConfiguration();
     } catch (validationError) {
       console.error('Bot configuration invalid:', validationError);
+
+      // Update log with validation error
+      if (cronLog) {
+        await prisma.cronLog.update({
+          where: { id: cronLog.id },
+          data: {
+            status: 'error',
+            errorMessage: 'Bot configuration invalid',
+            errorDetails: validationError instanceof Error ? validationError.message : 'Invalid configuration',
+            completedAt: new Date(),
+            executionTime: Date.now() - startTime,
+          },
+        });
+      }
+
       return NextResponse.json(
         {
           success: false,
@@ -63,6 +107,22 @@ export async function POST(request: NextRequest) {
     if (tweets.length === 0) {
       console.log('✅ No new eligible tweets found');
       updateLastRun();
+
+      // Update log with no tweets found
+      if (cronLog) {
+        await prisma.cronLog.update({
+          where: { id: cronLog.id },
+          data: {
+            status: 'success',
+            tweetsFound: 0,
+            processed: 0,
+            failed: 0,
+            completedAt: new Date(),
+            executionTime: Date.now() - startTime,
+          },
+        });
+      }
+
       return NextResponse.json({
         success: true,
         message: 'No eligible tweets found',
@@ -107,6 +167,26 @@ export async function POST(request: NextRequest) {
 
     console.log(`✅ Cron job completed: ${processed} successful, ${failed} failed`);
 
+    // Update log with results
+    const hasErrors = failed > 0;
+    const errorResults = results.filter((r) => !r.success);
+
+    if (cronLog) {
+      await prisma.cronLog.update({
+        where: { id: cronLog.id },
+        data: {
+          status: hasErrors ? 'warning' : 'success',
+          tweetsFound: tweets.length,
+          processed,
+          failed,
+          errorMessage: hasErrors ? `${failed} tweet(s) failed to process` : null,
+          errorDetails: hasErrors ? JSON.stringify(errorResults) : null,
+          completedAt: new Date(),
+          executionTime: Date.now() - startTime,
+        },
+      });
+    }
+
     return NextResponse.json({
       success: true,
       message: `Processed ${processed} tweets successfully, ${failed} failed`,
@@ -124,11 +204,39 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('❌ Cron job error:', error);
 
+    // Log critical error
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorStack = error instanceof Error ? error.stack : undefined;
+
+    if (cronLog) {
+      await prisma.cronLog.update({
+        where: { id: cronLog.id },
+        data: {
+          status: 'error',
+          errorMessage: `Critical error: ${errorMessage}`,
+          errorDetails: errorStack,
+          completedAt: new Date(),
+          executionTime: Date.now() - startTime,
+        },
+      });
+    } else {
+      // If cronLog wasn't created, create one now
+      await prisma.cronLog.create({
+        data: {
+          status: 'error',
+          errorMessage: `Critical error: ${errorMessage}`,
+          errorDetails: errorStack,
+          completedAt: new Date(),
+          executionTime: Date.now() - startTime,
+        },
+      });
+    }
+
     return NextResponse.json(
       {
         success: false,
         error: 'Cron job failed',
-        details: error instanceof Error ? error.message : 'Unknown error',
+        details: errorMessage,
         timestamp: new Date().toISOString(),
       },
       { status: 500 }

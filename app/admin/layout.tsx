@@ -14,6 +14,7 @@ const navigation = [
   { name: 'Mint Links', href: '/admin/mint-links', icon: '🔗' },
   { name: 'Bot Control', href: '/admin/bot', icon: '🤖' },
   { name: 'Deliveries', href: '/admin/deliveries', icon: '📦' },
+  { name: 'Cron Logs', href: '/admin/cron-logs', icon: '📝' },
 ];
 
 export default function AdminLayout({
