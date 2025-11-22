@@ -20,7 +20,12 @@
     "type": "git",
     "url": "git+https://github.com/poap-studio/xbot.git"
   },
-  "keywords": ["poap", "twitter", "bot", "nft"],
+  "keywords": [
+    "poap",
+    "twitter",
+    "bot",
+    "nft"
+  ],
   "author": "POAP Studio",
   "license": "MIT",
   "bugs": {
@@ -28,12 +33,13 @@
   },
   "homepage": "https://github.com/poap-studio/xbot#readme",
   "dependencies": {
-    "@prisma/client": "^7.0.0",
+    "@prisma/client": "^6.19.0",
+    "@tailwindcss/postcss": "^4.1.17",
     "csv-parse": "^6.1.0",
     "csv-stringify": "^6.6.0",
     "next": "^16.0.3",
     "next-auth": "^5.0.0-beta.30",
-    "prisma": "^7.0.0",
+    "prisma": "^6.19.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "twitter-api-v2": "^1.28.0",
