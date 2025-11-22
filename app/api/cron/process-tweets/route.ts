@@ -1,7 +1,7 @@
 /**
  * Cron Job: Process Tweets
  * Automated bot execution triggered by Vercel Cron
- * Runs every 5 minutes to process eligible tweets
+ * Runs every minute to process eligible tweets
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -12,7 +12,7 @@ import { updateLastRun } from '@/lib/bot/status';
 import prisma from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
-export const maxDuration = 300; // 5 minutes
+export const maxDuration = 60; // 1 minute
 
 /**
  * POST /api/cron/process-tweets

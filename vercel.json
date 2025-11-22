@@ -4,7 +4,7 @@
   "crons": [
     {
       "path": "/api/cron/process-tweets",
-      "schedule": "*/5 * * * *"
+      "schedule": "* * * * *"
     }
   ]
 }
