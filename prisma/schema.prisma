@@ -69,7 +69,7 @@ model TwitterUser {
 
 model Delivery {
   id              String   @id @default(cuid())
-  twitterUserId   String
+  twitterUserId   String   // References TwitterUser.id (cuid)
   twitterUser     TwitterUser @relation(fields: [twitterUserId], references: [id])
   tweetId         String   @unique
   mintLink        String
