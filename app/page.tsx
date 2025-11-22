@@ -8,6 +8,20 @@
 import { useEffect, useState } from 'react';
 import { useSession, signIn, signOut } from 'next-auth/react';
 import { DeliveryCard, type DeliveryData } from '@/components/claim/DeliveryCard';
+import {
+  Box,
+  Button,
+  Container,
+  Typography,
+  Card,
+  CardContent,
+  CircularProgress,
+  Alert,
+  AppBar,
+  Toolbar,
+  Stack,
+} from '@mui/material';
+import { Twitter as TwitterIcon, Logout as LogoutIcon } from '@mui/icons-material';
 
 interface DeliveriesResponse {
   success: boolean;
@@ -60,137 +74,193 @@ export default function Home() {
   // Loading state
   if (status === 'loading') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">Loading...</p>
-        </div>
-      </div>
+      <Box
+        sx={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          bgcolor: 'background.default',
+        }}
+      >
+        <Box sx={{ textAlign: 'center' }}>
+          <CircularProgress size={48} sx={{ mb: 2 }} />
+          <Typography color="text.secondary">Loading...</Typography>
+        </Box>
+      </Box>
     );
   }
 
   // Not authenticated - show login
   if (status === 'unauthenticated') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 px-4">
-        <div className="max-w-md w-full">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8">
-            <div className="text-center mb-8">
-              <div className="text-6xl mb-4">🎫</div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-                POAP Twitter Bot
-              </h1>
-              <p className="text-gray-600 dark:text-gray-400">
-                Sign in with Twitter to claim your POAPs
-              </p>
-            </div>
-
-            <button
+      <Box
+        sx={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          bgcolor: 'background.default',
+          backgroundImage: 'radial-gradient(circle at 50% 0%, rgba(101, 52, 255, 0.1) 0%, transparent 50%)',
+        }}
+      >
+        <Container maxWidth="sm">
+          <Card
+            sx={{
+              p: 4,
+              textAlign: 'center',
+              border: '1px solid',
+              borderColor: 'divider',
+              bgcolor: 'background.paper',
+            }}
+          >
+            <Typography variant="h1" sx={{ fontSize: '4rem', mb: 2 }}>
+              🎫
+            </Typography>
+            <Typography variant="h3" gutterBottom>
+              POAP Twitter Bot
+            </Typography>
+            <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
+              Sign in with Twitter to claim your POAPs
+            </Typography>
+            <Button
+              variant="contained"
+              size="large"
+              startIcon={<TwitterIcon />}
               onClick={() => signIn('twitter')}
-              className="w-full px-6 py-4 text-lg font-semibold text-white bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 rounded-xl transition-colors shadow-lg hover:shadow-xl flex items-center justify-center gap-3"
+              fullWidth
+              sx={{
+                py: 1.5,
+                fontSize: '1.125rem',
+                bgcolor: '#1DA1F2',
+                '&:hover': {
+                  bgcolor: '#1A8CD8',
+                },
+              }}
             >
-              <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-              </svg>
               Sign in with Twitter
-            </button>
-
-            <p className="text-xs text-gray-500 dark:text-gray-500 text-center mt-6">
+            </Button>
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 3 }}>
               By signing in, you agree to access your Twitter deliveries
-            </p>
-          </div>
-        </div>
-      </div>
+            </Typography>
+          </Card>
+        </Container>
+      </Box>
     );
   }
 
   // Authenticated - show deliveries
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
       {/* Header */}
-      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                My POAP Deliveries
-              </h1>
-              {session?.user && (
-                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                  Signed in as @{session.user.username}
-                </p>
-              )}
-            </div>
-            <button
-              onClick={() => signOut()}
-              className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
-            >
-              Sign Out
-            </button>
-          </div>
-        </div>
-      </div>
+      <AppBar position="static" elevation={0} sx={{ bgcolor: 'background.paper', borderBottom: '1px solid', borderColor: 'divider' }}>
+        <Toolbar>
+          <Box sx={{ flexGrow: 1 }}>
+            <Typography variant="h5" component="h1">
+              My POAP Deliveries
+            </Typography>
+            {session?.user && (
+              <Typography variant="body2" color="text.secondary">
+                Signed in as @{session.user.username}
+              </Typography>
+            )}
+          </Box>
+          <Button
+            variant="outlined"
+            startIcon={<LogoutIcon />}
+            onClick={() => signOut()}
+            sx={{ borderColor: 'divider' }}
+          >
+            Sign Out
+          </Button>
+        </Toolbar>
+      </AppBar>
 
-      {/* Stats */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Total POAPs</p>
-            <p className="text-3xl font-bold text-gray-900 dark:text-white">{stats.total}</p>
-          </div>
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Claimed</p>
-            <p className="text-3xl font-bold text-green-600 dark:text-green-400">{stats.claimed}</p>
-          </div>
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Pending</p>
-            <p className="text-3xl font-bold text-yellow-600 dark:text-yellow-400">{stats.unclaimed}</p>
-          </div>
-        </div>
+      <Container maxWidth="lg" sx={{ py: 4 }}>
+        {/* Stats */}
+        <Stack direction={{ xs: 'column', md: 'row' }} spacing={3} sx={{ mb: 4 }}>
+          <Card sx={{ flex: 1, bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider' }}>
+            <CardContent>
+              <Typography variant="body2" color="text.secondary" gutterBottom>
+                Total POAPs
+              </Typography>
+              <Typography variant="h3">{stats.total}</Typography>
+            </CardContent>
+          </Card>
+          <Card sx={{ flex: 1, bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider' }}>
+            <CardContent>
+              <Typography variant="body2" color="text.secondary" gutterBottom>
+                Claimed
+              </Typography>
+              <Typography variant="h3" color="success.main">
+                {stats.claimed}
+              </Typography>
+            </CardContent>
+          </Card>
+          <Card sx={{ flex: 1, bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider' }}>
+            <CardContent>
+              <Typography variant="body2" color="text.secondary" gutterBottom>
+                Pending
+              </Typography>
+              <Typography variant="h3" color="warning.main">
+                {stats.unclaimed}
+              </Typography>
+            </CardContent>
+          </Card>
+        </Stack>
 
         {/* Error Message */}
         {error && (
-          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-6">
-            <p className="text-sm text-red-800 dark:text-red-200">{error}</p>
-            <button
-              onClick={fetchDeliveries}
-              className="mt-2 text-sm font-medium text-red-600 dark:text-red-400 hover:underline"
-            >
+          <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
+            {error}
+            <Button size="small" onClick={fetchDeliveries} sx={{ ml: 2 }}>
               Try again
-            </button>
-          </div>
+            </Button>
+          </Alert>
         )}
 
         {/* Loading State */}
         {loading && (
-          <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600 dark:text-gray-400">Loading your deliveries...</p>
-          </div>
+          <Box sx={{ textAlign: 'center', py: 8 }}>
+            <CircularProgress size={48} sx={{ mb: 2 }} />
+            <Typography color="text.secondary">Loading your deliveries...</Typography>
+          </Box>
         )}
 
         {/* No Deliveries */}
         {!loading && !error && deliveries.length === 0 && (
-          <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg shadow">
-            <div className="text-6xl mb-4">📭</div>
-            <p className="text-gray-600 dark:text-gray-400 text-lg mb-2">
+          <Card sx={{ py: 8, textAlign: 'center', bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider' }}>
+            <Typography variant="h1" sx={{ fontSize: '4rem', mb: 2 }}>
+              📭
+            </Typography>
+            <Typography variant="h6" gutterBottom>
               No POAP deliveries yet
-            </p>
-            <p className="text-sm text-gray-500 dark:text-gray-500">
+            </Typography>
+            <Typography color="text.secondary">
               Post a tweet with the campaign hashtag and code to receive your POAP
-            </p>
-          </div>
+            </Typography>
+          </Card>
         )}
 
         {/* Deliveries Grid */}
         {!loading && deliveries.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: {
+                xs: '1fr',
+                md: 'repeat(2, 1fr)',
+                lg: 'repeat(3, 1fr)',
+              },
+              gap: 3,
+            }}
+          >
             {deliveries.map((delivery) => (
               <DeliveryCard key={delivery.id} delivery={delivery} />
             ))}
-          </div>
+          </Box>
         )}
-      </div>
-    </div>
+      </Container>
+    </Box>
   );
 }

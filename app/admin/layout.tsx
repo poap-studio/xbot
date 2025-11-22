@@ -7,14 +7,38 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import {
+  Box,
+  AppBar,
+  Toolbar,
+  Typography,
+  Drawer,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
+  Button,
+} from '@mui/material';
+import {
+  Dashboard as DashboardIcon,
+  Settings as SettingsIcon,
+  Link as LinkIcon,
+  SmartToy as SmartToyIcon,
+  LocalShipping as DeliveryIcon,
+  Description as LogsIcon,
+  Home as HomeIcon,
+} from '@mui/icons-material';
+
+const DRAWER_WIDTH = 240;
 
 const navigation = [
-  { name: 'Dashboard', href: '/admin', icon: '📊' },
-  { name: 'POAP Config', href: '/admin/poap', icon: '⚙️' },
-  { name: 'Mint Links', href: '/admin/mint-links', icon: '🔗' },
-  { name: 'Bot Control', href: '/admin/bot', icon: '🤖' },
-  { name: 'Deliveries', href: '/admin/deliveries', icon: '📦' },
-  { name: 'Cron Logs', href: '/admin/cron-logs', icon: '📝' },
+  { name: 'Dashboard', href: '/admin', icon: <DashboardIcon /> },
+  { name: 'POAP Config', href: '/admin/poap', icon: <SettingsIcon /> },
+  { name: 'Mint Links', href: '/admin/mint-links', icon: <LinkIcon /> },
+  { name: 'Bot Control', href: '/admin/bot', icon: <SmartToyIcon /> },
+  { name: 'Deliveries', href: '/admin/deliveries', icon: <DeliveryIcon /> },
+  { name: 'Cron Logs', href: '/admin/cron-logs', icon: <LogsIcon /> },
 ];
 
 export default function AdminLayout({
@@ -25,61 +49,125 @@ export default function AdminLayout({
   const pathname = usePathname();
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Top Navigation Bar */}
-      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center">
-              <h1 className="text-xl font-bold text-gray-900 dark:text-white">
-                POAP Bot Admin
-              </h1>
-            </div>
-            <Link
-              href="/"
-              className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-            >
-              ← Back to Home
-            </Link>
-          </div>
-        </div>
-      </div>
+    <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'background.default' }}>
+      {/* Top AppBar */}
+      <AppBar
+        position="fixed"
+        sx={{
+          zIndex: (theme) => theme.zIndex.drawer + 1,
+          bgcolor: 'background.paper',
+          borderBottom: 1,
+          borderColor: 'divider',
+        }}
+        elevation={0}
+      >
+        <Toolbar>
+          <Typography
+            variant="h6"
+            noWrap
+            component="div"
+            sx={{ flexGrow: 1, fontWeight: 'bold', color: 'text.primary' }}
+          >
+            POAP Bot Admin
+          </Typography>
+          <Button
+            component={Link}
+            href="/"
+            startIcon={<HomeIcon />}
+            sx={{
+              color: 'text.secondary',
+              '&:hover': {
+                color: 'primary.main',
+                bgcolor: 'action.hover',
+              },
+            }}
+          >
+            Volver al Inicio
+          </Button>
+        </Toolbar>
+      </AppBar>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="flex gap-6">
-          {/* Sidebar Navigation */}
-          <aside className="w-64 flex-shrink-0">
-            <nav className="space-y-1">
-              {navigation.map((item) => {
-                const isActive =
-                  pathname === item.href ||
-                  (item.href !== '/admin' && pathname?.startsWith(item.href));
+      {/* Sidebar Drawer */}
+      <Drawer
+        variant="permanent"
+        sx={{
+          width: DRAWER_WIDTH,
+          flexShrink: 0,
+          '& .MuiDrawer-paper': {
+            width: DRAWER_WIDTH,
+            boxSizing: 'border-box',
+            bgcolor: 'background.paper',
+            borderRight: 1,
+            borderColor: 'divider',
+          },
+        }}
+      >
+        <Toolbar /> {/* Spacer for AppBar */}
+        <Box sx={{ overflow: 'auto', p: 2 }}>
+          <List>
+            {navigation.map((item) => {
+              const isActive =
+                pathname === item.href ||
+                (item.href !== '/admin' && pathname?.startsWith(item.href));
 
-                return (
-                  <Link
-                    key={item.name}
+              return (
+                <ListItem key={item.name} disablePadding sx={{ mb: 0.5 }}>
+                  <ListItemButton
+                    component={Link}
                     href={item.href}
-                    className={`
-                      flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg transition-colors
-                      ${
-                        isActive
-                          ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400'
-                          : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
-                      }
-                    `}
+                    selected={isActive}
+                    sx={{
+                      borderRadius: 1.5,
+                      '&.Mui-selected': {
+                        bgcolor: 'primary.main',
+                        color: 'primary.contrastText',
+                        '&:hover': {
+                          bgcolor: 'primary.dark',
+                        },
+                        '& .MuiListItemIcon-root': {
+                          color: 'primary.contrastText',
+                        },
+                      },
+                      '&:hover': {
+                        bgcolor: 'action.hover',
+                      },
+                    }}
                   >
-                    <span className="text-xl">{item.icon}</span>
-                    {item.name}
-                  </Link>
-                );
-              })}
-            </nav>
-          </aside>
+                    <ListItemIcon
+                      sx={{
+                        color: isActive ? 'primary.contrastText' : 'text.secondary',
+                        minWidth: 40,
+                      }}
+                    >
+                      {item.icon}
+                    </ListItemIcon>
+                    <ListItemText
+                      primary={item.name}
+                      primaryTypographyProps={{
+                        fontSize: '0.875rem',
+                        fontWeight: isActive ? 'bold' : 'medium',
+                      }}
+                    />
+                  </ListItemButton>
+                </ListItem>
+              );
+            })}
+          </List>
+        </Box>
+      </Drawer>
 
-          {/* Main Content */}
-          <main className="flex-1 min-w-0">{children}</main>
-        </div>
-      </div>
-    </div>
+      {/* Main Content */}
+      <Box
+        component="main"
+        sx={{
+          flexGrow: 1,
+          bgcolor: 'background.default',
+          minHeight: '100vh',
+        }}
+      >
+        <Toolbar /> {/* Spacer for AppBar */}
+        {children}
+      </Box>
+    </Box>
   );
 }

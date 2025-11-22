@@ -6,6 +6,24 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import {
+  Box,
+  Container,
+  Typography,
+  Card,
+  Stack,
+  Chip,
+  Button,
+  CircularProgress,
+  Alert,
+  AlertTitle,
+} from '@mui/material';
+import {
+  PlayArrow as PlayArrowIcon,
+  Stop as StopIcon,
+  Refresh as RefreshIcon,
+  PlayCircle as PlayCircleIcon,
+} from '@mui/icons-material';
 
 interface BotStatus {
   running: boolean;
@@ -124,149 +142,167 @@ export default function BotControlPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-      </div>
+      <Container maxWidth="lg" sx={{ py: 4 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
+          <CircularProgress />
+        </Box>
+      </Container>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-          Bot Control
-        </h1>
-        <p className="text-gray-600 dark:text-gray-400">
-          Start, stop and monitor the bot
-        </p>
-      </div>
+    <Container maxWidth="lg" sx={{ py: 4 }}>
+      <Stack spacing={3}>
+        {/* Header */}
+        <Box>
+          <Typography variant="h4" gutterBottom sx={{ fontWeight: 'bold' }}>
+            Control del Bot
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Inicia, detiene y monitorea el bot
+          </Typography>
+        </Box>
 
-      {error && (
-        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
-          <p className="text-sm text-red-800 dark:text-red-200">{error}</p>
-        </div>
-      )}
-
-      {/* Bot Status */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-            Current Status
-          </h2>
-          <div className="flex items-center gap-2">
-            {status?.running ? (
-              <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-                ● Running
-              </span>
-            ) : (
-              <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200">
-                ○ Stopped
-              </span>
-            )}
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <p className="text-sm text-gray-600 dark:text-gray-400">Bot Account</p>
-            {status?.connected ? (
-              <p className="text-lg font-medium text-gray-900 dark:text-white">
-                @{status.username}
-              </p>
-            ) : (
-              <p className="text-lg font-medium text-red-600 dark:text-red-400">
-                Not connected
-              </p>
-            )}
-          </div>
-
-          <div>
-            <p className="text-sm text-gray-600 dark:text-gray-400">Last Run</p>
-            <p className="text-lg font-medium text-gray-900 dark:text-white">
-              {status?.lastRun
-                ? new Date(status.lastRun).toLocaleString()
-                : 'Never'}
-            </p>
-          </div>
-
-          <div>
-            <p className="text-sm text-gray-600 dark:text-gray-400">Processed Today</p>
-            <p className="text-lg font-medium text-gray-900 dark:text-white">
-              {status?.processedToday || 0} tweets
-            </p>
-          </div>
-
-          <div>
-            <p className="text-sm text-gray-600 dark:text-gray-400">Errors Today</p>
-            <p className="text-lg font-medium text-gray-900 dark:text-white">
-              {status?.errors || 0}
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Control Actions */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 space-y-4">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-          Actions
-        </h2>
-
-        <div className="flex flex-wrap gap-3">
-          {!status?.running ? (
-            <button
-              onClick={handleStart}
-              disabled={actionLoading || !status?.connected}
-              className="px-6 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {actionLoading ? 'Starting...' : 'Start Bot'}
-            </button>
-          ) : (
-            <button
-              onClick={handleStop}
-              disabled={actionLoading}
-              className="px-6 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {actionLoading ? 'Stopping...' : 'Stop Bot'}
-            </button>
-          )}
-
-          <button
-            onClick={handleRunOnce}
-            disabled={actionLoading || status?.running || !status?.connected}
-            className="px-6 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {actionLoading ? 'Running...' : 'Run Once'}
-          </button>
-
-          <button
-            onClick={fetchStatus}
-            disabled={actionLoading}
-            className="px-6 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Refresh Status
-          </button>
-        </div>
-
-        {!status?.connected && (
-          <div className="mt-4 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
-            <p className="text-sm text-yellow-800 dark:text-yellow-200">
-              Bot account is not connected. Please connect the bot account in the Dashboard before starting.
-            </p>
-          </div>
+        {/* Error Alert */}
+        {error && (
+          <Alert severity="error" onClose={() => setError(null)}>
+            {error}
+          </Alert>
         )}
-      </div>
 
-      {/* Information */}
-      <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-        <h3 className="text-sm font-medium text-blue-900 dark:text-blue-200 mb-2">
-          About Bot Control
-        </h3>
-        <ul className="text-sm text-blue-800 dark:text-blue-300 space-y-1">
-          <li>• <strong>Start Bot</strong>: Runs the bot continuously in the background</li>
-          <li>• <strong>Stop Bot</strong>: Stops the background process</li>
-          <li>• <strong>Run Once</strong>: Processes tweets once without continuous monitoring</li>
-        </ul>
-      </div>
-    </div>
+        {/* Bot Status */}
+        <Card sx={{ p: 3 }}>
+          <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 3 }}>
+            <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+              Estado Actual
+            </Typography>
+            <Chip
+              label={status?.running ? 'Ejecutándose' : 'Detenido'}
+              color={status?.running ? 'success' : 'default'}
+              icon={status?.running ? <PlayCircleIcon /> : <StopIcon />}
+            />
+          </Stack>
+
+          <Box sx={{
+            display: 'grid',
+            gridTemplateColumns: {
+              xs: '1fr',
+              sm: 'repeat(2, 1fr)',
+            },
+            gap: 3,
+          }}>
+            <Box>
+              <Typography variant="body2" color="text.secondary" gutterBottom>
+                Cuenta del Bot
+              </Typography>
+              {status?.connected ? (
+                <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+                  @{status.username}
+                </Typography>
+              ) : (
+                <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'error.main' }}>
+                  No conectada
+                </Typography>
+              )}
+            </Box>
+
+            <Box>
+              <Typography variant="body2" color="text.secondary" gutterBottom>
+                Última Ejecución
+              </Typography>
+              <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+                {status?.lastRun
+                  ? new Date(status.lastRun).toLocaleString('es-ES')
+                  : 'Nunca'}
+              </Typography>
+            </Box>
+
+            <Box>
+              <Typography variant="body2" color="text.secondary" gutterBottom>
+                Procesados Hoy
+              </Typography>
+              <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+                {status?.processedToday || 0} tweets
+              </Typography>
+            </Box>
+
+            <Box>
+              <Typography variant="body2" color="text.secondary" gutterBottom>
+                Errores Hoy
+              </Typography>
+              <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+                {status?.errors || 0}
+              </Typography>
+            </Box>
+          </Box>
+        </Card>
+
+        {/* Control Actions */}
+        <Card sx={{ p: 3 }}>
+          <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', mb: 3 }}>
+            Acciones
+          </Typography>
+
+          <Stack direction="row" spacing={2} flexWrap="wrap" useFlexGap>
+            {!status?.running ? (
+              <Button
+                variant="contained"
+                color="success"
+                startIcon={actionLoading ? <CircularProgress size={20} color="inherit" /> : <PlayArrowIcon />}
+                onClick={handleStart}
+                disabled={actionLoading || !status?.connected}
+              >
+                {actionLoading ? 'Iniciando...' : 'Iniciar Bot'}
+              </Button>
+            ) : (
+              <Button
+                variant="contained"
+                color="error"
+                startIcon={actionLoading ? <CircularProgress size={20} color="inherit" /> : <StopIcon />}
+                onClick={handleStop}
+                disabled={actionLoading}
+              >
+                {actionLoading ? 'Deteniendo...' : 'Detener Bot'}
+              </Button>
+            )}
+
+            <Button
+              variant="contained"
+              startIcon={actionLoading ? <CircularProgress size={20} color="inherit" /> : <PlayCircleIcon />}
+              onClick={handleRunOnce}
+              disabled={actionLoading || status?.running || !status?.connected}
+            >
+              {actionLoading ? 'Ejecutando...' : 'Ejecutar Una Vez'}
+            </Button>
+
+            <Button
+              variant="outlined"
+              startIcon={<RefreshIcon />}
+              onClick={fetchStatus}
+              disabled={actionLoading}
+            >
+              Actualizar Estado
+            </Button>
+          </Stack>
+
+          {!status?.connected && (
+            <Alert severity="warning" sx={{ mt: 3 }}>
+              <AlertTitle>Cuenta No Conectada</AlertTitle>
+              La cuenta del bot no está conectada. Por favor, conecta la cuenta del bot en el Dashboard antes de iniciar.
+            </Alert>
+          )}
+        </Card>
+
+        {/* Information */}
+        <Alert severity="info">
+          <AlertTitle>Acerca del Control del Bot</AlertTitle>
+          <Box component="ul" sx={{ m: 0, pl: 2 }}>
+            <li><strong>Iniciar Bot</strong>: Ejecuta el bot continuamente en segundo plano</li>
+            <li><strong>Detener Bot</strong>: Detiene el proceso en segundo plano</li>
+            <li><strong>Ejecutar Una Vez</strong>: Procesa tweets una vez sin monitoreo continuo</li>
+          </Box>
+        </Alert>
+      </Stack>
+    </Container>
   );
 }

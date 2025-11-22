@@ -112,7 +112,7 @@ export async function generateReplyText(claimUrl: string): Promise<string> {
     }
 
     // Replace placeholder with actual claim URL
-    const text = config.botReplyText.replace('{{claimUrl}}', claimUrl);
+    const text = config.botReplyEligible.replace('{{claimUrl}}', claimUrl);
 
     // Validate length
     if (text.length > 280) {

@@ -18,7 +18,12 @@ export async function GET(request: NextRequest) {
     // Check authentication
     const session = await auth();
 
+    console.log('=== CLAIM DELIVERIES SESSION DEBUG ===');
+    console.log('Session:', JSON.stringify(session, null, 2));
+    console.log('======================================');
+
     if (!session?.user?.id) {
+      console.error('No user ID in session. Session:', session);
       return NextResponse.json(
         { error: 'Unauthorized. Please log in with Twitter.' },
         { status: 401 }

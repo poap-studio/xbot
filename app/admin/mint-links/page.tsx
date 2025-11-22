@@ -6,6 +6,25 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import {
+  Box,
+  Container,
+  Typography,
+  Card,
+  Stack,
+  Button,
+  CircularProgress,
+  Alert,
+  TextField,
+  Paper,
+} from '@mui/material';
+import {
+  Upload as UploadIcon,
+  Link as LinkIcon,
+  CheckCircle as CheckCircleIcon,
+  HourglassEmpty as HourglassEmptyIcon,
+  Celebration as CelebrationIcon,
+} from '@mui/icons-material';
 
 interface MintLinkStats {
   total: number;
@@ -49,7 +68,7 @@ export default function MintLinksPage() {
 
   const handleImport = async () => {
     if (!links.trim()) {
-      setError('Please enter at least one mint link');
+      setError('Por favor ingresa al menos un mint link');
       return;
     }
 
@@ -76,7 +95,7 @@ export default function MintLinksPage() {
       }
 
       setSuccess(
-        `Successfully imported ${data.imported} links (${data.duplicates} duplicates skipped)`
+        `${data.imported} links importados correctamente (${data.duplicates} duplicados omitidos)`
       );
       setLinks('');
       fetchStats();
@@ -91,122 +110,136 @@ export default function MintLinksPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-      </div>
+      <Container maxWidth="lg" sx={{ py: 4 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
+          <CircularProgress />
+        </Box>
+      </Container>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-          Mint Links
-        </h1>
-        <p className="text-gray-600 dark:text-gray-400">
-          Import and manage POAP mint links
-        </p>
-      </div>
+    <Container maxWidth="lg" sx={{ py: 4 }}>
+      <Stack spacing={3}>
+        {/* Header */}
+        <Box>
+          <Typography variant="h4" gutterBottom sx={{ fontWeight: 'bold' }}>
+            Mint Links
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Importa y gestiona los enlaces de mint POAP
+          </Typography>
+        </Box>
 
-      {error && (
-        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
-          <p className="text-sm text-red-800 dark:text-red-200">{error}</p>
-        </div>
-      )}
+        {/* Alerts */}
+        {error && (
+          <Alert severity="error" onClose={() => setError(null)}>
+            {error}
+          </Alert>
+        )}
 
-      {success && (
-        <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
-          <p className="text-sm text-green-800 dark:text-green-200">{success}</p>
-        </div>
-      )}
+        {success && (
+          <Alert severity="success" onClose={() => setSuccess(null)}>
+            {success}
+          </Alert>
+        )}
 
-      {/* Statistics Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">
-              Total Links
-            </h3>
-            <span className="text-2xl">🔗</span>
-          </div>
-          <p className="text-3xl font-bold text-gray-900 dark:text-white">
-            {stats?.total || 0}
-          </p>
-        </div>
+        {/* Statistics Grid */}
+        <Box sx={{
+          display: 'grid',
+          gridTemplateColumns: {
+            xs: '1fr',
+            sm: 'repeat(2, 1fr)',
+            md: 'repeat(4, 1fr)',
+          },
+          gap: 2,
+        }}>
+          <Card sx={{ p: 3 }}>
+            <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
+              <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 'medium' }}>
+                Total Links
+              </Typography>
+              <LinkIcon sx={{ fontSize: 32, color: 'primary.main', opacity: 0.3 }} />
+            </Stack>
+            <Typography variant="h3" sx={{ fontWeight: 'bold' }}>
+              {stats?.total || 0}
+            </Typography>
+          </Card>
 
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">
-              Available
-            </h3>
-            <span className="text-2xl">✅</span>
-          </div>
-          <p className="text-3xl font-bold text-green-600 dark:text-green-400">
-            {stats?.available || 0}
-          </p>
-        </div>
+          <Card sx={{ p: 3 }}>
+            <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
+              <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 'medium' }}>
+                Disponibles
+              </Typography>
+              <CheckCircleIcon sx={{ fontSize: 32, color: 'success.main', opacity: 0.3 }} />
+            </Stack>
+            <Typography variant="h3" sx={{ fontWeight: 'bold', color: 'success.main' }}>
+              {stats?.available || 0}
+            </Typography>
+          </Card>
 
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">
-              Reserved
-            </h3>
-            <span className="text-2xl">⏳</span>
-          </div>
-          <p className="text-3xl font-bold text-yellow-600 dark:text-yellow-400">
-            {stats?.reserved || 0}
-          </p>
-        </div>
+          <Card sx={{ p: 3 }}>
+            <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
+              <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 'medium' }}>
+                Reservados
+              </Typography>
+              <HourglassEmptyIcon sx={{ fontSize: 32, color: 'warning.main', opacity: 0.3 }} />
+            </Stack>
+            <Typography variant="h3" sx={{ fontWeight: 'bold', color: 'warning.main' }}>
+              {stats?.reserved || 0}
+            </Typography>
+          </Card>
 
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">
-              Claimed
-            </h3>
-            <span className="text-2xl">🎉</span>
-          </div>
-          <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">
-            {stats?.claimed || 0}
-          </p>
-        </div>
-      </div>
+          <Card sx={{ p: 3 }}>
+            <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
+              <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 'medium' }}>
+                Reclamados
+              </Typography>
+              <CelebrationIcon sx={{ fontSize: 32, color: 'info.main', opacity: 0.3 }} />
+            </Stack>
+            <Typography variant="h3" sx={{ fontWeight: 'bold', color: 'info.main' }}>
+              {stats?.claimed || 0}
+            </Typography>
+          </Card>
+        </Box>
 
-      {/* Import Section */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 space-y-4">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-          Import Mint Links
-        </h2>
+        {/* Import Section */}
+        <Card sx={{ p: 3 }}>
+          <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', mb: 3 }}>
+            Importar Mint Links
+          </Typography>
 
-        <div>
-          <label
-            htmlFor="links"
-            className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
-          >
-            Paste mint links (one per line)
-          </label>
-          <textarea
-            id="links"
-            value={links}
-            onChange={(e) => setLinks(e.target.value)}
-            rows={10}
-            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
-            placeholder="https://poap.xyz/claim/abc123&#10;https://poap.xyz/claim/def456&#10;https://poap.xyz/claim/ghi789"
-          />
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            Enter POAP mint links, one per line. Duplicates will be automatically skipped.
-          </p>
-        </div>
+          <Stack spacing={3}>
+            <TextField
+              multiline
+              rows={10}
+              fullWidth
+              value={links}
+              onChange={(e) => setLinks(e.target.value)}
+              placeholder="https://poap.xyz/claim/abc123&#10;https://poap.xyz/claim/def456&#10;https://poap.xyz/claim/ghi789"
+              helperText="Ingresa los enlaces de mint POAP, uno por línea. Los duplicados se omitirán automáticamente."
+              sx={{
+                '& .MuiInputBase-root': {
+                  fontFamily: 'monospace',
+                  fontSize: '0.875rem',
+                },
+              }}
+            />
 
-        <div className="flex justify-end">
-          <button
-            onClick={handleImport}
-            disabled={importing || !links.trim()}
-            className="px-6 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {importing ? 'Importing...' : 'Import Links'}
-          </button>
-        </div>
-      </div>
-    </div>
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <Button
+                variant="contained"
+                size="large"
+                startIcon={importing ? <CircularProgress size={20} color="inherit" /> : <UploadIcon />}
+                onClick={handleImport}
+                disabled={importing || !links.trim()}
+              >
+                {importing ? 'Importando...' : 'Importar Links'}
+              </Button>
+            </Box>
+          </Stack>
+        </Card>
+      </Stack>
+    </Container>
   );
 }

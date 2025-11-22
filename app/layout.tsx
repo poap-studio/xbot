@@ -1,9 +1,7 @@
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
 import './globals.css';
 import { SessionProvider } from '@/components/providers/SessionProvider';
-
-const inter = Inter({ subsets: ['latin'] });
+import { ThemeProvider } from '@/components/providers/ThemeProvider';
 
 export const metadata: Metadata = {
   title: 'POAP Twitter Bot',
@@ -17,8 +15,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={inter.className}>
-        <SessionProvider>{children}</SessionProvider>
+      <body>
+        <ThemeProvider>
+          <SessionProvider>{children}</SessionProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

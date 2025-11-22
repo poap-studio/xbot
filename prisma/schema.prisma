@@ -11,9 +11,14 @@ model Config {
   id              String   @id @default(cuid())
   poapEventId     String
   poapSecretCode  String
-  botReplyText    String   @default("¡Felicidades! Reclama tu POAP aquí: {{claimUrl}}")
+
+  // Reply messages
+  botReplyEligible    String   @default("¡Felicidades! Has compartido el código correcto. Reclama tu POAP aquí: {{claimUrl}}")
+  botReplyNotEligible String   @default("Gracias por tu interés. Asegúrate de incluir un código válido y una imagen en tu tweet.")
+
+  // Search configuration
   twitterHashtag  String   @default("#POAP")
-  requiredCode    String   @default("ELIGIBLE")
+  requiredCode    String   @default("ELIGIBLE") // Legacy: mantener por compatibilidad
 
   // POAP API credentials (encrypted)
   poapClientId    String?
@@ -27,6 +32,20 @@ model Config {
   updatedAt       DateTime @updatedAt
 
   @@map("config")
+}
+
+model ValidCode {
+  id              String   @id @default(cuid())
+  code            String   @unique
+  isUsed          Boolean  @default(false)
+  usedBy          String?  // twitterId
+  usedAt          DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([code])
+  @@index([isUsed])
+  @@map("valid_codes")
 }
 
 model BotAccount {

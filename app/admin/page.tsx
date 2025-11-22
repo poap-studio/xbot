@@ -7,6 +7,28 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import {
+  Box,
+  Container,
+  Typography,
+  Card,
+  Stack,
+  Chip,
+  Button,
+  CircularProgress,
+  Alert,
+  Paper,
+} from '@mui/material';
+import {
+  Settings as SettingsIcon,
+  Link as LinkIcon,
+  SmartToy as SmartToyIcon,
+  LocalShipping as DeliveryIcon,
+  CheckCircle as CheckCircleIcon,
+  Cancel as CancelIcon,
+  Twitter as TwitterIcon,
+  TrendingUp as TrendingUpIcon,
+} from '@mui/icons-material';
 import { BotConnection } from '@/components/admin/BotConnection';
 
 interface DashboardStats {
@@ -67,194 +89,264 @@ export default function AdminDashboard() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-      </div>
+      <Container maxWidth="lg" sx={{ py: 4 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
+          <CircularProgress />
+        </Box>
+      </Container>
     );
   }
 
   if (error) {
     return (
-      <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
-        <p className="text-sm text-red-800 dark:text-red-200">{error}</p>
-        <button
-          onClick={fetchStats}
-          className="mt-2 text-sm font-medium text-red-600 dark:text-red-400 hover:underline"
-        >
-          Try again
-        </button>
-      </div>
+      <Container maxWidth="lg" sx={{ py: 4 }}>
+        <Alert severity="error">
+          {error}
+          <Button
+            onClick={fetchStats}
+            size="small"
+            sx={{ mt: 1 }}
+          >
+            Reintentar
+          </Button>
+        </Alert>
+      </Container>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-          Dashboard
-        </h1>
-        <p className="text-gray-600 dark:text-gray-400">
-          Overview of your POAP bot activity
-        </p>
-      </div>
+    <Container maxWidth="lg" sx={{ py: 4 }}>
+      <Stack spacing={4}>
+        {/* Header */}
+        <Box>
+          <Typography variant="h4" gutterBottom sx={{ fontWeight: 'bold' }}>
+            Dashboard
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Vista general de la actividad del bot POAP
+          </Typography>
+        </Box>
 
-      {/* Bot Connection */}
-      <BotConnection />
+        {/* Bot Connection */}
+        <BotConnection />
 
-      {/* Bot Status */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-            Bot Status
-          </h2>
-          {stats?.bot.connected ? (
-            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-              ✓ Connected
-            </span>
-          ) : (
-            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
-              ✗ Disconnected
-            </span>
+        {/* Bot Status Card */}
+        <Card sx={{ p: 3 }}>
+          <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
+            <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+              Estado del Bot
+            </Typography>
+            <Chip
+              icon={stats?.bot.connected ? <CheckCircleIcon /> : <CancelIcon />}
+              label={stats?.bot.connected ? 'Conectado' : 'Desconectado'}
+              color={stats?.bot.connected ? 'success' : 'error'}
+            />
+          </Stack>
+
+          {stats?.bot.connected && stats.bot.username && (
+            <Typography variant="body2" color="text.secondary">
+              Conectado como <Typography component="span" sx={{ fontWeight: 'bold' }}>@{stats.bot.username}</Typography>
+            </Typography>
           )}
-        </div>
 
-        {stats?.bot.connected && stats.bot.username && (
-          <p className="text-sm text-gray-600 dark:text-gray-400">
-            Connected as <span className="font-medium">@{stats.bot.username}</span>
-          </p>
-        )}
+          {!stats?.bot.connected && (
+            <Box sx={{ mt: 2 }}>
+              <Button
+                component={Link}
+                href="/api/auth/bot-twitter"
+                variant="contained"
+                startIcon={<TwitterIcon />}
+                sx={{
+                  bgcolor: '#1DA1F2',
+                  '&:hover': { bgcolor: '#1A8CD8' },
+                }}
+              >
+                Conectar Cuenta del Bot
+              </Button>
+            </Box>
+          )}
+        </Card>
 
-        {!stats?.bot.connected && (
-          <div className="mt-4">
-            <Link
-              href="/api/auth/bot-twitter"
-              className="inline-block px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 rounded-lg transition-colors"
+        {/* Stats Grid */}
+        <Box sx={{
+          display: 'grid',
+          gridTemplateColumns: {
+            xs: '1fr',
+            sm: 'repeat(2, 1fr)',
+            lg: 'repeat(4, 1fr)',
+          },
+          gap: 2,
+        }}>
+          {/* Deliveries */}
+          <Card sx={{ p: 3 }}>
+            <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
+              <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 'medium' }}>
+                Entregas
+              </Typography>
+              <DeliveryIcon sx={{ fontSize: 32, color: 'primary.main', opacity: 0.3 }} />
+            </Stack>
+            <Typography variant="h3" sx={{ fontWeight: 'bold', mb: 1 }}>
+              {stats?.deliveries.total || 0}
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              {stats?.deliveries.claimed || 0} reclamadas ({stats?.deliveries.claimRate.toFixed(1) || 0}%)
+            </Typography>
+          </Card>
+
+          {/* Mint Links */}
+          <Card sx={{ p: 3 }}>
+            <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
+              <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 'medium' }}>
+                Enlaces Mint
+              </Typography>
+              <LinkIcon sx={{ fontSize: 32, color: 'primary.main', opacity: 0.3 }} />
+            </Stack>
+            <Typography variant="h3" sx={{ fontWeight: 'bold', mb: 1 }}>
+              {stats?.mintLinks.available || 0}
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              {stats?.mintLinks.total || 0} total
+            </Typography>
+          </Card>
+
+          {/* Eligible Tweets */}
+          <Card sx={{ p: 3 }}>
+            <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
+              <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 'medium' }}>
+                Tweets Elegibles
+              </Typography>
+              <TwitterIcon sx={{ fontSize: 32, color: 'primary.main', opacity: 0.3 }} />
+            </Stack>
+            <Typography variant="h3" sx={{ fontWeight: 'bold', mb: 1 }}>
+              {stats?.tweets.eligible || 0}
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              {stats?.tweets.pending || 0} pendientes de respuesta
+            </Typography>
+          </Card>
+
+          {/* Claim Rate */}
+          <Card sx={{ p: 3 }}>
+            <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
+              <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 'medium' }}>
+                Tasa de Reclamo
+              </Typography>
+              <TrendingUpIcon sx={{ fontSize: 32, color: 'success.main', opacity: 0.3 }} />
+            </Stack>
+            <Typography variant="h3" sx={{ fontWeight: 'bold', mb: 1 }}>
+              {stats?.deliveries.claimRate.toFixed(1) || 0}%
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              {stats?.deliveries.claimed || 0} de {stats?.deliveries.total || 0}
+            </Typography>
+          </Card>
+        </Box>
+
+        {/* Quick Actions */}
+        <Card sx={{ p: 3 }}>
+          <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', mb: 3 }}>
+            Acciones Rápidas
+          </Typography>
+          <Box sx={{
+            display: 'grid',
+            gridTemplateColumns: {
+              xs: '1fr',
+              md: 'repeat(3, 1fr)',
+            },
+            gap: 2,
+          }}>
+            <Paper
+              component={Link}
+              href="/admin/poap"
+              sx={{
+                p: 2,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 2,
+                textDecoration: 'none',
+                color: 'inherit',
+                border: '2px solid',
+                borderColor: 'divider',
+                transition: 'all 0.2s',
+                '&:hover': {
+                  borderColor: 'primary.main',
+                  bgcolor: 'action.hover',
+                },
+              }}
             >
-              Connect Bot Account
-            </Link>
-          </div>
-        )}
-      </div>
+              <SettingsIcon sx={{ fontSize: 32, color: 'primary.main' }} />
+              <Box>
+                <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
+                  Configurar POAP
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  Evento, hashtag y mensajes
+                </Typography>
+              </Box>
+            </Paper>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Deliveries */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">
-              Deliveries
-            </h3>
-            <span className="text-2xl">📦</span>
-          </div>
-          <p className="text-3xl font-bold text-gray-900 dark:text-white">
-            {stats?.deliveries.total || 0}
-          </p>
-          <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
-            {stats?.deliveries.claimed || 0} claimed ({stats?.deliveries.claimRate.toFixed(1) || 0}%)
-          </p>
-        </div>
+            <Paper
+              component={Link}
+              href="/admin/mint-links"
+              sx={{
+                p: 2,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 2,
+                textDecoration: 'none',
+                color: 'inherit',
+                border: '2px solid',
+                borderColor: 'divider',
+                transition: 'all 0.2s',
+                '&:hover': {
+                  borderColor: 'primary.main',
+                  bgcolor: 'action.hover',
+                },
+              }}
+            >
+              <LinkIcon sx={{ fontSize: 32, color: 'primary.main' }} />
+              <Box>
+                <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
+                  Importar Enlaces
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  Agregar nuevos mint links
+                </Typography>
+              </Box>
+            </Paper>
 
-        {/* Mint Links */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">
-              Mint Links
-            </h3>
-            <span className="text-2xl">🔗</span>
-          </div>
-          <p className="text-3xl font-bold text-gray-900 dark:text-white">
-            {stats?.mintLinks.available || 0}
-          </p>
-          <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
-            {stats?.mintLinks.total || 0} total
-          </p>
-        </div>
-
-        {/* Tweets */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">
-              Eligible Tweets
-            </h3>
-            <span className="text-2xl">🐦</span>
-          </div>
-          <p className="text-3xl font-bold text-gray-900 dark:text-white">
-            {stats?.tweets.eligible || 0}
-          </p>
-          <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
-            {stats?.tweets.pending || 0} pending reply
-          </p>
-        </div>
-
-        {/* Claim Rate */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">
-              Claim Rate
-            </h3>
-            <span className="text-2xl">📈</span>
-          </div>
-          <p className="text-3xl font-bold text-gray-900 dark:text-white">
-            {stats?.deliveries.claimRate.toFixed(1) || 0}%
-          </p>
-          <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
-            {stats?.deliveries.claimed || 0} of {stats?.deliveries.total || 0}
-          </p>
-        </div>
-      </div>
-
-      {/* Quick Actions */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-          Quick Actions
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Link
-            href="/admin/poap"
-            className="flex items-center gap-3 p-4 border-2 border-gray-200 dark:border-gray-700 rounded-lg hover:border-blue-500 dark:hover:border-blue-500 transition-colors"
-          >
-            <span className="text-2xl">⚙️</span>
-            <div>
-              <h3 className="font-medium text-gray-900 dark:text-white">
-                Configure POAP
-              </h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                Event settings & reply text
-              </p>
-            </div>
-          </Link>
-
-          <Link
-            href="/admin/mint-links"
-            className="flex items-center gap-3 p-4 border-2 border-gray-200 dark:border-gray-700 rounded-lg hover:border-blue-500 dark:hover:border-blue-500 transition-colors"
-          >
-            <span className="text-2xl">🔗</span>
-            <div>
-              <h3 className="font-medium text-gray-900 dark:text-white">
-                Import Links
-              </h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                Add new mint links
-              </p>
-            </div>
-          </Link>
-
-          <Link
-            href="/admin/bot"
-            className="flex items-center gap-3 p-4 border-2 border-gray-200 dark:border-gray-700 rounded-lg hover:border-blue-500 dark:hover:border-blue-500 transition-colors"
-          >
-            <span className="text-2xl">🤖</span>
-            <div>
-              <h3 className="font-medium text-gray-900 dark:text-white">
-                Control Bot
-              </h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                Start/stop automation
-              </p>
-            </div>
-          </Link>
-        </div>
-      </div>
-    </div>
+            <Paper
+              component={Link}
+              href="/admin/bot"
+              sx={{
+                p: 2,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 2,
+                textDecoration: 'none',
+                color: 'inherit',
+                border: '2px solid',
+                borderColor: 'divider',
+                transition: 'all 0.2s',
+                '&:hover': {
+                  borderColor: 'primary.main',
+                  bgcolor: 'action.hover',
+                },
+              }}
+            >
+              <SmartToyIcon sx={{ fontSize: 32, color: 'primary.main' }} />
+              <Box>
+                <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
+                  Controlar Bot
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  Iniciar/detener automatización
+                </Typography>
+              </Box>
+            </Paper>
+          </Box>
+        </Card>
+      </Stack>
+    </Container>
   );
 }
