@@ -1,5 +1,18 @@
 # Actualizaciones al Plan de Trabajo
 
+## ⚠️ IMPLEMENTATION GUIDELINES
+
+**ALL implementations must follow the guidelines in `IMPLEMENTATION_GUIDELINES.md`:**
+- ✅ Production-ready code only (NO minimal implementations)
+- ✅ Complete test coverage (unit, integration, E2E)
+- ✅ Comprehensive error handling
+- ✅ Full security measures
+- ✅ Complete documentation
+
+**This is not optional. Every phase must be fully implemented and production-ready.**
+
+---
+
 ## NUEVA FUNCIONALIDAD: Conexión de Cuenta de Bot desde Backoffice
 
 ### Resumen

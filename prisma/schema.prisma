@@ -14,10 +14,39 @@ model Config {
   botReplyText    String   @default("¡Felicidades! Reclama tu POAP aquí: {{claimUrl}}")
   twitterHashtag  String   @default("#POAP")
   requiredCode    String   @default("ELIGIBLE")
+
+  // Relación con cuenta del bot
+  botAccountId    String?  @unique
+  botAccount      BotAccount? @relation(fields: [botAccountId], references: [id])
+
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
   @@map("config")
+}
+
+model BotAccount {
+  id              String   @id @default(cuid())
+  twitterId       String   @unique
+  username        String
+  displayName     String?
+  profileImageUrl String?
+
+  // OAuth credentials para postear (encrypted)
+  accessToken     String
+  accessSecret    String
+
+  // Estado de conexión
+  isConnected     Boolean  @default(true)
+  lastUsedAt      DateTime?
+  connectedAt     DateTime @default(now())
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  config          Config?
+
+  @@map("bot_accounts")
 }
 
 model TwitterUser {
