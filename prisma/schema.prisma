@@ -1,0 +1,83 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Config {
+  id              String   @id @default(cuid())
+  poapEventId     String
+  poapSecretCode  String
+  botReplyText    String   @default("¡Felicidades! Reclama tu POAP aquí: {{claimUrl}}")
+  twitterHashtag  String   @default("#POAP")
+  requiredCode    String   @default("ELIGIBLE")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("config")
+}
+
+model TwitterUser {
+  id              String   @id @default(cuid())
+  twitterId       String   @unique
+  username        String
+  displayName     String?
+  profileImageUrl String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  deliveries      Delivery[]
+
+  @@map("twitter_users")
+}
+
+model Delivery {
+  id              String   @id @default(cuid())
+  twitterUserId   String
+  twitterUser     TwitterUser @relation(fields: [twitterUserId], references: [id])
+  tweetId         String   @unique
+  mintLink        String
+  qrHash          String   @unique
+  deliveredAt     DateTime @default(now())
+  claimed         Boolean  @default(false)
+  claimedAt       DateTime?
+
+  @@index([twitterUserId])
+  @@index([claimed])
+  @@map("deliveries")
+}
+
+model Tweet {
+  id              String   @id @default(cuid())
+  tweetId         String   @unique
+  twitterUserId   String
+  username        String
+  text            String
+  hasImage        Boolean
+  hasCode         Boolean
+  isEligible      Boolean
+  processedAt     DateTime @default(now())
+  botReplied      Boolean  @default(false)
+  botReplyTweetId String?
+
+  @@index([tweetId])
+  @@index([isEligible])
+  @@map("tweets")
+}
+
+model QRCode {
+  id              String   @id @default(cuid())
+  qrHash          String   @unique
+  claimed         Boolean  @default(false)
+  reservedFor     String?  // twitterId
+  reservedAt      DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([claimed])
+  @@index([reservedFor])
+  @@map("qr_codes")
+}

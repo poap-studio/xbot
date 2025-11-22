@@ -1,0 +1,58 @@
+{
+  "name": "xbot",
+  "version": "1.0.0",
+  "description": "Twitter POAP Bot - Automated POAP delivery for Twitter users",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:e2e": "playwright test",
+    "test:all": "npm test && npm run test:e2e",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:studio": "prisma studio"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/poap-studio/xbot.git"
+  },
+  "keywords": ["poap", "twitter", "bot", "nft"],
+  "author": "POAP Studio",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/poap-studio/xbot/issues"
+  },
+  "homepage": "https://github.com/poap-studio/xbot#readme",
+  "dependencies": {
+    "@prisma/client": "^7.0.0",
+    "csv-parse": "^6.1.0",
+    "csv-stringify": "^6.6.0",
+    "next": "^16.0.3",
+    "next-auth": "^5.0.0-beta.30",
+    "prisma": "^7.0.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "twitter-api-v2": "^1.28.0",
+    "zod": "^4.1.12"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.56.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.0",
+    "@types/node": "^24.10.1",
+    "@types/react": "^19.2.6",
+    "@types/react-dom": "^19.2.3",
+    "autoprefixer": "^10.4.22",
+    "eslint": "^9.39.1",
+    "eslint-config-next": "^16.0.3",
+    "jest": "^30.2.0",
+    "jest-environment-jsdom": "^30.2.0",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.1.17",
+    "typescript": "^5.9.3"
+  }
+}
