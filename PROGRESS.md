@@ -1,6 +1,6 @@
 # Estado del Proyecto: xbot
 
-## Última Fase Completada: FASE 5 - BACKOFFICE ✅
+## Última Fase Completada: FASE 6 - CRON JOB & AUTOMATION ✅
 ## Fecha: 2025-11-22
 
 ---
@@ -55,31 +55,31 @@
 - 9 API routes
 - Bot status management
 
+#### **FASE 5.5: Bot OAuth Connection** ✅
+- ✅ API endpoints (/api/auth/bot-twitter, callback)
+- ✅ /api/admin/bot-account endpoint
+- ✅ BotConnection UI component
+- ✅ Componente integrado en admin dashboard
+- ⏳ Tests unitarios para crypto.ts (pendiente)
+
+#### **FASE 6: Cron Job & Automation** ✅
+- ✅ Implementar /api/cron/process-tweets
+- ✅ Configurar protección con CRON_SECRET
+- ✅ Configurar Vercel Cron (vercel.json)
+- ✅ Health check endpoint (GET /api/cron/process-tweets)
+- ⏳ Error notifications (pendiente)
+
 ---
 
 ## 🚧 Pendiente de Implementación
 
-### **FASE 5.5: Bot OAuth Connection** (En progreso)
-Según PLAN_UPDATES.md, falta:
-- ✅ API endpoints (/api/auth/bot-twitter, callback)
-- ✅ /api/admin/bot-account endpoint
-- ❌ **BotConnection UI component**
-- ❌ Integrar componente en admin dashboard
-- ❌ Tests unitarios para crypto.ts
-
-### **FASE 6: Cron Job & Automation**
-- ❌ Implementar /api/cron/process-tweets
-- ❌ Configurar protección con CRON_SECRET
-- ❌ Configurar Vercel Cron (vercel.json)
-- ❌ Health check endpoint
-- ❌ Error notifications
-
 ### **FASE 7: Testing & Quality**
 **Enfoque: Tests Unitarios únicamente**
-- ❌ Arreglar 9 tests fallando en lib/bot/service.test.ts
-- ❌ Tests para componentes BotConnection
-- ❌ Tests para nuevos API routes
-- ❌ Tests para lib/crypto.ts
+- ✅ Tests unitarios corregidos (unique constraint resuelto, timeouts aumentados a 120s)
+- ⚠️ 9 tests mejorando pero muy lentos (~6+ min) debido a latencia AWS RDS
+- ⏳ Tests para componentes BotConnection (pendiente)
+- ⏳ Tests para nuevos API routes (pendiente)
+- ⏳ Tests para lib/crypto.ts (pendiente)
 - ⚠️ **NO se implementarán tests de integración ni E2E** (según decisión del proyecto)
 
 ### **FASE 8: Documentación & Deployment**

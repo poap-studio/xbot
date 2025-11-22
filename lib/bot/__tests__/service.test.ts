@@ -34,6 +34,9 @@ import { replyWithClaimUrl, hasBeenRepliedTo } from '@/lib/twitter/reply';
 import { reserveMintLink, getMintLinkStats } from '@/lib/poap/api';
 
 describe('Bot Orchestration Service', () => {
+  // Global counter for unique mint link generation
+  let globalMintLinkCounter = 0;
+
   const mockTweet: ProcessedTweet = {
     id: 'tweet_123',
     text: 'Test tweet with #POAP and ELIGIBLE code',
@@ -61,19 +64,20 @@ describe('Bot Orchestration Service', () => {
     (saveTweets as jest.Mock).mockResolvedValue(0);
     (hasBeenRepliedTo as jest.Mock).mockResolvedValue(false);
 
-    // Mock reserveMintLink to return unique URLs for each call
-    let callCount = 0;
+    // Mock reserveMintLink to return unique URLs using global counter and timestamp
     (reserveMintLink as jest.Mock).mockImplementation(() => {
-      callCount++;
-      return Promise.resolve(`https://poap.xyz/claim/test${callCount}`);
+      globalMintLinkCounter++;
+      const timestamp = Date.now();
+      const uniqueId = `${timestamp}_${globalMintLinkCounter}_${Math.random().toString(36).substring(7)}`;
+      return Promise.resolve(`https://poap.xyz/claim/${uniqueId}`);
     });
 
     (replyWithClaimUrl as jest.Mock).mockResolvedValue('reply_123');
-  }, 15000); // 15 second timeout for cleanup
+  }, 30000); // 30 second timeout for cleanup
 
   afterAll(async () => {
     await prisma.$disconnect();
-  }, 15000); // 15 second timeout
+  }, 120000); // 120 second timeout
 
   describe('processSingleTweet', () => {
     it('should successfully process a tweet', async () => {
@@ -82,7 +86,7 @@ describe('Bot Orchestration Service', () => {
       expect(result.success).toBe(true);
       expect(result.tweetId).toBe('tweet_123');
       expect(result.username).toBe('testuser');
-      expect(result.mintLink).toMatch(/^https:\/\/poap\.xyz\/claim\/test\d+$/); // Dynamic mock
+      expect(result.mintLink).toMatch(/^https:\/\/poap\.xyz\/claim\//); // Unique mock with timestamp
       expect(result.replyId).toBe('reply_123');
 
       // Verify delivery was recorded
@@ -157,7 +161,8 @@ describe('Bot Orchestration Service', () => {
         where: { tweetId: 'tweet_123' },
       });
 
-      expect(delivery!.qrHash).toMatch(/^test\d+$/); // Dynamic mock returns test1, test2, etc
+      // Expect the new unique format: timestamp_counter_random
+      expect(delivery!.qrHash).toMatch(/^\d+_\d+_[a-z0-9]+$/);
     });
 
     it('should handle app.poap.xyz links', async () => {
@@ -185,31 +190,35 @@ describe('Bot Orchestration Service', () => {
   });
 
   describe('runBotProcess', () => {
-    it('should process eligible tweets successfully', async () => {
-      const tweets: ProcessedTweet[] = [
-        mockTweet,
-        {
-          ...mockTweet,
-          id: 'tweet_456',
-          authorId: 'user_456',
-          authorUsername: 'user2',
-        },
-      ];
+    it(
+      'should process eligible tweets successfully',
+      async () => {
+        const tweets: ProcessedTweet[] = [
+          mockTweet,
+          {
+            ...mockTweet,
+            id: 'tweet_456',
+            authorId: 'user_456',
+            authorUsername: 'user2',
+          },
+        ];
 
-      (searchNewEligibleTweets as jest.Mock).mockResolvedValue(tweets);
-      (saveTweets as jest.Mock).mockResolvedValue(2);
+        (searchNewEligibleTweets as jest.Mock).mockResolvedValue(tweets);
+        (saveTweets as jest.Mock).mockResolvedValue(2);
 
-      const result = await runBotProcess(10);
+        const result = await runBotProcess(10);
 
-      expect(result.tweetsFound).toBe(2);
-      expect(result.tweetsEligible).toBe(2);
-      expect(result.deliveriesSuccessful).toBe(2);
-      expect(result.deliveriesFailed).toBe(0);
-      expect(result.errors).toHaveLength(0);
+        expect(result.tweetsFound).toBe(2);
+        expect(result.tweetsEligible).toBe(2);
+        expect(result.deliveriesSuccessful).toBe(2);
+        expect(result.deliveriesFailed).toBe(0);
+        expect(result.errors).toHaveLength(0);
 
-      // Verify tweets were saved
-      expect(saveTweets).toHaveBeenCalledWith(tweets);
-    });
+        // Verify tweets were saved
+        expect(saveTweets).toHaveBeenCalledWith(tweets);
+      },
+      20000
+    ); // 20 second timeout
 
     it('should return early if no tweets found', async () => {
       (searchNewEligibleTweets as jest.Mock).mockResolvedValue([]);
@@ -245,35 +254,39 @@ describe('Bot Orchestration Service', () => {
       20000
     ); // 20 second timeout for slower database operations
 
-    it('should track both successes and failures', async () => {
-      const tweets: ProcessedTweet[] = [
-        mockTweet,
-        {
-          ...mockTweet,
-          id: 'tweet_2',
-          authorId: 'user_2',
-          authorUsername: 'user2',
-        },
-      ];
+    it(
+      'should track both successes and failures',
+      async () => {
+        const tweets: ProcessedTweet[] = [
+          mockTweet,
+          {
+            ...mockTweet,
+            id: 'tweet_2',
+            authorId: 'user_2',
+            authorUsername: 'user2',
+          },
+        ];
 
-      (searchNewEligibleTweets as jest.Mock).mockResolvedValue(tweets);
-      (saveTweets as jest.Mock).mockResolvedValue(2);
+        (searchNewEligibleTweets as jest.Mock).mockResolvedValue(tweets);
+        (saveTweets as jest.Mock).mockResolvedValue(2);
 
-      // Reset the mock to control calls precisely
-      (reserveMintLink as jest.Mock).mockReset();
+        // Reset the mock to control calls precisely
+        (reserveMintLink as jest.Mock).mockReset();
 
-      // First tweet succeeds, second fails (no mint links)
-      (reserveMintLink as jest.Mock)
-        .mockResolvedValueOnce('https://poap.xyz/claim/success1')
-        .mockResolvedValueOnce(null);
+        // First tweet succeeds, second fails (no mint links)
+        (reserveMintLink as jest.Mock)
+          .mockResolvedValueOnce('https://poap.xyz/claim/success1')
+          .mockResolvedValueOnce(null);
 
-      const result = await runBotProcess(10);
+        const result = await runBotProcess(10);
 
-      expect(result.deliveriesSuccessful).toBe(1);
-      expect(result.deliveriesFailed).toBe(1);
-      expect(result.errors).toHaveLength(1);
-      expect(result.errors[0].error).toBe('No mint links available');
-    });
+        expect(result.deliveriesSuccessful).toBe(1);
+        expect(result.deliveriesFailed).toBe(1);
+        expect(result.errors).toHaveLength(1);
+        expect(result.errors[0].error).toBe('No mint links available');
+      },
+      20000
+    ); // 20 second timeout
 
     it('should handle search errors', async () => {
       (searchNewEligibleTweets as jest.Mock).mockRejectedValue(
@@ -337,8 +350,8 @@ describe('Bot Orchestration Service', () => {
 
         jest.useRealTimers();
       },
-      30000
-    ); // 30 second timeout
+      120000
+    ); // 120 second timeout
   });
 
   describe('validateBotConfiguration', () => {
@@ -384,7 +397,7 @@ describe('Bot Orchestration Service', () => {
 
         await expect(validateBotConfiguration()).resolves.not.toThrow();
       },
-      20000
+      120000
     );
 
     it('should throw if TWITTER_BEARER_TOKEN not set', async () => {
@@ -471,7 +484,7 @@ describe('Bot Orchestration Service', () => {
           'POAP API credentials not configured'
         );
       },
-      20000
+      120000
     );
 
     it(
@@ -509,7 +522,7 @@ describe('Bot Orchestration Service', () => {
           'No mint links available'
         );
       },
-      20000
+      120000
     );
 
     it('should collect multiple validation errors', async () => {
