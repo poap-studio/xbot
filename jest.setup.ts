@@ -4,10 +4,16 @@
  */
 
 import '@testing-library/jest-dom';
+import { config } from 'dotenv';
+import { resolve } from 'path';
 
-// Mock window.location
-delete (window as any).location;
-window.location = {
+// Load environment variables from .env.local for tests
+config({ path: resolve(__dirname, '.env.local') });
+
+// Mock window.location (only in jsdom environment)
+if (typeof window !== 'undefined') {
+  delete (window as any).location;
+  window.location = {
   href: '',
   origin: 'http://localhost',
   protocol: 'http:',
@@ -21,11 +27,12 @@ window.location = {
   reload: jest.fn(),
   replace: jest.fn(),
   toString: jest.fn(() => 'http://localhost/'),
-  ancestorOrigins: {} as DOMStringList,
-} as Location;
+    ancestorOrigins: {} as DOMStringList,
+  } as Location;
 
-// Mock window.history.replaceState
-window.history.replaceState = jest.fn();
+  // Mock window.history.replaceState
+  window.history.replaceState = jest.fn();
+}
 
 // Suppress console errors for navigation warnings in tests
 const originalError = console.error;

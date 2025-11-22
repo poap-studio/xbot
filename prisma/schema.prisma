@@ -15,6 +15,10 @@ model Config {
   twitterHashtag  String   @default("#POAP")
   requiredCode    String   @default("ELIGIBLE")
 
+  // POAP API credentials (encrypted)
+  poapClientId    String?
+  poapClientSecret String?
+
   // Relación con cuenta del bot
   botAccountId    String?  @unique
   botAccount      BotAccount? @relation(fields: [botAccountId], references: [id])
@@ -97,12 +101,26 @@ model Tweet {
   @@map("tweets")
 }
 
+model PoapAuth {
+  id              String   @id @default(cuid())
+  accessToken     String   @db.Text // OAuth2 bearer token
+  expiresAt       DateTime // Token expires after 24h
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("poap_auth")
+}
+
 model QRCode {
   id              String   @id @default(cuid())
   qrHash          String   @unique
+  mintLink        String   // Full mint link (e.g., https://poap.xyz/claim/abc123)
+  secret          String?  // Secret from POAP API (if retrieved)
   claimed         Boolean  @default(false)
   reservedFor     String?  // twitterId
   reservedAt      DateTime?
+  claimedBy       String?  // Ethereum address or email
+  claimedAt       DateTime?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
