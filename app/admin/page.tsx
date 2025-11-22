@@ -7,6 +7,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { BotConnection } from '@/components/admin/BotConnection';
 
 interface DashboardStats {
   bot: {
@@ -96,6 +97,9 @@ export default function AdminDashboard() {
           Overview of your POAP bot activity
         </p>
       </div>
+
+      {/* Bot Connection */}
+      <BotConnection />
 
       {/* Bot Status */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">

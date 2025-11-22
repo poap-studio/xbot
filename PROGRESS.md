@@ -1,217 +1,273 @@
 # Estado del Proyecto: xbot
 
-## Última Fase Completada: FASE 0 - SETUP INICIAL ✅
+## Última Fase Completada: FASE 5 - BACKOFFICE ✅
 ## Fecha: 2025-11-22
-
-### Archivos Creados/Modificados
-- package.json (configuración de proyecto con scripts)
-- tsconfig.json (configuración TypeScript - actualizado por Next.js)
-- next.config.ts (configuración Next.js)
-- next-env.d.ts (tipos de Next.js - auto-generado)
-- tailwind.config.ts (configuración Tailwind CSS)
-- postcss.config.mjs (configuración PostCSS con @tailwindcss/postcss)
-- .eslintrc.json (configuración ESLint)
-- jest.config.js (configuración Jest)
-- jest.setup.js (setup de testing)
-- playwright.config.ts (configuración E2E)
-- .gitignore (archivos a ignorar)
-- prisma/schema.prisma (schema completo de BD)
-- prisma/migrations/20251122160653_init/ (migración inicial)
-- .env.local (variables de entorno - NO COMITEADO)
-- .env.example (ejemplo de variables de entorno)
-- app/globals.css (estilos globales)
-- app/layout.tsx (layout principal)
-- app/page.tsx (página de inicio)
-- README.md (documentación completa)
-- PLAN_UPDATES.md (actualizaciones al plan con OAuth del bot)
-- PROGRESS.md (este archivo)
-- create_rds.py (script Python para crear RDS - temporal)
-- configure_rds_access.py (script Python para configurar security group - temporal)
-- DATABASE_URL.txt (credenciales de BD - NO COMITEADO)
-
-### Configuraciones Completadas ✅
-- ✅ Repositorio clonado desde https://github.com/poap-studio/xbot
-- ✅ npm inicializado con package.json
-- ✅ Dependencias instaladas:
-  - Next.js 16.0.3 + React 19 + TypeScript 5.9
-  - Prisma 6.19.0 (downgrade desde 7.0 por compatibilidad)
-  - @prisma/client 6.19.0
-  - NextAuth.js 5.0 beta
-  - Twitter API v2 (twitter-api-v2)
-  - Tailwind CSS 4.1.17 + @tailwindcss/postcss
-  - Jest 30 + Playwright 1.56
-  - Zod, csv-parse, csv-stringify
-- ✅ Dependencias de desarrollo instaladas
-- ✅ TypeScript configurado
-- ✅ Next.js configurado con App Router
-- ✅ Tailwind CSS 4 configurado con PostCSS plugin
-- ✅ ESLint configurado
-- ✅ Prisma schema creado (Config, TwitterUser, Delivery, Tweet, QRCode)
-- ✅ Testing setup (Jest + Playwright)
-- ✅ Estructura básica de Next.js creada
-- ✅ AWS RDS PostgreSQL creado y configurado
-  - Instance ID: xbot-postgres
-  - Engine: PostgreSQL 15.15
-  - Class: db.t3.micro
-  - Storage: 20 GB
-  - Region: eu-west-1
-  - Endpoint: ***REMOVED_DB_HOST***:5432
-  - Security Group configurado para permitir conexiones públicas
-- ✅ Variables de entorno configuradas en .env.local
-- ✅ Migración inicial de Prisma ejecutada
-- ✅ Cliente de Prisma generado
-- ✅ Build de Next.js exitoso
-
-### Variables de Entorno Configuradas
-Todas las variables están en `.env.local` (ver `.env.example` para template):
-- ✅ DATABASE_URL (PostgreSQL en AWS RDS)
-- ✅ POAP_CLIENT_ID, POAP_CLIENT_SECRET, POAP_API_KEY
-- ✅ TWITTER_API_KEY, TWITTER_API_SECRET, TWITTER_BEARER_TOKEN
-- ⚠️  TWITTER_CLIENT_ID, TWITTER_CLIENT_SECRET (OAuth - PENDIENTE)
-- ⚠️  TWITTER_ACCESS_TOKEN, TWITTER_ACCESS_SECRET (PENDIENTE)
-- ✅ NEXTAUTH_URL, NEXTAUTH_SECRET (generados)
-- ✅ NEXT_PUBLIC_APP_URL
-- ✅ CRON_SECRET (generado)
-- ✅ ENCRYPTION_SECRET (generado)
-
-### Credenciales Pendientes
-Para completar la configuración, necesitas:
-
-1. **Twitter OAuth 2.0 App** (para login de usuarios que reclaman POAPs):
-   - Ve a https://developer.twitter.com/en/portal/dashboard
-   - Crea nueva App o usa existente
-   - Habilita OAuth 2.0 en "User authentication settings"
-   - Callback URL: `http://localhost:3000/api/auth/callback/twitter` (local)
-   - Callback URL producción: `https://tu-dominio.vercel.app/api/auth/callback/twitter`
-   - Obtendrás TWITTER_CLIENT_ID y TWITTER_CLIENT_SECRET
-
-2. **Twitter Access Tokens** (para que el bot publique - OPCIONAL si usas OAuth desde backoffice):
-   - En la misma app, genera "Access Token and Secret"
-   - Estos son TWITTER_ACCESS_TOKEN y TWITTER_ACCESS_SECRET
-   - Nota: Con la nueva funcionalidad del plan, estos se obtienen vía OAuth desde el backoffice
-
-### Siguiente Paso
-**FASE 0.5: Actualizar Schema con BotAccount** (según PLAN_UPDATES.md)
-
-O continuar directamente con:
-**FASE 1: Implementar POAP API Client**
-Archivo principal: `lib/poap/auth.ts`
-
-### Comandos para Continuar
-```bash
-cd /Users/albertogomeztoribio/git/xbot
-
-# Verificar que arranca
-npm run dev
-
-# Ejecutar tests (cuando se implementen)
-npm test
-
-# Build para producción
-npm run build
-
-# Abrir Prisma Studio para ver la BD
-npx prisma studio
-```
-
-### Configuración de Vercel (Pendiente)
-Cuando estés listo para desplegar, configura estas variables en Vercel:
-
-```bash
-# Ir a: https://vercel.com/tu-usuario/xbot/settings/environment-variables
-
-DATABASE_URL="postgresql://xbotadmin:[PASSWORD]@***REMOVED_DB_HOST***:5432/xbot"
-POAP_CLIENT_ID="***REMOVED_POAP_CLIENT_ID***"
-POAP_CLIENT_SECRET="***REMOVED_POAP_CLIENT_SECRET***"
-POAP_API_KEY="***REMOVED_POAP_API_KEY***"
-TWITTER_API_KEY="***REMOVED_TWITTER_API_KEY***"
-TWITTER_API_SECRET="***REMOVED_TWITTER_API_SECRET***"
-TWITTER_BEARER_TOKEN="***REMOVED_TWITTER_BEARER_TOKEN***"
-TWITTER_CLIENT_ID="[TU_TWITTER_CLIENT_ID_OAUTH]"
-TWITTER_CLIENT_SECRET="[TU_TWITTER_CLIENT_SECRET_OAUTH]"
-TWITTER_ACCESS_TOKEN="[TU_ACCESS_TOKEN]"
-TWITTER_ACCESS_SECRET="[TU_ACCESS_SECRET]"
-NEXTAUTH_URL="https://tu-dominio.vercel.app"
-NEXTAUTH_SECRET="***REMOVED_NEXTAUTH_SECRET***"
-NEXT_PUBLIC_APP_URL="https://tu-dominio.vercel.app"
-CRON_SECRET="***REMOVED_CRON_SECRET***"
-ENCRYPTION_SECRET="***REMOVED_ENCRYPTION_SECRET***"
-```
-
-### Notas Técnicas
-- **Stack**: Next.js 16 + React 19 + TypeScript 5.9
-- **Base de datos**: PostgreSQL 15.15 en AWS RDS (eu-west-1)
-- **ORM**: Prisma 6.19.0 (downgrade desde 7.0 por problemas de compatibilidad)
-- **Autenticación**: NextAuth.js 5.0 beta (Twitter OAuth)
-- **Twitter**: twitter-api-v2 1.28
-- **Testing**: Jest 30 + Playwright 1.56
-- **Estilos**: Tailwind CSS 4.1 con @tailwindcss/postcss
-- **Build**: ✅ Compilación exitosa
-
-### Estructura del Proyecto
-```
-xbot/
-├── .next/                  # Build output (auto-generado)
-├── app/                    # Next.js App Router
-│   ├── globals.css
-│   ├── layout.tsx
-│   └── page.tsx
-├── prisma/
-│   ├── migrations/
-│   │   └── 20251122160653_init/
-│   │       └── migration.sql
-│   └── schema.prisma       # Database schema
-├── node_modules/
-├── .env.local             # Environment variables (NO COMITEADO)
-├── .env.example            # Environment variables template
-├── .eslintrc.json
-├── .gitignore
-├── jest.config.js
-├── jest.setup.js
-├── next-env.d.ts          # Auto-generado
-├── next.config.ts
-├── package.json
-├── package-lock.json
-├── playwright.config.ts
-├── postcss.config.mjs
-├── PLAN_UPDATES.md        # Actualización del plan con OAuth del bot
-├── PROGRESS.md            # This file
-├── README.md
-├── tailwind.config.ts
-└── tsconfig.json
-```
-
-### Archivos Temporales (No comitear)
-- create_rds.py
-- configure_rds_access.py
-- DATABASE_URL.txt
-- .env.local
-
-### Próximas Fases
-1. **FASE 0.5** (OPCIONAL): Actualizar schema con BotAccount + encriptación
-2. **FASE 1**: POAP API Client (lib/poap/)
-3. **FASE 2**: Twitter API Client (lib/twitter/)
-4. **FASE 3**: Bot Service (lib/bot/)
-5. **FASE 4**: Web de Claim (/app/claim/)
-6. **FASE 5**: Backoffice (/app/admin/)
-7. **FASE 6**: Testing Completo
-8. **FASE 7**: Documentación y Deployment
-
-### Commits Realizados
-1. `a4af83b` - Initial setup: Next.js app with Prisma, testing, and database schema
-2. `39483c2` - Add bot account OAuth connection to plan
-3. (Pendiente) - Complete FASE 0 with RDS setup and working build
 
 ---
 
-## ✅ FASE 0 COMPLETADA
+## 📊 Estado General del Proyecto
 
-Todos los objetivos de la FASE 0 han sido completados:
-- ✅ Proyecto Next.js configurado
-- ✅ Base de datos PostgreSQL en AWS RDS creada y migrada
-- ✅ Variables de entorno configuradas
-- ✅ Build exitoso
-- ✅ Prisma funcionando
-- ✅ Testing configurado
+### ✅ Fases Completadas
 
-**Listo para comenzar FASE 1: POAP API Client**
+#### **FASE 0: Setup Inicial** ✅
+- Next.js 16 + React 19 + TypeScript 5.9
+- Prisma 6.19.0 con PostgreSQL en AWS RDS
+- Tailwind CSS 4.1
+- Testing configurado (Jest + Playwright)
+- Variables de entorno configuradas
+- Build exitoso
+
+#### **FASE 1: POAP API Client** ✅
+- OAuth2 client credentials flow
+- Token auto-renewal (24h expiry, 1h buffer)
+- Mint links import & reservation
+- Claim tracking
+- 21 unit tests passing
+
+#### **FASE 2: Twitter API Client** ✅
+- Tweet search con filtros (images, code)
+- FIFO processing con createdAt ordering
+- Reply functionality
+- Rate limiting (2s delays)
+- 20 unit tests passing
+
+#### **FASE 3: Bot Service** ✅
+- Delivery tracking (record, check, stats)
+- Single tweet processing
+- Complete bot orchestration
+- Validation & error handling
+- 35 unit tests passing (9 failing - timeouts)
+
+#### **FASE 4: Claim Page** ✅
+- NextAuth v5 Twitter OAuth
+- User deliveries view
+- Statistics dashboard
+- Claim button with copy to clipboard
+- Session management
+
+#### **FASE 5: Backoffice** ✅
+- Admin layout with navigation
+- Dashboard with real-time stats
+- POAP configuration (event ID, search query, reply template)
+- Mint links management (import, stats, filtering)
+- Bot control (start/stop/run-once)
+- Deliveries monitoring (list, search, filter)
+- 9 API routes
+- Bot status management
+
+---
+
+## 🚧 Pendiente de Implementación
+
+### **FASE 5.5: Bot OAuth Connection** (En progreso)
+Según PLAN_UPDATES.md, falta:
+- ✅ API endpoints (/api/auth/bot-twitter, callback)
+- ✅ /api/admin/bot-account endpoint
+- ❌ **BotConnection UI component**
+- ❌ Integrar componente en admin dashboard
+- ❌ Tests unitarios para crypto.ts
+
+### **FASE 6: Cron Job & Automation**
+- ❌ Implementar /api/cron/process-tweets
+- ❌ Configurar protección con CRON_SECRET
+- ❌ Configurar Vercel Cron (vercel.json)
+- ❌ Health check endpoint
+- ❌ Error notifications
+
+### **FASE 7: Testing & Quality**
+**Enfoque: Tests Unitarios únicamente**
+- ❌ Arreglar 9 tests fallando en lib/bot/service.test.ts
+- ❌ Tests para componentes BotConnection
+- ❌ Tests para nuevos API routes
+- ❌ Tests para lib/crypto.ts
+- ⚠️ **NO se implementarán tests de integración ni E2E** (según decisión del proyecto)
+
+### **FASE 8: Documentación & Deployment**
+- ❌ Actualizar README con deployment
+- ❌ Configurar Vercel project
+- ❌ Configurar environment variables en Vercel
+- ❌ Deployment a staging
+- ❌ Deployment a producción
+- ❌ Configurar monitoring
+
+---
+
+## 📁 Estructura Actual del Proyecto
+
+```
+xbot/
+├── app/
+│   ├── admin/
+│   │   ├── bot/page.tsx           ✅ Bot control
+│   │   ├── deliveries/page.tsx    ✅ Deliveries monitoring
+│   │   ├── layout.tsx             ✅ Admin layout
+│   │   ├── mint-links/page.tsx    ✅ Mint links management
+│   │   ├── page.tsx               ✅ Dashboard
+│   │   └── poap/page.tsx          ✅ POAP configuration
+│   ├── api/
+│   │   ├── admin/
+│   │   │   ├── bot/
+│   │   │   │   ├── run-once/route.ts    ✅
+│   │   │   │   ├── start/route.ts       ✅
+│   │   │   │   ├── status/route.ts      ✅
+│   │   │   │   └── stop/route.ts        ✅
+│   │   │   ├── deliveries/route.ts      ✅
+│   │   │   ├── mint-links/
+│   │   │   │   ├── import/route.ts      ✅
+│   │   │   │   └── stats/route.ts       ✅
+│   │   │   ├── poap/config/route.ts     ✅
+│   │   │   ├── stats/route.ts           ✅
+│   │   │   └── bot-account/route.ts     ✅
+│   │   ├── auth/
+│   │   │   ├── [...nextauth]/route.ts   ✅
+│   │   │   └── bot-twitter/
+│   │   │       ├── route.ts             ✅
+│   │   │       └── callback/route.ts    ✅
+│   │   └── claim/deliveries/route.ts    ✅
+│   ├── claim/page.tsx             ✅ User claim page
+│   ├── globals.css
+│   ├── layout.tsx
+│   └── page.tsx
+├── components/
+│   └── claim/
+│       └── DeliveryCard.tsx       ✅
+├── lib/
+│   ├── auth.ts                    ✅ NextAuth v5 config
+│   ├── bot/
+│   │   ├── delivery.ts            ✅ 20 tests passing
+│   │   ├── service.ts             ✅ 15 passing, 9 failing
+│   │   ├── status.ts              ✅ Status management
+│   │   └── __tests__/
+│   ├── crypto.ts                  ✅ Encryption utilities
+│   ├── poap/
+│   │   ├── api.ts                 ✅ 21 tests passing
+│   │   └── __tests__/
+│   ├── prisma.ts                  ✅
+│   └── twitter/
+│       ├── search.ts              ✅ 20 tests passing
+│       └── __tests__/
+├── prisma/
+│   ├── schema.prisma              ✅ Complete schema
+│   └── migrations/
+├── .env.local                     ✅ (not committed)
+├── .env.example                   ✅
+├── package.json                   ✅
+└── README.md                      ✅
+
+Total: 76 tests (67 passing, 9 failing)
+```
+
+---
+
+## 🔐 Variables de Entorno Configuradas
+
+### Base de Datos
+- ✅ DATABASE_URL (AWS RDS PostgreSQL)
+
+### POAP API
+- ✅ POAP_CLIENT_ID
+- ✅ POAP_CLIENT_SECRET
+- ✅ POAP_API_KEY
+
+### Twitter API
+- ✅ TWITTER_API_KEY
+- ✅ TWITTER_API_SECRET
+- ✅ TWITTER_BEARER_TOKEN
+- ✅ TWITTER_CLIENT_ID (OAuth user login)
+- ✅ TWITTER_CLIENT_SECRET (OAuth user login)
+
+### NextAuth
+- ✅ NEXTAUTH_URL
+- ✅ NEXTAUTH_SECRET
+
+### App
+- ✅ NEXT_PUBLIC_APP_URL
+- ✅ CRON_SECRET
+- ✅ ENCRYPTION_SECRET
+
+---
+
+## 📝 Commits Realizados
+
+1. `a4af83b` - Initial setup: Next.js app with Prisma, testing, and database schema
+2. `39483c2` - Add bot account OAuth connection to plan
+3. `c419b07` - Complete FASE 0: Setup with RDS and working build
+4. `82c4fd9` - Add FASE 1: Complete POAP API Client implementation
+5. `ac0e9fc` - Add FASE 2: Complete Twitter API Client implementation
+6. `bf13ba2` - Add FASE 3: Bot Service with delivery tracking and orchestration
+7. `bfcf06a` - Add FASE 4: Claim page with Twitter OAuth and deliveries
+8. `ec77e79` - Add FASE 5: Complete Admin Backoffice
+
+---
+
+## 🎯 Próximos Pasos
+
+### Inmediato (Esta sesión)
+1. **Crear componente BotConnection UI**
+   - Componente React para conectar/desconectar bot
+   - Mostrar info de cuenta conectada
+   - Botones de acción (conectar/reconectar/desconectar)
+
+2. **Implementar Cron Job**
+   - API route `/api/cron/process-tweets`
+   - Protección con `CRON_SECRET`
+   - Configurar `vercel.json` para cron scheduling
+
+3. **Arreglar Tests Unitarios**
+   - Resolver 9 tests fallando en `service.test.ts`
+   - Problemas: timeouts, qrHash duplicates, assertions
+
+4. **Actualizar Documentación**
+   - README con instrucciones de deployment
+   - Documentar API routes nuevas
+
+### Mediano Plazo
+5. **Deployment a Vercel**
+   - Configurar proyecto
+   - Variables de entorno
+   - Staging deployment
+   - Production deployment
+
+---
+
+## 🔧 Testing Strategy (ACTUALIZADA)
+
+### ✅ Tests Unitarios (Foco principal)
+- Unit tests para todas las funciones
+- Mocks para APIs externas
+- Database en memoria para tests
+- Objetivo: 100% funciones críticas cubiertas
+
+### ❌ Tests de Integración (NO SE IMPLEMENTAN)
+- Decisión del proyecto: omitir tests de integración
+- Se confía en tests unitarios exhaustivos
+
+### ❌ Tests E2E (NO SE IMPLEMENTAN)
+- Decisión del proyecto: omitir tests E2E
+- Se validará manualmente en staging
+
+---
+
+## 📦 Stack Tecnológico
+
+- **Frontend**: Next.js 16 + React 19 + TypeScript 5.9 + Tailwind CSS 4.1
+- **Database**: PostgreSQL 15.15 (AWS RDS eu-west-1)
+- **ORM**: Prisma 6.19.0
+- **Auth**: NextAuth.js 5.0 beta
+- **APIs**: Twitter API v2 + POAP API
+- **Testing**: Jest 30 (solo unitarios)
+- **Deployment**: Vercel (pendiente)
+
+---
+
+## 🚀 Build Status
+
+- ✅ TypeScript compilation: SUCCESS
+- ✅ Next.js build: SUCCESS
+- ⚠️ Unit tests: 67/76 passing (9 failing)
+- ✅ ESLint: No errors
+- ✅ Database migrations: Applied
+
+---
+
+**Estado actual: FASE 5 completada, continuando con FASE 5.5 (Bot OAuth UI) y FASE 6 (Cron Job)**
