@@ -55,6 +55,7 @@ export default function QrPageConfigPage() {
         throw new Error(data.error || 'Failed to fetch config');
       }
 
+      console.log('QR Page config loaded:', data);
       setConfig({
         tweetTemplate: data.tweetTemplate || '',
         hashtag: data.hashtag || '#POAP',
@@ -153,14 +154,14 @@ export default function QrPageConfigPage() {
               multiline
               rows={4}
               placeholder="I visited the POAP Studio booth at ETH Global, and here's the proof! The secret word is {{code}} {{hashtag}}"
-              helperText={`Use {{code}} for the hidden code and {{hashtag}} for the configured hashtag (${config.hashtag}). Both will be replaced automatically.`}
+              helperText={`Use {{code}} for the hidden code and {{hashtag}} for the configured hashtag (${config.hashtag || '#POAP'}). Both will be replaced automatically.`}
               error={!!(config.tweetTemplate && !config.tweetTemplate.includes('{{code}}'))}
             />
 
             {config.tweetTemplate && (
               <Alert severity="info">
                 <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 'bold' }}>
-                  Preview with example code "ABC123" and configured hashtag "{config.hashtag}":
+                  Preview with example code "ABC123" and configured hashtag "{config.hashtag || '#POAP'}":
                 </Typography>
                 <Typography
                   variant="body2"
@@ -173,7 +174,13 @@ export default function QrPageConfigPage() {
                     wordBreak: 'break-word',
                   }}
                 >
-                  {config.tweetTemplate.replaceAll('{{code}}', 'ABC123').replaceAll('{{hashtag}}', config.hashtag || '#POAP')}
+                  {(() => {
+                    const hashtagValue = config.hashtag && config.hashtag.trim() ? config.hashtag : '#POAP';
+                    console.log('Preview hashtag:', hashtagValue);
+                    return config.tweetTemplate
+                      .replaceAll('{{code}}', 'ABC123')
+                      .replaceAll('{{hashtag}}', hashtagValue);
+                  })()}
                 </Typography>
               </Alert>
             )}
@@ -213,7 +220,7 @@ export default function QrPageConfigPage() {
           <strong>Available Variables:</strong>
           <Box component="ul" sx={{ m: 0, pl: 2, mt: 1 }}>
             <li><code>{'{{code}}'}</code> - Replaced with a unique hidden code</li>
-            <li><code>{'{{hashtag}}'}</code> - Replaced with the configured Twitter hashtag (currently: {config.hashtag})</li>
+            <li><code>{'{{hashtag}}'}</code> - Replaced with the configured Twitter hashtag (currently: {config.hashtag || '#POAP'})</li>
           </Box>
         </Alert>
       </Stack>
