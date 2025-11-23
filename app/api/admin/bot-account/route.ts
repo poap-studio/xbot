@@ -168,7 +168,7 @@ export async function POST(request: NextRequest) {
         create: {
           id: 'default',
           poapEventId: '',
-          poapSecretCode: '',
+          poapEditCode: '',
           botAccountId: botAccount.id,
         },
         update: {
