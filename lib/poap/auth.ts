@@ -49,6 +49,9 @@ async function getCredentials(): Promise<PoapCredentials> {
 async function requestNewToken(): Promise<OAuthTokenResponse> {
   const { clientId, clientSecret } = await getCredentials();
 
+  console.log('[POAP Auth] Requesting new OAuth token...');
+  console.log(`[POAP Auth] Client ID: ${clientId?.substring(0, 10)}...`);
+
   const response = await fetch(POAP_AUTH_URL, {
     method: 'POST',
     headers: {
@@ -64,6 +67,8 @@ async function requestNewToken(): Promise<OAuthTokenResponse> {
 
   if (!response.ok) {
     const errorText = await response.text();
+    console.error(`[POAP Auth] Token request failed: ${response.status}`);
+    console.error(`[POAP Auth] Error details: ${errorText}`);
     throw new Error(
       `POAP OAuth2 token request failed: ${response.status} ${response.statusText}. ${errorText}`
     );
@@ -72,9 +77,11 @@ async function requestNewToken(): Promise<OAuthTokenResponse> {
   const data: OAuthTokenResponse = await response.json();
 
   if (!data.access_token) {
+    console.error('[POAP Auth] Response missing access_token:', data);
     throw new Error('POAP OAuth2 response missing access_token');
   }
 
+  console.log(`[POAP Auth] Token obtained successfully (expires in ${data.expires_in}s)`);
   return data;
 }
 

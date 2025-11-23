@@ -382,8 +382,15 @@ export async function getEventQRCodes(
 ): Promise<string[]> {
   const url = `${POAP_API_BASE}/event/${eventId}/qr-codes`;
 
+  console.log(`[POAP API] Getting QR codes for event ${eventId}...`);
+
   // This endpoint requires OAuth2 Bearer token
   const token = await getValidToken();
+  const apiKey = (process.env.POAP_API_KEY || '').trim();
+
+  console.log(`[POAP API] Token length: ${token?.length || 0}`);
+  console.log(`[POAP API] API Key length: ${apiKey?.length || 0}`);
+  console.log(`[POAP API] Edit code: ${editCode}`);
 
   const response = await fetch(url, {
     method: 'POST',
@@ -391,7 +398,7 @@ export async function getEventQRCodes(
       'accept': 'application/json',
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${token}`,
-      'X-API-Key': (process.env.POAP_API_KEY || '').trim(),
+      'X-API-Key': apiKey,
     },
     body: JSON.stringify({
       secret_code: editCode,
@@ -400,6 +407,9 @@ export async function getEventQRCodes(
 
   if (!response.ok) {
     const errorText = await response.text();
+
+    console.error(`[POAP API] Request failed: ${response.status}`);
+    console.error(`[POAP API] Error response: ${errorText}`);
 
     // Provide helpful error messages
     if (response.status === 400 && errorText.includes('Invalid edit code')) {
