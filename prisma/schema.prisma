@@ -23,6 +23,9 @@ model Config {
   // Search configuration
   twitterHashtag  String   @default("#POAP")
 
+  // QR Page configuration
+  qrPageTweetTemplate String @default("Join our event! Use code {{code}} and share your experience. #POAP")
+
   // POAP API credentials (encrypted)
   poapClientId    String?
   poapClientSecret String?

@@ -28,6 +28,7 @@ import {
   LocalShipping as DeliveryIcon,
   Description as LogsIcon,
   Home as HomeIcon,
+  QrCode2 as QrCodeIcon,
 } from '@mui/icons-material';
 
 const DRAWER_WIDTH = 240;
@@ -36,6 +37,7 @@ const navigation = [
   { name: 'Dashboard', href: '/admin', icon: <DashboardIcon /> },
   { name: 'POAP Config', href: '/admin/poap', icon: <SettingsIcon /> },
   { name: 'Hidden Codes', href: '/admin/hidden-codes', icon: <LinkIcon /> },
+  { name: 'QR Page', href: '/admin/qr-page', icon: <QrCodeIcon /> },
   { name: 'Bot Config', href: '/admin/bot', icon: <SmartToyIcon /> },
   { name: 'Drops', href: '/admin/deliveries', icon: <DeliveryIcon /> },
   { name: 'Cron Logs', href: '/admin/cron-logs', icon: <LogsIcon /> },
