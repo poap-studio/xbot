@@ -108,18 +108,19 @@ export async function GET(request: NextRequest) {
     });
 
     // Update or create config to use this bot account
-    await prisma.config.upsert({
-      where: { id: 'default' },
-      create: {
-        id: 'default',
-        poapEventId: '',
-        poapEditCode: '',
-        botAccountId: botAccount.id,
-      },
-      update: {
-        botAccountId: botAccount.id,
-      },
-    });
+    // Note: If config doesn't exist, only update botAccountId to avoid overwriting existing config
+    const existingConfig = await prisma.config.findFirst();
+
+    if (existingConfig) {
+      // Config exists, just update the bot account
+      await prisma.config.update({
+        where: { id: existingConfig.id },
+        data: {
+          botAccountId: botAccount.id,
+        },
+      });
+    }
+    // If no config exists, it should be created from the admin panel first
 
     console.log(`Bot account connected: @${user.data.username} (${user.data.id})`);
 
