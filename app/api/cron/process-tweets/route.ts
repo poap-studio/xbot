@@ -5,7 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { searchNewEligibleTweets } from '@/lib/twitter/search';
+import { searchNewEligibleTweets, saveTweets } from '@/lib/twitter/search';
 import { processSingleTweet } from '@/lib/bot/service';
 import { validateBotConfiguration } from '@/lib/bot/service';
 import { updateLastRun } from '@/lib/bot/status';
@@ -136,6 +136,10 @@ export async function POST(request: NextRequest) {
     }
 
     console.log(`📤 Processing ${tweets.length} tweets...`);
+
+    // Save tweets to database first (required for markTweetAsReplied)
+    await saveTweets(tweets);
+    console.log(`💾 Saved ${tweets.length} tweets to database`);
 
     // Process tweets
     const results = [];
