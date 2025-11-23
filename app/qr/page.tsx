@@ -15,6 +15,7 @@ export default function DynamicQrPage() {
   const [error, setError] = useState<string | null>(null);
   const [currentCode, setCurrentCode] = useState<string | null>(null);
   const eventSourceRef = useRef<EventSource | null>(null);
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     // Initial QR load
@@ -26,24 +27,55 @@ export default function DynamicQrPage() {
 
     eventSource.onmessage = (event) => {
       const data = JSON.parse(event.data);
-      if (data.type === 'update' && data.code !== currentCode) {
-        console.log('QR code updated via SSE, fetching new QR...');
+      console.log('SSE event received:', data);
+
+      if (data.type === 'update') {
+        console.log('QR code scan detected via SSE, fetching new QR...');
         fetchQrCode();
       }
     };
 
     eventSource.onerror = (error) => {
       console.error('SSE error:', error);
-      eventSource.close();
     };
+
+    // Polling backup: Check for new codes every 3 seconds
+    // This ensures the QR updates even if SSE doesn't work in serverless environments
+    pollingIntervalRef.current = setInterval(() => {
+      checkForNewCode();
+    }, 3000);
 
     // Cleanup on unmount
     return () => {
       if (eventSourceRef.current) {
         eventSourceRef.current.close();
       }
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+      }
     };
-  }, [currentCode]);
+  }, []);
+
+  const checkForNewCode = async () => {
+    if (!currentCode) {
+      // Don't poll until we have an initial code
+      return;
+    }
+
+    try {
+      // Fetch the current available code without generating a new QR
+      const response = await fetch('/api/qr/current-code');
+      const data = await response.json();
+
+      if (response.ok && data.code && data.code !== currentCode) {
+        console.log('New code detected via polling. Old:', currentCode, 'New:', data.code);
+        fetchQrCode();
+      }
+    } catch (error) {
+      // Silently fail - this is just a backup mechanism
+      console.debug('Polling check error (expected):', error);
+    }
+  };
 
   const fetchQrCode = async () => {
     try {

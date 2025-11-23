@@ -58,19 +58,94 @@ export async function GET(request: NextRequest) {
 
       console.log(`Hidden code ${code} marked as used via QR scan`);
 
-      // Notify SSE clients to update QR
-      // This will be handled by a separate endpoint or in-memory event system
+      // Notify SSE clients to update QR - IMPORTANT: Do this AFTER marking as used
       notifyQrUpdate();
+      console.log('SSE update notification sent to all connected clients');
     }
 
     // Generate tweet text from template
     const tweetText = config.qrPageTweetTemplate.replace('{{code}}', code);
 
-    // Create Twitter intent URL
-    const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}`;
+    // Create Twitter app deep link with fallback to web
+    // For mobile: twitter://post?message=...
+    // For web fallback: we'll use a redirect page
+    const twitterAppUrl = `twitter://post?message=${encodeURIComponent(tweetText)}`;
+    const twitterWebUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}`;
 
-    // Redirect to Twitter
-    return NextResponse.redirect(twitterUrl);
+    // Create HTML page that tries to open the app first, then falls back to web
+    const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Opening Twitter...</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+      background: #f5f8fa;
+      color: #14171a;
+    }
+    .container {
+      text-align: center;
+      padding: 2rem;
+    }
+    .spinner {
+      border: 3px solid #e1e8ed;
+      border-top: 3px solid #1da1f2;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 1rem;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .button {
+      display: inline-block;
+      margin-top: 1rem;
+      padding: 0.75rem 1.5rem;
+      background: #1da1f2;
+      color: white;
+      text-decoration: none;
+      border-radius: 9999px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="spinner"></div>
+    <h2>Opening Twitter...</h2>
+    <p>If Twitter doesn't open automatically:</p>
+    <a href="${twitterWebUrl}" class="button">Click here to tweet</a>
+  </div>
+  <script>
+    // Try to open the app first
+    window.location.href = "${twitterAppUrl}";
+
+    // If app doesn't open within 2 seconds, redirect to web
+    setTimeout(function() {
+      window.location.href = "${twitterWebUrl}";
+    }, 2000);
+  </script>
+</body>
+</html>
+    `;
+
+    return new Response(html, {
+      headers: {
+        'Content-Type': 'text/html',
+      },
+    });
   } catch (error) {
     console.error('Error tracking QR scan:', error);
     return NextResponse.json(
