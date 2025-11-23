@@ -57,18 +57,19 @@ export async function GET(request: NextRequest) {
     const response = NextResponse.redirect(authLink.url);
 
     // Store in cookie for callback (encrypted)
+    // IMPORTANT: sameSite must be 'none' to allow cookies in cross-site redirects from Twitter
     response.cookies.set('oauth_token_secret', authLink.oauth_token_secret, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      secure: true, // Required when sameSite is 'none'
+      sameSite: 'none',
       maxAge: 600, // 10 minutes
       path: '/',
     });
 
     response.cookies.set('oauth_token', authLink.oauth_token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      secure: true, // Required when sameSite is 'none'
+      sameSite: 'none',
       maxAge: 600, // 10 minutes
       path: '/',
     });
