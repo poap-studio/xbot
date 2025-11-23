@@ -13,12 +13,22 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   try {
+    console.log('=== BOT TWITTER OAUTH CALLBACK STARTED ===');
+
     const searchParams = request.nextUrl.searchParams;
     const oauthToken = searchParams.get('oauth_token');
     const oauthVerifier = searchParams.get('oauth_verifier');
 
     // Get oauth_token_secret from cookie
     const oauthTokenSecret = request.cookies.get('oauth_token_secret')?.value;
+
+    console.log('OAuth parameters:', {
+      hasToken: !!oauthToken,
+      hasVerifier: !!oauthVerifier,
+      hasSecret: !!oauthTokenSecret,
+      token: oauthToken?.substring(0, 10) + '...',
+      verifier: oauthVerifier?.substring(0, 10) + '...',
+    });
 
     // Validate parameters
     if (!oauthToken || !oauthVerifier || !oauthTokenSecret) {
@@ -31,6 +41,8 @@ export async function GET(request: NextRequest) {
         `${process.env.NEXT_PUBLIC_APP_URL}/admin?error=oauth_params_missing`
       );
     }
+
+    console.log('OAuth parameters validated successfully');
 
     // Validate environment variables
     if (!process.env.TWITTER_API_KEY || !process.env.TWITTER_API_SECRET) {
@@ -121,7 +133,18 @@ export async function GET(request: NextRequest) {
 
     return response;
   } catch (error) {
-    console.error('Error in bot Twitter OAuth callback:', error);
+    console.error('=== BOT TWITTER OAUTH CALLBACK ERROR ===');
+    console.error('Error:', error);
+
+    if (error instanceof Error) {
+      console.error('Error message:', error.message);
+      console.error('Error stack:', error.stack);
+    }
+
+    if (typeof error === 'object' && error !== null) {
+      console.error('Error details:', JSON.stringify(error, null, 2));
+    }
+    console.error('========================================');
 
     // Clear OAuth cookies on error
     const response = NextResponse.redirect(
