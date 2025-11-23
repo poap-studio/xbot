@@ -49,6 +49,7 @@ export default function HiddenCodesPage() {
   const [codes, setCodes] = useState<string>('');
   const [showUploadDialog, setShowUploadDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   useEffect(() => {
     fetchStats();
@@ -75,9 +76,31 @@ export default function HiddenCodesPage() {
     }
   };
 
+  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setSelectedFile(file);
+
+    // Read and parse CSV file
+    const text = await file.text();
+    const lines = text.split(/\r?\n/);
+
+    // Extract codes from CSV (assuming codes are in first column or each line is a code)
+    const extractedCodes = lines
+      .map(line => {
+        // Try to parse as CSV (split by comma and take first column)
+        const parts = line.split(',');
+        return parts[0].trim();
+      })
+      .filter(code => code.length > 0);
+
+    setCodes(extractedCodes.join('\n'));
+  };
+
   const handleUpload = async () => {
     if (!codes.trim()) {
-      setError('Please enter at least one code');
+      setError('Please enter at least one code or upload a CSV file');
       return;
     }
 
@@ -109,6 +132,7 @@ export default function HiddenCodesPage() {
         `${data.added} codes added successfully (${data.duplicates} duplicates skipped)`
       );
       setCodes('');
+      setSelectedFile(null);
       setShowUploadDialog(false);
       await fetchStats();
     } catch (error) {
@@ -283,29 +307,72 @@ export default function HiddenCodesPage() {
       {/* Upload Dialog */}
       <Dialog
         open={showUploadDialog}
-        onClose={() => !uploading && setShowUploadDialog(false)}
+        onClose={() => {
+          if (!uploading) {
+            setShowUploadDialog(false);
+            setCodes('');
+            setSelectedFile(null);
+          }
+        }}
         maxWidth="sm"
         fullWidth
       >
         <DialogTitle>Upload Hidden Codes</DialogTitle>
         <DialogContent>
-          <Stack spacing={2} sx={{ mt: 1 }}>
+          <Stack spacing={3} sx={{ mt: 1 }}>
             <Typography variant="body2" color="text.secondary">
-              Enter the codes, one per line. Duplicate codes will be automatically skipped.
+              Upload a CSV file or enter codes manually. Duplicate codes will be automatically skipped.
             </Typography>
-            <TextField
-              multiline
-              rows={10}
-              value={codes}
-              onChange={(e) => setCodes(e.target.value)}
-              placeholder="CODE001&#10;CODE002&#10;CODE003&#10;..."
-              fullWidth
-              sx={{ fontFamily: 'monospace' }}
-            />
+
+            {/* File Upload */}
+            <Box>
+              <Button
+                variant="outlined"
+                component="label"
+                startIcon={<UploadIcon />}
+                fullWidth
+              >
+                {selectedFile ? selectedFile.name : 'Choose CSV File'}
+                <input
+                  type="file"
+                  accept=".csv,.txt"
+                  hidden
+                  onChange={handleFileSelect}
+                />
+              </Button>
+              {selectedFile && (
+                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+                  {codes.split('\n').filter(c => c.trim()).length} codes found in file
+                </Typography>
+              )}
+            </Box>
+
+            {/* Manual Entry */}
+            <Box>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                Or enter codes manually (one per line):
+              </Typography>
+              <TextField
+                multiline
+                rows={10}
+                value={codes}
+                onChange={(e) => setCodes(e.target.value)}
+                placeholder="CODE001&#10;CODE002&#10;CODE003&#10;..."
+                fullWidth
+                sx={{ fontFamily: 'monospace' }}
+              />
+            </Box>
           </Stack>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setShowUploadDialog(false)} disabled={uploading}>
+          <Button
+            onClick={() => {
+              setShowUploadDialog(false);
+              setCodes('');
+              setSelectedFile(null);
+            }}
+            disabled={uploading}
+          >
             Cancel
           </Button>
           <Button
