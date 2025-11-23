@@ -166,7 +166,7 @@ export default function Home() {
         <Toolbar>
           <Box sx={{ flexGrow: 1 }}>
             <Typography variant="h6" component="h1" sx={{ fontWeight: 'bold', color: 'text.primary' }}>
-              My POAP Deliveries
+              My POAP Achievements
             </Typography>
             {session?.user && (
               <Typography variant="caption" color="text.secondary">
@@ -256,7 +256,7 @@ export default function Home() {
         {loading && (
           <Box sx={{ textAlign: 'center', py: 8 }}>
             <CircularProgress size={48} sx={{ mb: 2 }} />
-            <Typography color="text.secondary">Loading your deliveries...</Typography>
+            <Typography color="text.secondary">Loading your achievements...</Typography>
           </Box>
         )}
 
@@ -267,10 +267,10 @@ export default function Home() {
               📭
             </Typography>
             <Typography variant="h5" gutterBottom sx={{ fontWeight: 'bold', mb: 2 }}>
-              No POAP deliveries yet
+              No POAP achievements yet
             </Typography>
             <Typography variant="body1" color="text.secondary">
-              Post a tweet with the campaign hashtag and code to receive your POAP
+              Post a tweet with the campaign hashtag and code to earn your POAP
             </Typography>
           </Card>
         )}

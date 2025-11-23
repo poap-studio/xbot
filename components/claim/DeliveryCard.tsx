@@ -1,11 +1,10 @@
 /**
  * Delivery Card Component
- * Displays a POAP delivery with claim link
+ * Displays a POAP achievement with claim link
  */
 
 'use client';
 
-import { useState } from 'react';
 import {
   Card,
   CardContent,
@@ -15,13 +14,9 @@ import {
   Box,
   Stack,
   Link,
-  TextField,
-  InputAdornment,
-  IconButton,
   Alert,
 } from '@mui/material';
 import {
-  ContentCopy as CopyIcon,
   CheckCircle as CheckIcon,
   Launch as LaunchIcon,
   Twitter as TwitterIcon,
@@ -42,18 +37,6 @@ interface DeliveryCardProps {
 }
 
 export function DeliveryCard({ delivery }: DeliveryCardProps) {
-  const [copied, setCopied] = useState(false);
-
-  const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(delivery.mintLink);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch (error) {
-      console.error('Failed to copy:', error);
-    }
-  };
-
   const handleClaim = () => {
     window.open(delivery.mintLink, '_blank', 'noopener,noreferrer');
   };
@@ -85,10 +68,10 @@ export function DeliveryCard({ delivery }: DeliveryCardProps) {
         <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ mb: 3 }}>
           <Box>
             <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>
-              POAP Delivery
+              POAP Achievement
             </Typography>
             <Typography variant="caption" color="text.secondary">
-              Delivered {formatDate(delivery.deliveredAt)}
+              Earned {formatDate(delivery.deliveredAt)}
             </Typography>
           </Box>
 
@@ -137,65 +120,19 @@ export function DeliveryCard({ delivery }: DeliveryCardProps) {
 
         {/* Claim Section */}
         {!delivery.claimed && (
-          <Stack spacing={2}>
-            <Box
-              sx={{
-                bgcolor: 'background.default',
-                borderRadius: 1,
-                p: 2,
-                border: '1px solid',
-                borderColor: 'divider',
-              }}
-            >
-              <Typography
-                variant="caption"
-                color="text.secondary"
-                sx={{ display: 'block', mb: 1, fontWeight: 'medium' }}
-              >
-                Claim Link
-              </Typography>
-              <TextField
-                fullWidth
-                size="small"
-                value={delivery.mintLink}
-                InputProps={{
-                  readOnly: true,
-                  sx: {
-                    fontFamily: 'monospace',
-                    fontSize: '0.875rem',
-                  },
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton
-                        onClick={handleCopy}
-                        edge="end"
-                        size="small"
-                        sx={{
-                          color: copied ? 'success.main' : 'text.secondary',
-                        }}
-                      >
-                        {copied ? <CheckIcon fontSize="small" /> : <CopyIcon fontSize="small" />}
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                }}
-              />
-            </Box>
-
-            <Button
-              variant="contained"
-              fullWidth
-              onClick={handleClaim}
-              endIcon={<LaunchIcon />}
-              sx={{
-                py: 1.5,
-                fontWeight: 'bold',
-                textTransform: 'none',
-              }}
-            >
-              Claim POAP Now
-            </Button>
-          </Stack>
+          <Button
+            variant="contained"
+            fullWidth
+            onClick={handleClaim}
+            endIcon={<LaunchIcon />}
+            sx={{
+              py: 1.5,
+              fontWeight: 'bold',
+              textTransform: 'none',
+            }}
+          >
+            Claim POAP Now
+          </Button>
         )}
 
         {/* Claimed Info */}

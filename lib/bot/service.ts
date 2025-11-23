@@ -101,8 +101,9 @@ export async function processSingleTweet(
       };
     }
 
-    // 4. Reply to tweet with claim URL
-    const replyId = await replyWithClaimUrl(tweetId, mintLink);
+    // 4. Reply to tweet with claim URL (using website URL instead of direct mint link)
+    const websiteUrl = process.env.NEXT_PUBLIC_APP_URL?.trim() || 'https://xbot.poap.studio';
+    const replyId = await replyWithClaimUrl(tweetId, websiteUrl);
 
     // 5. Extract qrHash from mint link
     // Format: https://poap.xyz/claim/abc123 or https://app.poap.xyz/claim/abc123
