@@ -391,6 +391,7 @@ export async function getEventQRCodes(
       'accept': 'application/json',
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${token}`,
+      'X-API-Key': process.env.POAP_API_KEY || '',
     },
     body: JSON.stringify({
       secret_code: editCode,
@@ -427,6 +428,7 @@ export async function getClaimSecret(qrHash: string): Promise<string> {
     headers: {
       'accept': 'application/json',
       'Authorization': `Bearer ${token}`,
+      'X-API-Key': process.env.POAP_API_KEY || '',
     },
   });
 
