@@ -7,10 +7,11 @@ import NextAuth from 'next-auth';
 import Twitter from 'next-auth/providers/twitter';
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
+  trustHost: true, // Required for Vercel and other hosted environments
   providers: [
     Twitter({
-      clientId: process.env.TWITTER_CLIENT_ID!,
-      clientSecret: process.env.TWITTER_CLIENT_SECRET!,
+      clientId: process.env.TWITTER_CLIENT_ID?.trim()!,
+      clientSecret: process.env.TWITTER_CLIENT_SECRET?.trim()!,
       authorization: {
         params: {
           scope: 'tweet.read users.read offline.access', // Minimal scopes for user login
@@ -82,5 +83,5 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   session: {
     strategy: 'jwt',
   },
-  secret: process.env.NEXTAUTH_SECRET,
+  secret: process.env.NEXTAUTH_SECRET?.trim(),
 });
