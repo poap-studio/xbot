@@ -82,7 +82,7 @@ export default function AdminLayout({
               },
             }}
           >
-            Volver al Inicio
+            Back to Home
           </Button>
         </Toolbar>
       </AppBar>
