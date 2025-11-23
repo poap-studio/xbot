@@ -86,8 +86,9 @@ export default function HiddenCodesPage() {
     const text = await file.text();
     const lines = text.split(/\r?\n/);
 
-    // Each line is a code (no columns, just simple list)
+    // Skip first line (header) and extract codes
     const extractedCodes = lines
+      .slice(1) // Skip header row
       .map(line => line.trim())
       .filter(code => code.length > 0);
 
@@ -96,7 +97,7 @@ export default function HiddenCodesPage() {
 
   const handleUpload = async () => {
     if (!codes.trim()) {
-      setError('Please enter at least one code or upload a CSV file');
+      setError('Please upload a CSV file with codes');
       return;
     }
 
@@ -297,11 +298,12 @@ export default function HiddenCodesPage() {
             <li>If valid, assigns a QR code and responds with the mint link</li>
             <li>The code is marked as used and cannot be reused</li>
           </ul>
-          <strong>File Format:</strong>
+          <strong>CSV File Format:</strong>
           <br />
-          Upload a CSV or TXT file with one code per line (no headers, no additional columns):
+          Upload a CSV file with one code per line. The first row will be automatically skipped (header):
           <br />
           <code style={{ display: 'block', marginTop: '4px', padding: '8px', background: 'rgba(0,0,0,0.1)', borderRadius: '4px' }}>
+            code<br />
             CODE001<br />
             CODE002<br />
             CODE003
@@ -326,7 +328,7 @@ export default function HiddenCodesPage() {
         <DialogContent>
           <Stack spacing={3} sx={{ mt: 1 }}>
             <Typography variant="body2" color="text.secondary">
-              Upload a file with one code per line, or enter codes manually. Duplicate codes will be automatically skipped.
+              Upload a CSV file with one code per line. The first row (header) will be skipped automatically. Duplicate codes will be automatically skipped.
             </Typography>
 
             {/* File Upload */}
@@ -337,7 +339,7 @@ export default function HiddenCodesPage() {
                 startIcon={<UploadIcon />}
                 fullWidth
               >
-                {selectedFile ? selectedFile.name : 'Choose File (CSV/TXT)'}
+                {selectedFile ? selectedFile.name : 'Choose CSV File'}
                 <input
                   type="file"
                   accept=".csv,.txt"
@@ -346,26 +348,10 @@ export default function HiddenCodesPage() {
                 />
               </Button>
               {selectedFile && (
-                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
-                  {codes.split('\n').filter(c => c.trim()).length} codes found in file
+                <Typography variant="caption" color="success.main" sx={{ display: 'block', mt: 1, fontWeight: 'bold' }}>
+                  ✓ {codes.split('\n').filter(c => c.trim()).length} codes ready to upload
                 </Typography>
               )}
-            </Box>
-
-            {/* Manual Entry */}
-            <Box>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                Or enter codes manually (one per line):
-              </Typography>
-              <TextField
-                multiline
-                rows={10}
-                value={codes}
-                onChange={(e) => setCodes(e.target.value)}
-                placeholder="CODE001&#10;CODE002&#10;CODE003&#10;..."
-                fullWidth
-                sx={{ fontFamily: 'monospace' }}
-              />
             </Box>
           </Stack>
         </DialogContent>
