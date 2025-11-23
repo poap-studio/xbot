@@ -48,18 +48,31 @@ export async function GET(request: Request) {
       : 0;
 
     return NextResponse.json({
-      logs: logs.map((log) => ({
-        id: log.id,
-        status: log.status,
-        tweetsFound: log.tweetsFound,
-        processed: log.processed,
-        failed: log.failed,
-        errorMessage: log.errorMessage,
-        errorDetails: log.errorDetails ? JSON.parse(log.errorDetails) : null,
-        executionTime: log.executionTime,
-        startedAt: log.startedAt.toISOString(),
-        completedAt: log.completedAt?.toISOString(),
-      })),
+      logs: logs.map((log) => {
+        // Try to parse errorDetails as JSON, fallback to raw string
+        let errorDetails = null;
+        if (log.errorDetails) {
+          try {
+            errorDetails = JSON.parse(log.errorDetails);
+          } catch {
+            // If not valid JSON, return as string
+            errorDetails = log.errorDetails;
+          }
+        }
+
+        return {
+          id: log.id,
+          status: log.status,
+          tweetsFound: log.tweetsFound,
+          processed: log.processed,
+          failed: log.failed,
+          errorMessage: log.errorMessage,
+          errorDetails,
+          executionTime: log.executionTime,
+          startedAt: log.startedAt.toISOString(),
+          completedAt: log.completedAt?.toISOString(),
+        };
+      }),
       stats: {
         total: totalLogs,
         last24Hours,

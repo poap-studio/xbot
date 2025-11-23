@@ -83,7 +83,10 @@ export async function POST(request: NextRequest) {
           data: {
             status: 'error',
             errorMessage: 'Bot configuration invalid',
-            errorDetails: validationError instanceof Error ? validationError.message : 'Invalid configuration',
+            errorDetails: JSON.stringify({
+              error: validationError instanceof Error ? validationError.message : 'Invalid configuration',
+              type: 'validation_error',
+            }),
             completedAt: new Date(),
             executionTime: Date.now() - startTime,
           },
@@ -214,7 +217,11 @@ export async function POST(request: NextRequest) {
         data: {
           status: 'error',
           errorMessage: `Critical error: ${errorMessage}`,
-          errorDetails: errorStack,
+          errorDetails: JSON.stringify({
+            error: errorMessage,
+            stack: errorStack,
+            type: 'critical_error',
+          }),
           completedAt: new Date(),
           executionTime: Date.now() - startTime,
         },
@@ -225,7 +232,11 @@ export async function POST(request: NextRequest) {
         data: {
           status: 'error',
           errorMessage: `Critical error: ${errorMessage}`,
-          errorDetails: errorStack,
+          errorDetails: JSON.stringify({
+            error: errorMessage,
+            stack: errorStack,
+            type: 'critical_error',
+          }),
           completedAt: new Date(),
           executionTime: Date.now() - startTime,
         },
