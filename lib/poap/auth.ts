@@ -2,10 +2,10 @@
  * POAP OAuth2 Client
  * Handles OAuth2 client credentials flow with automatic token renewal
  * Tokens expire after 24 hours and are automatically renewed
+ * Credentials are loaded from environment variables (POAP_CLIENT_ID, POAP_CLIENT_SECRET)
  */
 
 import prisma from '@/lib/prisma';
-import { decrypt } from '@/lib/crypto';
 
 const POAP_AUTH_URL = 'https://auth.accounts.poap.xyz/oauth/token';
 const POAP_AUDIENCE = 'https://api.poap.tech';
@@ -25,21 +25,18 @@ interface PoapCredentials {
 }
 
 /**
- * Get POAP API credentials from config
+ * Get POAP API credentials from environment variables
  * @throws {Error} If credentials are not configured
  */
 async function getCredentials(): Promise<PoapCredentials> {
-  const config = await prisma.config.findFirst();
+  const clientId = process.env.POAP_CLIENT_ID;
+  const clientSecret = process.env.POAP_CLIENT_SECRET;
 
-  if (!config?.poapClientId || !config?.poapClientSecret) {
+  if (!clientId || !clientSecret) {
     throw new Error(
-      'POAP API credentials not configured. Please configure them in the admin panel.'
+      'POAP API credentials not configured. Please set POAP_CLIENT_ID and POAP_CLIENT_SECRET environment variables.'
     );
   }
-
-  // Decrypt credentials
-  const clientId = decrypt(config.poapClientId);
-  const clientSecret = decrypt(config.poapClientSecret);
 
   return { clientId, clientSecret };
 }
