@@ -257,12 +257,9 @@ export async function POST(request: NextRequest) {
 
 /**
  * GET /api/cron/process-tweets
- * Health check endpoint
+ * Vercel Cron uses GET by default, so we handle it the same as POST
  */
-export async function GET() {
-  return NextResponse.json({
-    status: 'ok',
-    endpoint: 'process-tweets',
-    message: 'Cron endpoint is healthy. Use POST with Bearer token to trigger.',
-  });
+export async function GET(request: NextRequest) {
+  // Vercel Cron sends GET requests, so we just call POST handler
+  return POST(request);
 }
