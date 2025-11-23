@@ -69,10 +69,12 @@ export async function GET(request: NextRequest) {
     }
 
     // Generate tweet text from template
-    // Use replaceAll to replace ALL occurrences of {{code}} with the SAME code
-    const tweetText = config.qrPageTweetTemplate.replaceAll('{{code}}', code);
+    // Replace {{code}} with the actual code and {{hashtag}} with the configured hashtag
+    let tweetText = config.qrPageTweetTemplate.replaceAll('{{code}}', code);
+    tweetText = tweetText.replaceAll('{{hashtag}}', config.twitterHashtag);
 
     console.log(`Tweet template: ${config.qrPageTweetTemplate}`);
+    console.log(`Hashtag: ${config.twitterHashtag}`);
     console.log(`Generated tweet text: ${tweetText}`);
 
     // Create Twitter app deep link with fallback to web

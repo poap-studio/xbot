@@ -30,6 +30,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       tweetTemplate: config.qrPageTweetTemplate,
+      hashtag: config.twitterHashtag,
     });
   } catch (error) {
     console.error('Error fetching QR page config:', error);

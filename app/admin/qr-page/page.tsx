@@ -26,6 +26,7 @@ import {
 
 interface QrPageConfig {
   tweetTemplate: string;
+  hashtag?: string;
 }
 
 export default function QrPageConfigPage() {
@@ -33,6 +34,7 @@ export default function QrPageConfigPage() {
   const [saving, setSaving] = useState(false);
   const [config, setConfig] = useState<QrPageConfig>({
     tweetTemplate: '',
+    hashtag: '',
   });
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -55,6 +57,7 @@ export default function QrPageConfigPage() {
 
       setConfig({
         tweetTemplate: data.tweetTemplate || '',
+        hashtag: data.hashtag || '#POAP',
       });
     } catch (error) {
       console.error('Error fetching config:', error);
@@ -149,15 +152,15 @@ export default function QrPageConfigPage() {
               fullWidth
               multiline
               rows={4}
-              placeholder="I visited the POAP Studio booth at ETH Global, and here's the proof! The secret word is {{code}} #ethglobalxpoap"
-              helperText="Use {{code}} as placeholder for the hidden code. This will be replaced with an actual code when users scan the QR."
+              placeholder="I visited the POAP Studio booth at ETH Global, and here's the proof! The secret word is {{code}} {{hashtag}}"
+              helperText={`Use {{code}} for the hidden code and {{hashtag}} for the configured hashtag (${config.hashtag}). Both will be replaced automatically.`}
               error={!!(config.tweetTemplate && !config.tweetTemplate.includes('{{code}}'))}
             />
 
             {config.tweetTemplate && (
               <Alert severity="info">
                 <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 'bold' }}>
-                  Preview with example code "ABC123":
+                  Preview with example code "ABC123" and configured hashtag "{config.hashtag}":
                 </Typography>
                 <Typography
                   variant="body2"
@@ -170,7 +173,7 @@ export default function QrPageConfigPage() {
                     wordBreak: 'break-word',
                   }}
                 >
-                  {config.tweetTemplate.replaceAll('{{code}}', 'ABC123')}
+                  {config.tweetTemplate.replaceAll('{{code}}', 'ABC123').replaceAll('{{hashtag}}', config.hashtag || '#POAP')}
                 </Typography>
               </Alert>
             )}
@@ -200,12 +203,17 @@ export default function QrPageConfigPage() {
         {/* Info Card */}
         <Alert severity="info">
           <AlertTitle>How Dynamic QR Codes Work</AlertTitle>
-          <Box component="ul" sx={{ m: 0, pl: 2 }}>
+          <Box component="ul" sx={{ m: 0, pl: 2, mb: 2 }}>
             <li>The QR code displays a unique URL that tracks when it's scanned</li>
             <li>When scanned, users are redirected to Twitter with a pre-filled tweet</li>
             <li>Each tweet contains a unique hidden code from your pool of available codes</li>
             <li>After a QR scan is detected, the code is marked as used and the QR updates automatically</li>
             <li>The next person who scans will get a different hidden code</li>
+          </Box>
+          <strong>Available Variables:</strong>
+          <Box component="ul" sx={{ m: 0, pl: 2, mt: 1 }}>
+            <li><code>{'{{code}}'}</code> - Replaced with a unique hidden code</li>
+            <li><code>{'{{hashtag}}'}</code> - Replaced with the configured Twitter hashtag (currently: {config.hashtag})</li>
           </Box>
         </Alert>
       </Stack>

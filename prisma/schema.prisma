@@ -24,7 +24,7 @@ model Config {
   twitterHashtag  String   @default("#POAP")
 
   // QR Page configuration
-  qrPageTweetTemplate String @default("I visited the POAP Studio booth at ETH Global, and here's the proof! The secret word is {{code}} #ethglobalxpoap")
+  qrPageTweetTemplate String @default("I visited the POAP Studio booth at ETH Global, and here's the proof! The secret word is {{code}} {{hashtag}}")
 
   // POAP API credentials (encrypted)
   poapClientId    String?
