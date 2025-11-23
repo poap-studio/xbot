@@ -153,14 +153,23 @@ export default function Home() {
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
       {/* Header */}
-      <AppBar position="static" elevation={0} sx={{ bgcolor: 'background.paper', borderBottom: '1px solid', borderColor: 'divider' }}>
+      <AppBar
+        position="fixed"
+        elevation={0}
+        sx={{
+          bgcolor: 'background.paper',
+          borderBottom: 1,
+          borderColor: 'divider',
+          zIndex: (theme) => theme.zIndex.drawer + 1,
+        }}
+      >
         <Toolbar>
           <Box sx={{ flexGrow: 1 }}>
-            <Typography variant="h5" component="h1">
+            <Typography variant="h6" component="h1" sx={{ fontWeight: 'bold', color: 'text.primary' }}>
               My POAP Deliveries
             </Typography>
             {session?.user && (
-              <Typography variant="body2" color="text.secondary">
+              <Typography variant="caption" color="text.secondary">
                 Signed in as @{session.user.username}
               </Typography>
             )}
@@ -169,45 +178,69 @@ export default function Home() {
             variant="outlined"
             startIcon={<LogoutIcon />}
             onClick={() => signOut()}
-            sx={{ borderColor: 'divider' }}
+            sx={{
+              borderColor: 'divider',
+              color: 'text.secondary',
+              '&:hover': {
+                borderColor: 'primary.main',
+                color: 'primary.main',
+              }
+            }}
           >
             Sign Out
           </Button>
         </Toolbar>
       </AppBar>
 
+      {/* Spacer for fixed AppBar */}
+      <Toolbar />
+
       <Container maxWidth="lg" sx={{ py: 4 }}>
         {/* Stats */}
-        <Stack direction={{ xs: 'column', md: 'row' }} spacing={3} sx={{ mb: 4 }}>
-          <Card sx={{ flex: 1, bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider' }}>
-            <CardContent>
-              <Typography variant="body2" color="text.secondary" gutterBottom>
-                Total POAPs
-              </Typography>
-              <Typography variant="h3">{stats.total}</Typography>
-            </CardContent>
+        <Box sx={{
+          display: 'grid',
+          gridTemplateColumns: {
+            xs: '1fr',
+            sm: 'repeat(2, 1fr)',
+            md: 'repeat(3, 1fr)',
+          },
+          gap: 3,
+          mb: 4,
+        }}>
+          <Card sx={{ p: 3, bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider' }}>
+            <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 'medium', mb: 2 }}>
+              Total POAPs
+            </Typography>
+            <Typography variant="h3" sx={{ fontWeight: 'bold', mb: 1 }}>
+              {stats.total}
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              All your deliveries
+            </Typography>
           </Card>
-          <Card sx={{ flex: 1, bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider' }}>
-            <CardContent>
-              <Typography variant="body2" color="text.secondary" gutterBottom>
-                Claimed
-              </Typography>
-              <Typography variant="h3" color="success.main">
-                {stats.claimed}
-              </Typography>
-            </CardContent>
+          <Card sx={{ p: 3, bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider' }}>
+            <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 'medium', mb: 2 }}>
+              Claimed
+            </Typography>
+            <Typography variant="h3" sx={{ fontWeight: 'bold', color: 'success.main', mb: 1 }}>
+              {stats.claimed}
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              Successfully collected
+            </Typography>
           </Card>
-          <Card sx={{ flex: 1, bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider' }}>
-            <CardContent>
-              <Typography variant="body2" color="text.secondary" gutterBottom>
-                Pending
-              </Typography>
-              <Typography variant="h3" color="warning.main">
-                {stats.unclaimed}
-              </Typography>
-            </CardContent>
+          <Card sx={{ p: 3, bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider' }}>
+            <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 'medium', mb: 2 }}>
+              Pending
+            </Typography>
+            <Typography variant="h3" sx={{ fontWeight: 'bold', color: 'warning.main', mb: 1 }}>
+              {stats.unclaimed}
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              Ready to claim
+            </Typography>
           </Card>
-        </Stack>
+        </Box>
 
         {/* Error Message */}
         {error && (
@@ -229,14 +262,14 @@ export default function Home() {
 
         {/* No Deliveries */}
         {!loading && !error && deliveries.length === 0 && (
-          <Card sx={{ py: 8, textAlign: 'center', bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider' }}>
-            <Typography variant="h1" sx={{ fontSize: '4rem', mb: 2 }}>
+          <Card sx={{ p: 6, textAlign: 'center', bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider' }}>
+            <Typography variant="h1" sx={{ fontSize: '4rem', mb: 3 }}>
               📭
             </Typography>
-            <Typography variant="h6" gutterBottom>
+            <Typography variant="h5" gutterBottom sx={{ fontWeight: 'bold', mb: 2 }}>
               No POAP deliveries yet
             </Typography>
-            <Typography color="text.secondary">
+            <Typography variant="body1" color="text.secondary">
               Post a tweet with the campaign hashtag and code to receive your POAP
             </Typography>
           </Card>
