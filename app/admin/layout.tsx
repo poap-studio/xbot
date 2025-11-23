@@ -48,10 +48,13 @@ export default function AdminLayout({
 }) {
   const pathname = usePathname();
 
+  // Don't show navigation on login and unauthorized pages
+  const showNavigation = pathname !== '/admin/login' && pathname !== '/admin/unauthorized';
+
   return (
     <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'background.default' }}>
       {/* Top AppBar */}
-      <AppBar
+      {showNavigation && <AppBar
         position="fixed"
         sx={{
           zIndex: (theme) => theme.zIndex.drawer + 1,
@@ -85,10 +88,10 @@ export default function AdminLayout({
             Back to Home
           </Button>
         </Toolbar>
-      </AppBar>
+      </AppBar>}
 
       {/* Sidebar Drawer */}
-      <Drawer
+      {showNavigation && <Drawer
         variant="permanent"
         sx={{
           width: DRAWER_WIDTH,
@@ -154,7 +157,7 @@ export default function AdminLayout({
             })}
           </List>
         </Box>
-      </Drawer>
+      </Drawer>}
 
       {/* Main Content */}
       <Box
@@ -165,7 +168,7 @@ export default function AdminLayout({
           minHeight: '100vh',
         }}
       >
-        <Toolbar /> {/* Spacer for AppBar */}
+        {showNavigation && <Toolbar />} {/* Spacer for AppBar */}
         {children}
       </Box>
     </Box>
