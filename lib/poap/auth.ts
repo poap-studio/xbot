@@ -135,14 +135,19 @@ async function getCurrentToken(): Promise<string | null> {
   });
 
   if (!auth) {
+    console.log('[POAP Auth] No token found in database');
     return null;
   }
+
+  console.log(`[POAP Auth] Found token in DB, length: ${auth.accessToken?.length || 0}`);
+  console.log(`[POAP Auth] Token expires at: ${auth.expiresAt}`);
 
   if (!isTokenValid(auth.expiresAt)) {
-    console.log('POAP token expired or near expiry, needs renewal');
+    console.log('[POAP Auth] Token expired or near expiry, needs renewal');
     return null;
   }
 
+  console.log('[POAP Auth] Using cached token from database');
   return auth.accessToken;
 }
 
