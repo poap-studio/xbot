@@ -82,17 +82,13 @@ export default function HiddenCodesPage() {
 
     setSelectedFile(file);
 
-    // Read and parse CSV file
+    // Read file (CSV or TXT with one code per line)
     const text = await file.text();
     const lines = text.split(/\r?\n/);
 
-    // Extract codes from CSV (assuming codes are in first column or each line is a code)
+    // Each line is a code (no columns, just simple list)
     const extractedCodes = lines
-      .map(line => {
-        // Try to parse as CSV (split by comma and take first column)
-        const parts = line.split(',');
-        return parts[0].trim();
-      })
+      .map(line => line.trim())
       .filter(code => code.length > 0);
 
     setCodes(extractedCodes.join('\n'));
@@ -295,12 +291,21 @@ export default function HiddenCodesPage() {
           (along with the configured hashtag and an image) to be eligible to receive a POAP.
           <br /><br />
           <strong>Flow:</strong>
-          <ul style={{ marginTop: '8px', marginBottom: 0, paddingLeft: '20px' }}>
+          <ul style={{ marginTop: '8px', marginBottom: '8px', paddingLeft: '20px' }}>
             <li>User tweets: hashtag + hidden code + image</li>
             <li>Bot verifies that the code exists and hasn't been used</li>
             <li>If valid, assigns a QR code and responds with the mint link</li>
             <li>The code is marked as used and cannot be reused</li>
           </ul>
+          <strong>File Format:</strong>
+          <br />
+          Upload a CSV or TXT file with one code per line (no headers, no additional columns):
+          <br />
+          <code style={{ display: 'block', marginTop: '4px', padding: '8px', background: 'rgba(0,0,0,0.1)', borderRadius: '4px' }}>
+            CODE001<br />
+            CODE002<br />
+            CODE003
+          </code>
         </Alert>
       </Stack>
 
@@ -321,7 +326,7 @@ export default function HiddenCodesPage() {
         <DialogContent>
           <Stack spacing={3} sx={{ mt: 1 }}>
             <Typography variant="body2" color="text.secondary">
-              Upload a CSV file or enter codes manually. Duplicate codes will be automatically skipped.
+              Upload a file with one code per line, or enter codes manually. Duplicate codes will be automatically skipped.
             </Typography>
 
             {/* File Upload */}
@@ -332,7 +337,7 @@ export default function HiddenCodesPage() {
                 startIcon={<UploadIcon />}
                 fullWidth
               >
-                {selectedFile ? selectedFile.name : 'Choose CSV File'}
+                {selectedFile ? selectedFile.name : 'Choose File (CSV/TXT)'}
                 <input
                   type="file"
                   accept=".csv,.txt"
