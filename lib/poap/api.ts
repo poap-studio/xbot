@@ -370,7 +370,7 @@ export async function getMintLinkStats(): Promise<{
 
 /**
  * Get all QR codes for an event using Event ID and Edit Code
- * This uses the edit code endpoint, not OAuth
+ * This endpoint requires OAuth2 Bearer token authentication
  * Documentation: https://documentation.poap.tech/reference/posteventqr-codes
  * @param {string} eventId - POAP event ID
  * @param {string} editCode - Edit code (secret_code) for the event (6 digit code)
@@ -382,12 +382,15 @@ export async function getEventQRCodes(
 ): Promise<string[]> {
   const url = `${POAP_API_BASE}/event/${eventId}/qr-codes`;
 
+  // This endpoint requires OAuth2 Bearer token
+  const token = await getValidToken();
+
   const response = await fetch(url, {
     method: 'POST',
     headers: {
       'accept': 'application/json',
       'Content-Type': 'application/json',
-      'X-API-Key': process.env.POAP_API_KEY || '',
+      'Authorization': `Bearer ${token}`,
     },
     body: JSON.stringify({
       secret_code: editCode,
@@ -407,30 +410,30 @@ export async function getEventQRCodes(
 }
 
 /**
- * Get claim delivery secret for a QR hash
- * Documentation: https://documentation.poap.tech/reference/postactionsclaim-delivery-v2
+ * Get claim secret for a QR hash
+ * This endpoint requires OAuth2 Bearer token authentication
+ * Documentation: https://documentation.poap.tech/reference/getactionsclaim-qr
  * @param {string} qrHash - QR hash
- * @returns {Promise<string>} Secret for claim delivery
+ * @returns {Promise<string>} Secret for claiming the POAP
  */
-export async function getClaimDeliverySecret(qrHash: string): Promise<string> {
-  const url = `${POAP_API_BASE}/actions/claim-delivery`;
+export async function getClaimSecret(qrHash: string): Promise<string> {
+  const url = `${POAP_API_BASE}/actions/claim-qr?qr_hash=${qrHash}`;
+
+  // This endpoint requires OAuth2 Bearer token
+  const token = await getValidToken();
 
   const response = await fetch(url, {
-    method: 'POST',
+    method: 'GET',
     headers: {
-      'Content-Type': 'application/json',
       'accept': 'application/json',
-      'X-API-Key': process.env.POAP_API_KEY || '',
+      'Authorization': `Bearer ${token}`,
     },
-    body: JSON.stringify({
-      qr_hash: qrHash,
-    }),
   });
 
   if (!response.ok) {
     const errorText = await response.text();
     throw new Error(
-      `Failed to get claim delivery secret: ${response.status} - ${errorText}`
+      `Failed to get claim secret: ${response.status} - ${errorText}`
     );
   }
 
@@ -477,7 +480,7 @@ export async function loadQRCodesFromPOAP(
 
       // Get the secret for this QR hash
       console.log(`Getting secret for ${qrHash}...`);
-      const secret = await getClaimDeliverySecret(qrHash);
+      const secret = await getClaimSecret(qrHash);
 
       // Build mint link
       const mintLink = `https://poap.xyz/claim/${qrHash}`;
