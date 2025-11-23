@@ -57,7 +57,9 @@ export default function Home() {
         throw new Error(data.error || 'Failed to fetch deliveries');
       }
 
-      setDeliveries(data.deliveries);
+      // Filter to show only unclaimed deliveries
+      const unclaimedDeliveries = data.deliveries.filter((d: DeliveryData) => !d.claimed);
+      setDeliveries(unclaimedDeliveries);
       setStats({
         total: data.total,
         claimed: data.claimed,
@@ -196,52 +198,6 @@ export default function Home() {
       <Toolbar />
 
       <Container maxWidth="lg" sx={{ py: 4 }}>
-        {/* Stats */}
-        <Box sx={{
-          display: 'grid',
-          gridTemplateColumns: {
-            xs: '1fr',
-            sm: 'repeat(2, 1fr)',
-            md: 'repeat(3, 1fr)',
-          },
-          gap: 3,
-          mb: 4,
-        }}>
-          <Card sx={{ p: 3, bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider' }}>
-            <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 'medium', mb: 2 }}>
-              Total POAPs
-            </Typography>
-            <Typography variant="h3" sx={{ fontWeight: 'bold', mb: 1 }}>
-              {stats.total}
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              All your deliveries
-            </Typography>
-          </Card>
-          <Card sx={{ p: 3, bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider' }}>
-            <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 'medium', mb: 2 }}>
-              Claimed
-            </Typography>
-            <Typography variant="h3" sx={{ fontWeight: 'bold', color: 'success.main', mb: 1 }}>
-              {stats.claimed}
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              Successfully collected
-            </Typography>
-          </Card>
-          <Card sx={{ p: 3, bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider' }}>
-            <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 'medium', mb: 2 }}>
-              Pending
-            </Typography>
-            <Typography variant="h3" sx={{ fontWeight: 'bold', color: 'warning.main', mb: 1 }}>
-              {stats.unclaimed}
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              Ready to claim
-            </Typography>
-          </Card>
-        </Box>
-
         {/* Error Message */}
         {error && (
           <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
@@ -264,13 +220,13 @@ export default function Home() {
         {!loading && !error && deliveries.length === 0 && (
           <Card sx={{ p: 6, textAlign: 'center', bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider' }}>
             <Typography variant="h1" sx={{ fontSize: '4rem', mb: 3 }}>
-              📭
+              ✨
             </Typography>
             <Typography variant="h5" gutterBottom sx={{ fontWeight: 'bold', mb: 2 }}>
-              No POAP achievements yet
+              No pending POAPs to claim
             </Typography>
             <Typography variant="body1" color="text.secondary">
-              Post a tweet with the campaign hashtag and code to earn your POAP
+              You have no POAPs waiting to be claimed. Post a tweet with the campaign hashtag and code to earn your next POAP!
             </Typography>
           </Card>
         )}
