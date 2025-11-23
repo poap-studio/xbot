@@ -29,8 +29,8 @@ interface PoapCredentials {
  * @throws {Error} If credentials are not configured
  */
 async function getCredentials(): Promise<PoapCredentials> {
-  const clientId = process.env.POAP_CLIENT_ID;
-  const clientSecret = process.env.POAP_CLIENT_SECRET;
+  const clientId = process.env.POAP_CLIENT_ID?.trim();
+  const clientSecret = process.env.POAP_CLIENT_SECRET?.trim();
 
   if (!clientId || !clientSecret) {
     throw new Error(
