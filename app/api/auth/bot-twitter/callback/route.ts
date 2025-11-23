@@ -136,9 +136,12 @@ export async function GET(request: NextRequest) {
     console.error('=== BOT TWITTER OAUTH CALLBACK ERROR ===');
     console.error('Error:', error);
 
+    let errorMessage = 'oauth_failed';
+
     if (error instanceof Error) {
       console.error('Error message:', error.message);
       console.error('Error stack:', error.stack);
+      errorMessage = error.message;
     }
 
     if (typeof error === 'object' && error !== null) {
@@ -148,7 +151,7 @@ export async function GET(request: NextRequest) {
 
     // Clear OAuth cookies on error
     const response = NextResponse.redirect(
-      `${process.env.NEXT_PUBLIC_APP_URL}/admin?error=oauth_failed`
+      `${process.env.NEXT_PUBLIC_APP_URL}/admin?error=${encodeURIComponent(errorMessage)}`
     );
 
     response.cookies.delete('oauth_token');
