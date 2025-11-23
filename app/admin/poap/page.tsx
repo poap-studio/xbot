@@ -17,6 +17,8 @@ import {
   Card,
   Stack,
   Divider,
+  FormControlLabel,
+  Checkbox,
 } from '@mui/material';
 import {
   Save as SaveIcon,
@@ -27,6 +29,7 @@ import {
 interface PoapConfig {
   eventId: string;
   editCode: string;
+  allowMultipleClaims: boolean;
 }
 
 interface QRCodeStats {
@@ -43,6 +46,7 @@ export default function PoapConfigPage() {
   const [config, setConfig] = useState<PoapConfig>({
     eventId: '',
     editCode: '',
+    allowMultipleClaims: false,
   });
   const [qrStats, setQRStats] = useState<QRCodeStats>({
     total: 0,
@@ -73,6 +77,7 @@ export default function PoapConfigPage() {
       setConfig({
         eventId: data.eventId || '',
         editCode: data.editCode || '',
+        allowMultipleClaims: data.allowMultipleClaims ?? false,
       });
     } catch (error) {
       console.error('Error fetching config:', error);
@@ -109,6 +114,7 @@ export default function PoapConfigPage() {
         body: JSON.stringify({
           eventId: config.eventId,
           editCode: config.editCode,
+          allowMultipleClaims: config.allowMultipleClaims,
         }),
       });
 
@@ -225,6 +231,23 @@ export default function PoapConfigPage() {
               type="password"
               placeholder="your-secret-edit-code"
               helperText="The POAP event edit code (required to access QR codes)"
+            />
+
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={config.allowMultipleClaims}
+                  onChange={(e) => setConfig({ ...config, allowMultipleClaims: e.target.checked })}
+                />
+              }
+              label={
+                <Box>
+                  <Typography variant="body2">Allow Multiple Claims Per User</Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    If enabled, users can claim multiple POAPs for the same event with different valid tweets
+                  </Typography>
+                </Box>
+              }
             />
 
             <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>

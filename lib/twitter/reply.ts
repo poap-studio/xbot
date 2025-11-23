@@ -156,6 +156,58 @@ export async function replyWithClaimUrl(
 }
 
 /**
+ * Generate "already claimed" reply text
+ * Uses template from config
+ * @returns {Promise<string>} Reply text
+ */
+export async function generateAlreadyClaimedText(): Promise<string> {
+  try {
+    const config = await prisma.config.findFirst();
+
+    if (!config) {
+      throw new Error('Configuration not found');
+    }
+
+    const text = config.botReplyAlreadyClaimed || 'You have already claimed a POAP for this event. Only one claim per user is allowed.';
+
+    // Validate length
+    if (text.length > 280) {
+      console.warn(
+        `Generated "already claimed" reply text is too long (${text.length} chars). Truncating...`
+      );
+      return text.substring(0, 277) + '...';
+    }
+
+    return text;
+  } catch (error) {
+    console.error('Failed to generate "already claimed" reply text:', error);
+    return 'You have already claimed a POAP for this event. Only one claim per user is allowed.';
+  }
+}
+
+/**
+ * Reply to a tweet with "already claimed" message
+ * @param {string} tweetId - Tweet ID to reply to
+ * @returns {Promise<string>} Reply tweet ID
+ */
+export async function replyWithAlreadyClaimed(
+  tweetId: string
+): Promise<string> {
+  try {
+    const text = await generateAlreadyClaimedText();
+    const replyId = await replyToTweet(tweetId, text);
+    await markTweetAsReplied(tweetId, replyId);
+
+    return replyId;
+  } catch (error) {
+    if (error instanceof Error) {
+      throw new Error(`Failed to reply with already claimed message: ${error.message}`);
+    }
+    throw new Error('Failed to reply with already claimed message: Unknown error');
+  }
+}
+
+/**
  * Check if tweet has already been replied to
  * @param {string} tweetId - Tweet ID
  * @returns {Promise<boolean>} True if already replied

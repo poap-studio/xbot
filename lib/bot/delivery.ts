@@ -92,6 +92,34 @@ export async function hasDelivery(tweetId: string): Promise<boolean> {
 }
 
 /**
+ * Check if a user already has a delivery for the current event
+ * @param {string} twitterUserId - Twitter user ID (the internal ID from TwitterUser table)
+ * @returns {Promise<boolean>} True if user has already claimed
+ */
+export async function userHasDelivery(twitterUserId: string): Promise<boolean> {
+  try {
+    // Find TwitterUser by their Twitter ID
+    const twitterUser = await prisma.twitterUser.findUnique({
+      where: { twitterId: twitterUserId },
+    });
+
+    if (!twitterUser) {
+      return false;
+    }
+
+    // Check if this user has any deliveries
+    const delivery = await prisma.delivery.findFirst({
+      where: { twitterUserId: twitterUser.id },
+    });
+
+    return !!delivery;
+  } catch (error) {
+    console.error(`Error checking user delivery for ${twitterUserId}:`, error);
+    return false;
+  }
+}
+
+/**
  * Get delivery by tweet ID
  * @param {string} tweetId - Tweet ID
  * @returns {Promise<DeliveryRecord | null>} Delivery record or null

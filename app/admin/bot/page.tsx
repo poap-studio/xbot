@@ -32,6 +32,7 @@ interface BotConfig {
   twitterHashtag: string;
   botReplyEligible: string;
   botReplyNotEligible: string;
+  botReplyAlreadyClaimed: string;
   botConnected: boolean;
   botUsername?: string;
   lastRun?: string;
@@ -46,6 +47,7 @@ export default function BotConfigPage() {
     twitterHashtag: '',
     botReplyEligible: '',
     botReplyNotEligible: '',
+    botReplyAlreadyClaimed: '',
     botConnected: false,
     processedToday: 0,
     errors: 0,
@@ -96,6 +98,7 @@ export default function BotConfigPage() {
           twitterHashtag: config.twitterHashtag,
           botReplyEligible: config.botReplyEligible,
           botReplyNotEligible: config.botReplyNotEligible,
+          botReplyAlreadyClaimed: config.botReplyAlreadyClaimed,
         }),
       });
 
@@ -327,6 +330,17 @@ export default function BotConfigPage() {
               rows={3}
               placeholder="Thank you for your interest. Make sure to include a valid code and an image in your tweet."
               helperText="This message will be sent when the tweet doesn't meet the requirements"
+            />
+
+            <TextField
+              label="Message for Already Claimed POAPs"
+              value={config.botReplyAlreadyClaimed}
+              onChange={(e) => setConfig({ ...config, botReplyAlreadyClaimed: e.target.value })}
+              fullWidth
+              multiline
+              rows={3}
+              placeholder="You have already claimed a POAP for this event. Only one claim per user is allowed."
+              helperText="This message will be sent when a user tries to claim multiple times (if multiple claims are disabled)"
             />
 
             <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>

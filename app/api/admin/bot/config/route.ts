@@ -53,6 +53,7 @@ export async function GET() {
       twitterHashtag: config.twitterHashtag,
       botReplyEligible: config.botReplyEligible,
       botReplyNotEligible: config.botReplyNotEligible,
+      botReplyAlreadyClaimed: config.botReplyAlreadyClaimed || 'You have already claimed a POAP for this event. Only one claim per user is allowed.',
       botConnected: !!botAccount,
       botUsername: botAccount?.username,
       lastRun: status.lastRun,
@@ -75,7 +76,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { twitterHashtag, botReplyEligible, botReplyNotEligible } = body;
+    const { twitterHashtag, botReplyEligible, botReplyNotEligible, botReplyAlreadyClaimed } = body;
 
     // Validate input
     if (!twitterHashtag || !twitterHashtag.startsWith('#')) {
@@ -110,13 +111,19 @@ export async function POST(request: NextRequest) {
     }
 
     // Update configuration
+    const updateData: any = {
+      twitterHashtag,
+      botReplyEligible,
+      botReplyNotEligible,
+    };
+
+    if (botReplyAlreadyClaimed) {
+      updateData.botReplyAlreadyClaimed = botReplyAlreadyClaimed;
+    }
+
     await prisma.config.update({
       where: { id: config.id },
-      data: {
-        twitterHashtag,
-        botReplyEligible,
-        botReplyNotEligible,
-      },
+      data: updateData,
     });
 
     return NextResponse.json({

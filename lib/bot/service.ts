@@ -4,9 +4,9 @@
  */
 
 import { searchNewEligibleTweets, saveTweets, type ProcessedTweet } from '@/lib/twitter/search';
-import { replyWithClaimUrl, hasBeenRepliedTo } from '@/lib/twitter/reply';
+import { replyWithClaimUrl, replyWithAlreadyClaimed, hasBeenRepliedTo } from '@/lib/twitter/reply';
 import { reserveMintLink } from '@/lib/poap/api';
-import { recordDelivery, hasDelivery } from './delivery';
+import { recordDelivery, hasDelivery, userHasDelivery } from './delivery';
 import prisma from '@/lib/prisma';
 
 /**
@@ -89,7 +89,32 @@ export async function processSingleTweet(
       };
     }
 
-    // 3. Reserve mint link
+    // 3. Check if multiple claims are allowed
+    const config = await prisma.config.findFirst();
+    if (!config) {
+      throw new Error('Configuration not found');
+    }
+
+    // If multiple claims are NOT allowed, check if user already has a delivery
+    if (!config.allowMultipleClaims) {
+      const userAlreadyClaimed = await userHasDelivery(twitterUserId);
+      if (userAlreadyClaimed) {
+        console.log(`User ${username} (${twitterUserId}) already has a delivery. Multiple claims not allowed.`);
+
+        // Reply with "already claimed" message
+        const replyId = await replyWithAlreadyClaimed(tweetId);
+
+        return {
+          tweetId,
+          username,
+          success: false,
+          error: 'User already claimed',
+          replyId,
+        };
+      }
+    }
+
+    // 4. Reserve mint link
     const mintLink = await reserveMintLink(twitterUserId);
     if (!mintLink) {
       console.warn(`No available mint links for tweet ${tweetId}`);
@@ -101,21 +126,21 @@ export async function processSingleTweet(
       };
     }
 
-    // 4. Reply to tweet with claim URL (using website URL instead of direct mint link)
+    // 5. Reply to tweet with claim URL (using website URL instead of direct mint link)
     const websiteUrl = process.env.NEXT_PUBLIC_APP_URL?.trim() || 'https://xbot.poap.studio';
     const replyId = await replyWithClaimUrl(tweetId, websiteUrl);
 
-    // 5. Extract qrHash from mint link
+    // 6. Extract qrHash from mint link
     // Format: https://poap.xyz/claim/abc123 or https://app.poap.xyz/claim/abc123
     const qrHash = mintLink.split('/claim/')[1];
     if (!qrHash) {
       throw new Error('Invalid mint link format');
     }
 
-    // 6. Record delivery
+    // 7. Record delivery
     await recordDelivery(twitterUserId, username, tweetId, mintLink, qrHash);
 
-    // 7. Mark hidden code as used (if present)
+    // 8. Mark hidden code as used (if present)
     if (tweet.hiddenCode) {
       await markHiddenCodeAsUsed(tweet.hiddenCode, twitterUserId);
     }

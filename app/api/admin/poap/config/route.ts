@@ -30,6 +30,7 @@ export async function GET() {
     return NextResponse.json({
       eventId: config.poapEventId || '',
       editCode: config.poapEditCode || '',
+      allowMultipleClaims: config.allowMultipleClaims ?? false,
       eventName: '', // Not stored in database
       searchQuery: config.twitterHashtag || '',
       replyTemplate: config.botReplyEligible || '',
@@ -57,7 +58,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
-    const { eventId, editCode, searchQuery, replyTemplate, replyEligible, replyNotEligible } = body;
+    const { eventId, editCode, allowMultipleClaims, searchQuery, replyTemplate, replyEligible, replyNotEligible } = body;
 
     // Validate required fields
     if (!eventId) {
@@ -105,6 +106,10 @@ export async function POST(request: NextRequest) {
         updateData.botReplyNotEligible = notEligibleMsg;
       }
 
+      if (typeof allowMultipleClaims === 'boolean') {
+        updateData.allowMultipleClaims = allowMultipleClaims;
+      }
+
       config = await prisma.config.update({
         where: { id: existingConfig.id },
         data: updateData,
@@ -122,6 +127,7 @@ export async function POST(request: NextRequest) {
       config: {
         eventId: config.poapEventId,
         editCode: config.poapEditCode,
+        allowMultipleClaims: config.allowMultipleClaims,
         searchQuery: config.twitterHashtag,
         replyTemplate: config.botReplyEligible,
         replyEligible: config.botReplyEligible,

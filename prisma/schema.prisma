@@ -12,9 +12,13 @@ model Config {
   poapEventId     String   @default("")
   poapEditCode    String   @default("") // Edit code for POAP API to load QR codes
 
+  // Multiple claims configuration
+  allowMultipleClaims Boolean  @default(false) // Allow users to claim multiple POAPs for same event
+
   // Reply messages
   botReplyEligible    String   @default("¡Felicidades! Has compartido el código correcto. Reclama tu POAP aquí: {{claimUrl}}")
   botReplyNotEligible String   @default("Gracias por tu interés. Asegúrate de incluir un código válido y una imagen en tu tweet.")
+  botReplyAlreadyClaimed String @default("You have already claimed a POAP for this event. Only one claim per user is allowed.")
 
   // Search configuration
   twitterHashtag  String   @default("#POAP")
