@@ -158,7 +158,7 @@ export async function searchTweets(
       expansions: ['author_id', 'attachments.media_keys'],
     });
 
-    if (!response.data || response.data.data.length === 0) {
+    if (!response.data || !response.data.data || response.data.data.length === 0) {
       console.log('No tweets found matching criteria');
       return [];
     }
@@ -215,8 +215,9 @@ export async function getLastProcessedTweetId(): Promise<string | undefined> {
 }
 
 /**
- * Search for new eligible tweets since last check
- * @returns {Promise<ProcessedTweet[]>} Array of new eligible tweets
+ * Search for new tweets since last check
+ * Returns all matching tweets (eligible and non-eligible)
+ * @returns {Promise<ProcessedTweet[]>} Array of new tweets
  */
 export async function searchNewEligibleTweets(): Promise<ProcessedTweet[]> {
   try {
@@ -241,12 +242,11 @@ export async function searchNewEligibleTweets(): Promise<ProcessedTweet[]> {
     // Search tweets
     const tweets = await searchTweets(criteria);
 
-    // Filter only eligible ones
-    const eligibleTweets = tweets.filter((tweet) => tweet.isEligible);
+    // Return all tweets (caller will filter eligible ones if needed)
+    const eligibleCount = tweets.filter((tweet) => tweet.isEligible).length;
+    console.log(`Found ${tweets.length} tweets, ${eligibleCount} eligible`);
 
-    console.log(`Found ${eligibleTweets.length} new eligible tweets`);
-
-    return eligibleTweets;
+    return tweets;
   } catch (error) {
     if (error instanceof Error) {
       throw new Error(`Failed to search new eligible tweets: ${error.message}`);
