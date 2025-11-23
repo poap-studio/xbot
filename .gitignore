@@ -46,3 +46,5 @@ next-env.d.ts
 /prisma/migrations/
 .env.vercel.production
 .env.production
+test-*.js
+show-*.js
