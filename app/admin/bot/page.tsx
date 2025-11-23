@@ -159,22 +159,41 @@ export default function BotConfigPage() {
               '& .MuiAlert-message': { width: '100%' },
             }}
           >
-            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems="center" justifyContent="space-between">
+            <Stack spacing={2}>
+              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems="center" justifyContent="space-between">
+                <Box>
+                  <AlertTitle sx={{ fontWeight: 'bold' }}>Cuenta del Bot No Conectada</AlertTitle>
+                  <Typography variant="body2">
+                    Necesitas conectar una cuenta de Twitter con permisos de escritura para que el bot pueda responder automáticamente a los tweets.
+                  </Typography>
+                </Box>
+                <Button
+                  variant="contained"
+                  color="error"
+                  size="large"
+                  href="/api/auth/bot-twitter"
+                  sx={{ whiteSpace: 'nowrap', minWidth: 200 }}
+                >
+                  Conectar Cuenta de Twitter
+                </Button>
+              </Stack>
+
+              <Divider />
+
               <Box>
-                <AlertTitle sx={{ fontWeight: 'bold' }}>Cuenta del Bot No Conectada</AlertTitle>
-                <Typography variant="body2">
-                  Necesitas conectar una cuenta de Twitter con permisos de escritura para que el bot pueda responder automáticamente a los tweets.
+                <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1 }}>
+                  ⚠️ Antes de conectar, configura tu app de Twitter:
+                </Typography>
+                <Typography variant="caption" component="div" sx={{ pl: 2 }}>
+                  1. Ve a <a href="https://developer.twitter.com/en/portal/dashboard" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'underline' }}>Twitter Developer Portal</a><br />
+                  2. Selecciona tu app<br />
+                  3. Ve a "User authentication settings"<br />
+                  4. Habilita "OAuth 1.0a"<br />
+                  5. Agrega la callback URL: <code style={{ background: 'rgba(0,0,0,0.1)', padding: '2px 4px', borderRadius: '4px' }}>https://xbot.poap.studio/api/auth/bot-twitter/callback</code><br />
+                  6. Configura permisos a "Read and write"<br />
+                  7. Guarda los cambios
                 </Typography>
               </Box>
-              <Button
-                variant="contained"
-                color="error"
-                size="large"
-                href="/api/auth/bot-twitter"
-                sx={{ whiteSpace: 'nowrap', minWidth: 200 }}
-              >
-                Conectar Cuenta de Twitter
-              </Button>
             </Stack>
           </Alert>
         )}

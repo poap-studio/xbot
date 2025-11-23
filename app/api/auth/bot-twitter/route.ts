@@ -1,6 +1,14 @@
 /**
- * OAuth 1.0a endpoint to initiate bot account connection
+ * OAuth endpoint to initiate bot account connection
  * This endpoint starts the Twitter OAuth flow for connecting a bot account
+ *
+ * IMPORTANT: To use this endpoint, you need to:
+ * 1. Go to https://developer.twitter.com/en/portal/dashboard
+ * 2. Select your app
+ * 3. Go to "User authentication settings"
+ * 4. Enable OAuth 1.0a
+ * 5. Add callback URL: https://xbot.poap.studio/api/auth/bot-twitter/callback
+ * 6. Set App permissions to "Read and write"
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -15,14 +23,17 @@ export async function GET(request: NextRequest) {
     if (!process.env.TWITTER_API_KEY || !process.env.TWITTER_API_SECRET) {
       console.error('Twitter API credentials not configured');
       return NextResponse.redirect(
-        `${process.env.NEXT_PUBLIC_APP_URL}/admin?error=twitter_not_configured`
+        `${process.env.NEXT_PUBLIC_APP_URL}/admin/bot?error=twitter_not_configured`
       );
     }
 
     if (!process.env.NEXT_PUBLIC_APP_URL) {
       console.error('NEXT_PUBLIC_APP_URL not configured');
-      return NextResponse.redirect('/admin?error=app_url_not_configured');
+      return NextResponse.redirect('/admin/bot?error=app_url_not_configured');
     }
+
+    console.log('Initializing Twitter OAuth flow...');
+    console.log('Callback URL:', `${process.env.NEXT_PUBLIC_APP_URL}/api/auth/bot-twitter/callback`);
 
     // Initialize Twitter client
     const client = new TwitterApi({
@@ -32,14 +43,17 @@ export async function GET(request: NextRequest) {
 
     const callbackUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/auth/bot-twitter/callback`;
 
+    console.log('Generating auth link...');
+
     // Generate auth link
     const authLink = await client.generateAuthLink(callbackUrl, {
       linkMode: 'authorize', // Force re-authorization to get fresh tokens
     });
 
+    console.log('Auth link generated successfully');
+    console.log('Redirecting to:', authLink.url);
+
     // Store oauth_token_secret in a secure way
-    // For production, use encrypted session or Redis
-    // For now, we'll pass it as a query parameter (will be replaced by session in production)
     const response = NextResponse.redirect(authLink.url);
 
     // Store in cookie for callback (encrypted)
@@ -63,9 +77,19 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Error initiating bot Twitter OAuth:', error);
 
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    let errorMessage = 'Unknown error';
+
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    }
+
+    // Log detailed error for debugging
+    if (typeof error === 'object' && error !== null) {
+      console.error('Error details:', JSON.stringify(error, null, 2));
+    }
+
     return NextResponse.redirect(
-      `${process.env.NEXT_PUBLIC_APP_URL}/admin?error=${encodeURIComponent(errorMessage)}`
+      `${process.env.NEXT_PUBLIC_APP_URL}/admin/bot?error=${encodeURIComponent(errorMessage)}`
     );
   }
 }
