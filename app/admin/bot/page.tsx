@@ -105,7 +105,7 @@ export default function BotConfigPage() {
         throw new Error(data.error || 'Failed to save configuration');
       }
 
-      setSuccess('Configuración guardada correctamente');
+      setSuccess('Configuration saved successfully');
       await fetchConfig();
     } catch (error) {
       console.error('Error saving config:', error);
@@ -131,10 +131,10 @@ export default function BotConfigPage() {
         {/* Header */}
         <Box>
           <Typography variant="h4" gutterBottom sx={{ fontWeight: 'bold' }}>
-            Configuración del Bot
+            Bot Configuration
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            El bot está siempre activo escuchando el hashtag configurado y respondiendo automáticamente
+            The bot is always active listening to the configured hashtag and responding automatically
           </Typography>
         </Box>
 
@@ -162,9 +162,9 @@ export default function BotConfigPage() {
             <Stack spacing={2}>
               <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems="center" justifyContent="space-between">
                 <Box>
-                  <AlertTitle sx={{ fontWeight: 'bold' }}>Cuenta del Bot No Conectada</AlertTitle>
+                  <AlertTitle sx={{ fontWeight: 'bold' }}>Bot Account Not Connected</AlertTitle>
                   <Typography variant="body2">
-                    Necesitas conectar una cuenta de Twitter con permisos de escritura para que el bot pueda responder automáticamente a los tweets.
+                    You need to connect a Twitter account with write permissions so the bot can automatically respond to tweets.
                   </Typography>
                 </Box>
                 <Button
@@ -174,7 +174,7 @@ export default function BotConfigPage() {
                   href="/api/auth/bot-twitter"
                   sx={{ whiteSpace: 'nowrap', minWidth: 200 }}
                 >
-                  Conectar Cuenta de Twitter
+                  Connect Twitter Account
                 </Button>
               </Stack>
 
@@ -182,16 +182,16 @@ export default function BotConfigPage() {
 
               <Box>
                 <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1 }}>
-                  ⚠️ Antes de conectar, configura tu app de Twitter:
+                  ⚠️ Before connecting, configure your Twitter app:
                 </Typography>
                 <Typography variant="caption" component="div" sx={{ pl: 2 }}>
-                  1. Ve a <a href="https://developer.twitter.com/en/portal/dashboard" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'underline' }}>Twitter Developer Portal</a><br />
-                  2. Selecciona tu app<br />
-                  3. Ve a "User authentication settings"<br />
-                  4. Habilita "OAuth 1.0a"<br />
-                  5. Agrega la callback URL: <code style={{ background: 'rgba(0,0,0,0.1)', padding: '2px 4px', borderRadius: '4px' }}>https://xbot.poap.studio/api/auth/bot-twitter/callback</code><br />
-                  6. Configura permisos a "Read and write"<br />
-                  7. Guarda los cambios
+                  1. Go to <a href="https://developer.twitter.com/en/portal/dashboard" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'underline' }}>Twitter Developer Portal</a><br />
+                  2. Select your app<br />
+                  3. Go to "User authentication settings"<br />
+                  4. Enable "OAuth 1.0a"<br />
+                  5. Add the callback URL: <code style={{ background: 'rgba(0,0,0,0.1)', padding: '2px 4px', borderRadius: '4px' }}>https://xbot.poap.studio/api/auth/bot-twitter/callback</code><br />
+                  6. Configure permissions to "Read and write"<br />
+                  7. Save the changes
                 </Typography>
               </Box>
             </Stack>
@@ -202,18 +202,18 @@ export default function BotConfigPage() {
         <Card sx={{ p: 3 }}>
           <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 3 }}>
             <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-              Estado del Bot
+              Bot Status
             </Typography>
             <Stack direction="row" spacing={1}>
               <Chip
                 icon={<ScheduleIcon />}
-                label="Ejecuta cada minuto"
+                label="Runs every minute"
                 color="primary"
                 variant="outlined"
               />
               <Chip
                 icon={config.botConnected ? <CheckCircleIcon /> : <ErrorIcon />}
-                label={config.botConnected ? 'Conectado' : 'Desconectado'}
+                label={config.botConnected ? 'Connected' : 'Disconnected'}
                 color={config.botConnected ? 'success' : 'error'}
               />
             </Stack>
@@ -230,7 +230,7 @@ export default function BotConfigPage() {
           }}>
             <Box>
               <Typography variant="body2" color="text.secondary" gutterBottom>
-                Cuenta del Bot
+                Bot Account
               </Typography>
               {config.botConnected && config.botUsername ? (
                 <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
@@ -238,25 +238,25 @@ export default function BotConfigPage() {
                 </Typography>
               ) : (
                 <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'error.main' }}>
-                  No conectada
+                  Not connected
                 </Typography>
               )}
             </Box>
 
             <Box>
               <Typography variant="body2" color="text.secondary" gutterBottom>
-                Última Ejecución
+                Last Execution
               </Typography>
               <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
                 {config.lastRun
-                  ? new Date(config.lastRun).toLocaleString('es-ES')
-                  : 'Nunca'}
+                  ? new Date(config.lastRun).toLocaleString('en-US')
+                  : 'Never'}
               </Typography>
             </Box>
 
             <Box>
               <Typography variant="body2" color="text.secondary" gutterBottom>
-                Procesados Hoy
+                Processed Today
               </Typography>
               <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'success.main' }}>
                 {config.processedToday || 0} tweets
@@ -265,7 +265,7 @@ export default function BotConfigPage() {
 
             <Box>
               <Typography variant="body2" color="text.secondary" gutterBottom>
-                Errores Hoy
+                Errors Today
               </Typography>
               <Typography variant="h6" sx={{ fontWeight: 'bold', color: config.errors > 0 ? 'error.main' : 'text.primary' }}>
                 {config.errors || 0}
@@ -280,7 +280,7 @@ export default function BotConfigPage() {
               onClick={fetchConfig}
               size="small"
             >
-              Actualizar Estado
+              Update Status
             </Button>
           </Box>
         </Card>
@@ -288,45 +288,45 @@ export default function BotConfigPage() {
         {/* Configuration Form */}
         <Card sx={{ p: 3 }}>
           <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', mb: 3 }}>
-            Configuración de Monitoreo
+            Monitoring Configuration
           </Typography>
 
           <Stack spacing={3}>
             <TextField
-              label="Hashtag a Monitorear"
+              label="Hashtag to Monitor"
               value={config.twitterHashtag}
               onChange={(e) => setConfig({ ...config, twitterHashtag: e.target.value })}
               fullWidth
               placeholder="#POAP"
-              helperText="El bot buscará tweets con este hashtag. Incluye el símbolo #"
+              helperText="The bot will search for tweets with this hashtag. Include the # symbol"
             />
 
             <Divider />
 
             <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-              Mensajes de Respuesta
+              Response Messages
             </Typography>
 
             <TextField
-              label="Mensaje para Tweets Elegibles"
+              label="Message for Eligible Tweets"
               value={config.botReplyEligible}
               onChange={(e) => setConfig({ ...config, botReplyEligible: e.target.value })}
               fullWidth
               multiline
               rows={3}
-              placeholder="¡Felicidades! Has compartido el código correcto. Reclama tu POAP aquí: {{claimUrl}}"
-              helperText="Usa {{claimUrl}} donde quieres que aparezca el enlace de reclamación"
+              placeholder="Congratulations! You've shared the correct code. Claim your POAP here: {{claimUrl}}"
+              helperText="Use {{claimUrl}} where you want the claim link to appear"
             />
 
             <TextField
-              label="Mensaje para Tweets No Elegibles"
+              label="Message for Non-Eligible Tweets"
               value={config.botReplyNotEligible}
               onChange={(e) => setConfig({ ...config, botReplyNotEligible: e.target.value })}
               fullWidth
               multiline
               rows={3}
-              placeholder="Gracias por tu interés. Asegúrate de incluir un código válido y una imagen en tu tweet."
-              helperText="Este mensaje se enviará cuando el tweet no cumpla los requisitos"
+              placeholder="Thank you for your interest. Make sure to include a valid code and an image in your tweet."
+              helperText="This message will be sent when the tweet doesn't meet the requirements"
             />
 
             <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
@@ -335,7 +335,7 @@ export default function BotConfigPage() {
                 onClick={fetchConfig}
                 disabled={saving}
               >
-                Cancelar
+                Cancel
               </Button>
               <Button
                 variant="contained"
@@ -343,7 +343,7 @@ export default function BotConfigPage() {
                 onClick={handleSave}
                 disabled={saving}
               >
-                {saving ? 'Guardando...' : 'Guardar Configuración'}
+                {saving ? 'Saving...' : 'Save Configuration'}
               </Button>
             </Box>
           </Stack>
@@ -351,13 +351,13 @@ export default function BotConfigPage() {
 
         {/* Information */}
         <Alert severity="info">
-          <AlertTitle>¿Cómo Funciona el Bot?</AlertTitle>
+          <AlertTitle>How Does the Bot Work?</AlertTitle>
           <Box component="ul" sx={{ m: 0, pl: 2 }}>
-            <li>El bot se ejecuta automáticamente <strong>cada minuto</strong> mediante un cron job de Vercel</li>
-            <li>Busca tweets nuevos que contengan el <strong>hashtag configurado</strong></li>
-            <li>Verifica que el tweet tenga un <strong>código válido</strong> y una <strong>imagen</strong></li>
-            <li>Si es elegible, responde automáticamente con el mensaje configurado y un enlace de reclamación</li>
-            <li>Si no es elegible, responde con el mensaje de "no elegible"</li>
+            <li>The bot runs automatically <strong>every minute</strong> via a Vercel cron job</li>
+            <li>Searches for new tweets containing the <strong>configured hashtag</strong></li>
+            <li>Verifies that the tweet has a <strong>valid code</strong> and an <strong>image</strong></li>
+            <li>If eligible, automatically responds with the configured message and a claim link</li>
+            <li>If not eligible, responds with the "not eligible" message</li>
           </Box>
         </Alert>
       </Stack>

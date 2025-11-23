@@ -130,10 +130,10 @@ export default function DeliveriesPage() {
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <Box>
             <Typography variant="h4" gutterBottom sx={{ fontWeight: 'bold' }}>
-              Entregas
+              Drops
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              Monitorea todas las entregas de POAP
+              Monitor all POAP deliveries
             </Typography>
           </Box>
           <Button
@@ -142,7 +142,7 @@ export default function DeliveriesPage() {
             startIcon={<DownloadIcon />}
             onClick={handleExportCSV}
           >
-            Exportar CSV
+            Export CSV
           </Button>
         </Box>
 
@@ -153,7 +153,7 @@ export default function DeliveriesPage() {
             onClose={() => setError(null)}
             action={
               <Button color="inherit" size="small" onClick={fetchDeliveries}>
-                Reintentar
+                Retry
               </Button>
             }
           >
@@ -167,7 +167,7 @@ export default function DeliveriesPage() {
             {/* Search */}
             <TextField
               fullWidth
-              placeholder="Buscar por usuario, ID de tweet o QR hash..."
+              placeholder="Search by user, tweet ID or QR hash..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               InputProps={{
@@ -189,13 +189,13 @@ export default function DeliveriesPage() {
                 size="small"
               >
                 <ToggleButton value="all">
-                  Todas ({deliveries.length})
+                  All ({deliveries.length})
                 </ToggleButton>
                 <ToggleButton value="claimed">
-                  Reclamadas ({deliveries.filter((d) => d.claimed).length})
+                  Claimed ({deliveries.filter((d) => d.claimed).length})
                 </ToggleButton>
                 <ToggleButton value="unclaimed">
-                  Pendientes ({deliveries.filter((d) => !d.claimed).length})
+                  Pending ({deliveries.filter((d) => !d.claimed).length})
                 </ToggleButton>
               </ToggleButtonGroup>
             </Box>
@@ -207,11 +207,11 @@ export default function DeliveriesPage() {
           <Table>
             <TableHead>
               <TableRow sx={{ bgcolor: 'action.hover' }}>
-                <TableCell sx={{ fontWeight: 'bold' }}>Usuario</TableCell>
+                <TableCell sx={{ fontWeight: 'bold' }}>User</TableCell>
                 <TableCell sx={{ fontWeight: 'bold' }}>Tweet</TableCell>
                 <TableCell sx={{ fontWeight: 'bold' }}>QR Hash</TableCell>
-                <TableCell sx={{ fontWeight: 'bold' }}>Entregado</TableCell>
-                <TableCell sx={{ fontWeight: 'bold' }}>Estado</TableCell>
+                <TableCell sx={{ fontWeight: 'bold' }}>Delivered</TableCell>
+                <TableCell sx={{ fontWeight: 'bold' }}>Status</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -219,7 +219,7 @@ export default function DeliveriesPage() {
                 <TableRow>
                   <TableCell colSpan={5} align="center" sx={{ py: 8 }}>
                     <Typography variant="body2" color="text.secondary">
-                      No se encontraron entregas
+                      No deliveries found
                     </Typography>
                   </TableCell>
                 </TableRow>
@@ -277,14 +277,14 @@ export default function DeliveriesPage() {
                       {delivery.claimed ? (
                         <Chip
                           icon={<CheckCircleIcon />}
-                          label="Reclamado"
+                          label="Claimed"
                           color="success"
                           size="small"
                         />
                       ) : (
                         <Chip
                           icon={<HourglassEmptyIcon />}
-                          label="Pendiente"
+                          label="Pending"
                           color="warning"
                           size="small"
                         />
@@ -306,7 +306,7 @@ export default function DeliveriesPage() {
                   {deliveries.length}
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
-                  Total Entregas
+                  Total Deliveries
                 </Typography>
               </Box>
               <Box sx={{ textAlign: 'center' }}>
@@ -314,7 +314,7 @@ export default function DeliveriesPage() {
                   {deliveries.filter((d) => d.claimed).length}
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
-                  Reclamados
+                  Claimed
                 </Typography>
               </Box>
               <Box sx={{ textAlign: 'center' }}>
@@ -322,7 +322,7 @@ export default function DeliveriesPage() {
                   {deliveries.filter((d) => !d.claimed).length}
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
-                  Pendientes
+                  Pending
                 </Typography>
               </Box>
               <Box sx={{ textAlign: 'center' }}>
@@ -332,7 +332,7 @@ export default function DeliveriesPage() {
                     : 0}%
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
-                  Tasa de Reclamo
+                  Claim Rate
                 </Typography>
               </Box>
             </Stack>

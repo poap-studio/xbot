@@ -68,7 +68,7 @@ export default function MintLinksPage() {
 
   const handleImport = async () => {
     if (!links.trim()) {
-      setError('Por favor ingresa al menos un mint link');
+      setError('Please enter at least one mint link');
       return;
     }
 
@@ -95,7 +95,7 @@ export default function MintLinksPage() {
       }
 
       setSuccess(
-        `${data.imported} links importados correctamente (${data.duplicates} duplicados omitidos)`
+        `${data.imported} links imported successfully (${data.duplicates} duplicates skipped)`
       );
       setLinks('');
       fetchStats();
@@ -127,7 +127,7 @@ export default function MintLinksPage() {
             Mint Links
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Importa y gestiona los enlaces de mint POAP
+            Import and manage POAP mint links
           </Typography>
         </Box>
 
@@ -169,7 +169,7 @@ export default function MintLinksPage() {
           <Card sx={{ p: 3 }}>
             <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
               <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 'medium' }}>
-                Disponibles
+                Available
               </Typography>
               <CheckCircleIcon sx={{ fontSize: 32, color: 'success.main', opacity: 0.3 }} />
             </Stack>
@@ -181,7 +181,7 @@ export default function MintLinksPage() {
           <Card sx={{ p: 3 }}>
             <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
               <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 'medium' }}>
-                Reservados
+                Reserved
               </Typography>
               <HourglassEmptyIcon sx={{ fontSize: 32, color: 'warning.main', opacity: 0.3 }} />
             </Stack>
@@ -193,7 +193,7 @@ export default function MintLinksPage() {
           <Card sx={{ p: 3 }}>
             <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
               <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 'medium' }}>
-                Reclamados
+                Claimed
               </Typography>
               <CelebrationIcon sx={{ fontSize: 32, color: 'info.main', opacity: 0.3 }} />
             </Stack>
@@ -206,7 +206,7 @@ export default function MintLinksPage() {
         {/* Import Section */}
         <Card sx={{ p: 3 }}>
           <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', mb: 3 }}>
-            Importar Mint Links
+            Import Mint Links
           </Typography>
 
           <Stack spacing={3}>
@@ -217,7 +217,7 @@ export default function MintLinksPage() {
               value={links}
               onChange={(e) => setLinks(e.target.value)}
               placeholder="https://poap.xyz/claim/abc123&#10;https://poap.xyz/claim/def456&#10;https://poap.xyz/claim/ghi789"
-              helperText="Ingresa los enlaces de mint POAP, uno por línea. Los duplicados se omitirán automáticamente."
+              helperText="Enter POAP mint links, one per line. Duplicates will be automatically skipped."
               sx={{
                 '& .MuiInputBase-root': {
                   fontFamily: 'monospace',
@@ -234,7 +234,7 @@ export default function MintLinksPage() {
                 onClick={handleImport}
                 disabled={importing || !links.trim()}
               >
-                {importing ? 'Importando...' : 'Importar Links'}
+                {importing ? 'Importing...' : 'Import Links'}
               </Button>
             </Box>
           </Stack>

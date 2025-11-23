@@ -27,6 +27,7 @@ import {
   Delete as DeleteIcon,
   Refresh as RefreshIcon,
   Add as AddIcon,
+  Download as DownloadIcon,
 } from '@mui/icons-material';
 
 interface HiddenCodeStats {
@@ -77,7 +78,7 @@ export default function HiddenCodesPage() {
 
   const handleUpload = async () => {
     if (!codes.trim()) {
-      setError('Por favor ingresa al menos un código');
+      setError('Please enter at least one code');
       return;
     }
 
@@ -106,7 +107,7 @@ export default function HiddenCodesPage() {
       }
 
       setSuccess(
-        `${data.added} códigos agregados correctamente (${data.duplicates} duplicados omitidos)`
+        `${data.added} codes added successfully (${data.duplicates} duplicates skipped)`
       );
       setCodes('');
       setShowUploadDialog(false);
@@ -135,7 +136,7 @@ export default function HiddenCodesPage() {
         throw new Error(data.error || 'Failed to delete codes');
       }
 
-      setSuccess(`${data.deleted} códigos eliminados correctamente`);
+      setSuccess(`${data.deleted} codes deleted successfully`);
       setShowDeleteDialog(false);
       await fetchStats();
     } catch (error) {
@@ -144,6 +145,10 @@ export default function HiddenCodesPage() {
     } finally {
       setDeleting(false);
     }
+  };
+
+  const handleDownloadCSV = () => {
+    window.location.href = '/api/admin/hidden-codes/csv';
   };
 
   if (loading) {
@@ -165,7 +170,7 @@ export default function HiddenCodesPage() {
             Hidden Codes
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Gestiona los códigos ocultos que los usuarios deben incluir en sus tweets para ser elegibles
+            Manage the hidden codes that users must include in their tweets to be eligible
           </Typography>
         </Box>
 
@@ -193,7 +198,7 @@ export default function HiddenCodesPage() {
         }}>
           <Card sx={{ p: 3 }}>
             <Typography variant="body2" color="text.secondary" gutterBottom sx={{ fontWeight: 'medium' }}>
-              Total Códigos
+              Total Codes
             </Typography>
             <Typography variant="h3" sx={{ fontWeight: 'bold' }}>
               {stats.total}
@@ -202,7 +207,7 @@ export default function HiddenCodesPage() {
 
           <Card sx={{ p: 3 }}>
             <Typography variant="body2" color="text.secondary" gutterBottom sx={{ fontWeight: 'medium' }}>
-              Disponibles
+              Available
             </Typography>
             <Typography variant="h3" sx={{ fontWeight: 'bold', color: 'success.main' }}>
               {stats.available}
@@ -211,7 +216,7 @@ export default function HiddenCodesPage() {
 
           <Card sx={{ p: 3 }}>
             <Typography variant="body2" color="text.secondary" gutterBottom sx={{ fontWeight: 'medium' }}>
-              Usados
+              Used
             </Typography>
             <Typography variant="h3" sx={{ fontWeight: 'bold', color: 'warning.main' }}>
               {stats.used}
@@ -222,7 +227,7 @@ export default function HiddenCodesPage() {
         {/* Actions */}
         <Card sx={{ p: 3 }}>
           <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', mb: 3 }}>
-            Acciones
+            Actions
           </Typography>
 
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
@@ -233,7 +238,18 @@ export default function HiddenCodesPage() {
               onClick={() => setShowUploadDialog(true)}
               fullWidth
             >
-              Cargar Códigos
+              Upload Codes
+            </Button>
+
+            <Button
+              variant="contained"
+              color="success"
+              startIcon={<DownloadIcon />}
+              onClick={handleDownloadCSV}
+              disabled={stats.total === 0}
+              fullWidth
+            >
+              Download CSV
             </Button>
 
             <Button
@@ -242,7 +258,7 @@ export default function HiddenCodesPage() {
               onClick={fetchStats}
               fullWidth
             >
-              Actualizar
+              Refresh
             </Button>
 
             <Button
@@ -253,23 +269,23 @@ export default function HiddenCodesPage() {
               disabled={stats.total === 0}
               fullWidth
             >
-              Borrar Todos
+              Delete All
             </Button>
           </Stack>
         </Card>
 
         {/* Info */}
         <Alert severity="info">
-          <AlertTitle>¿Qué son los Hidden Codes?</AlertTitle>
-          Los Hidden Codes son códigos únicos que los usuarios deben incluir en el texto de su tweet
-          (junto con el hashtag configurado y una imagen) para ser elegibles para recibir un POAP.
+          <AlertTitle>What are Hidden Codes?</AlertTitle>
+          Hidden Codes are unique codes that users must include in their tweet text
+          (along with the configured hashtag and an image) to be eligible to receive a POAP.
           <br /><br />
-          <strong>Flujo:</strong>
+          <strong>Flow:</strong>
           <ul style={{ marginTop: '8px', marginBottom: 0, paddingLeft: '20px' }}>
-            <li>Usuario tweetea: hashtag + hidden code + imagen</li>
-            <li>Bot verifica que el código existe y no ha sido usado</li>
-            <li>Si es válido, asigna un QR code y responde con el mint link</li>
-            <li>El código se marca como usado y no puede reutilizarse</li>
+            <li>User tweets: hashtag + hidden code + image</li>
+            <li>Bot verifies that the code exists and hasn't been used</li>
+            <li>If valid, assigns a QR code and responds with the mint link</li>
+            <li>The code is marked as used and cannot be reused</li>
           </ul>
         </Alert>
       </Stack>
@@ -281,11 +297,11 @@ export default function HiddenCodesPage() {
         maxWidth="sm"
         fullWidth
       >
-        <DialogTitle>Cargar Hidden Codes</DialogTitle>
+        <DialogTitle>Upload Hidden Codes</DialogTitle>
         <DialogContent>
           <Stack spacing={2} sx={{ mt: 1 }}>
             <Typography variant="body2" color="text.secondary">
-              Ingresa los códigos, uno por línea. Los códigos duplicados serán omitidos automáticamente.
+              Enter the codes, one per line. Duplicate codes will be automatically skipped.
             </Typography>
             <TextField
               multiline
@@ -300,7 +316,7 @@ export default function HiddenCodesPage() {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setShowUploadDialog(false)} disabled={uploading}>
-            Cancelar
+            Cancel
           </Button>
           <Button
             onClick={handleUpload}
@@ -308,7 +324,7 @@ export default function HiddenCodesPage() {
             disabled={uploading || !codes.trim()}
             startIcon={uploading ? <CircularProgress size={20} color="inherit" /> : <UploadIcon />}
           >
-            {uploading ? 'Cargando...' : 'Cargar Códigos'}
+            {uploading ? 'Uploading...' : 'Upload Codes'}
           </Button>
         </DialogActions>
       </Dialog>
@@ -319,16 +335,16 @@ export default function HiddenCodesPage() {
         onClose={() => !deleting && setShowDeleteDialog(false)}
         maxWidth="xs"
       >
-        <DialogTitle>Confirmar Eliminación</DialogTitle>
+        <DialogTitle>Confirm Deletion</DialogTitle>
         <DialogContent>
           <Alert severity="warning">
-            ¿Estás seguro de que quieres eliminar TODOS los hidden codes ({stats.total} códigos)?
-            Esta acción no se puede deshacer.
+            Are you sure you want to delete ALL hidden codes ({stats.total} codes)?
+            This action cannot be undone.
           </Alert>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setShowDeleteDialog(false)} disabled={deleting}>
-            Cancelar
+            Cancel
           </Button>
           <Button
             onClick={handleDeleteAll}
@@ -337,7 +353,7 @@ export default function HiddenCodesPage() {
             disabled={deleting}
             startIcon={deleting ? <CircularProgress size={20} color="inherit" /> : <DeleteIcon />}
           >
-            {deleting ? 'Eliminando...' : 'Eliminar Todos'}
+            {deleting ? 'Deleting...' : 'Delete All'}
           </Button>
         </DialogActions>
       </Dialog>

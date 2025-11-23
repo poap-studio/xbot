@@ -107,7 +107,7 @@ export default function AdminDashboard() {
             size="small"
             sx={{ mt: 1 }}
           >
-            Reintentar
+            Retry
           </Button>
         </Alert>
       </Container>
@@ -123,7 +123,7 @@ export default function AdminDashboard() {
             Dashboard
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Vista general de la actividad del bot POAP
+            Overview of POAP bot activity
           </Typography>
         </Box>
 
@@ -134,18 +134,18 @@ export default function AdminDashboard() {
         <Card sx={{ p: 3 }}>
           <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
             <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-              Estado del Bot
+              Bot Status
             </Typography>
             <Chip
               icon={stats?.bot.connected ? <CheckCircleIcon /> : <CancelIcon />}
-              label={stats?.bot.connected ? 'Conectado' : 'Desconectado'}
+              label={stats?.bot.connected ? 'Connected' : 'Disconnected'}
               color={stats?.bot.connected ? 'success' : 'error'}
             />
           </Stack>
 
           {stats?.bot.connected && stats.bot.username && (
             <Typography variant="body2" color="text.secondary">
-              Conectado como <Typography component="span" sx={{ fontWeight: 'bold' }}>@{stats.bot.username}</Typography>
+              Connected as <Typography component="span" sx={{ fontWeight: 'bold' }}>@{stats.bot.username}</Typography>
             </Typography>
           )}
 
@@ -161,7 +161,7 @@ export default function AdminDashboard() {
                   '&:hover': { bgcolor: '#1A8CD8' },
                 }}
               >
-                Conectar Cuenta del Bot
+                Connect Bot Account
               </Button>
             </Box>
           )}
@@ -181,7 +181,7 @@ export default function AdminDashboard() {
           <Card sx={{ p: 3 }}>
             <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
               <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 'medium' }}>
-                Entregas
+                Deliveries
               </Typography>
               <DeliveryIcon sx={{ fontSize: 32, color: 'primary.main', opacity: 0.3 }} />
             </Stack>
@@ -189,7 +189,7 @@ export default function AdminDashboard() {
               {stats?.deliveries.total || 0}
             </Typography>
             <Typography variant="caption" color="text.secondary">
-              {stats?.deliveries.claimed || 0} reclamadas ({stats?.deliveries.claimRate.toFixed(1) || 0}%)
+              {stats?.deliveries.claimed || 0} claimed ({stats?.deliveries.claimRate.toFixed(1) || 0}%)
             </Typography>
           </Card>
 
@@ -197,7 +197,7 @@ export default function AdminDashboard() {
           <Card sx={{ p: 3 }}>
             <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
               <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 'medium' }}>
-                Enlaces Mint
+                Mint Links
               </Typography>
               <LinkIcon sx={{ fontSize: 32, color: 'primary.main', opacity: 0.3 }} />
             </Stack>
@@ -213,7 +213,7 @@ export default function AdminDashboard() {
           <Card sx={{ p: 3 }}>
             <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
               <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 'medium' }}>
-                Tweets Elegibles
+                Eligible Tweets
               </Typography>
               <TwitterIcon sx={{ fontSize: 32, color: 'primary.main', opacity: 0.3 }} />
             </Stack>
@@ -221,7 +221,7 @@ export default function AdminDashboard() {
               {stats?.tweets.eligible || 0}
             </Typography>
             <Typography variant="caption" color="text.secondary">
-              {stats?.tweets.pending || 0} pendientes de respuesta
+              {stats?.tweets.pending || 0} pending response
             </Typography>
           </Card>
 
@@ -229,7 +229,7 @@ export default function AdminDashboard() {
           <Card sx={{ p: 3 }}>
             <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
               <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 'medium' }}>
-                Tasa de Reclamo
+                Claim Rate
               </Typography>
               <TrendingUpIcon sx={{ fontSize: 32, color: 'success.main', opacity: 0.3 }} />
             </Stack>
@@ -237,7 +237,7 @@ export default function AdminDashboard() {
               {stats?.deliveries.claimRate.toFixed(1) || 0}%
             </Typography>
             <Typography variant="caption" color="text.secondary">
-              {stats?.deliveries.claimed || 0} de {stats?.deliveries.total || 0}
+              {stats?.deliveries.claimed || 0} of {stats?.deliveries.total || 0}
             </Typography>
           </Card>
         </Box>
@@ -245,7 +245,7 @@ export default function AdminDashboard() {
         {/* Quick Actions */}
         <Card sx={{ p: 3 }}>
           <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', mb: 3 }}>
-            Acciones Rápidas
+            Quick Actions
           </Typography>
           <Box sx={{
             display: 'grid',
@@ -277,10 +277,10 @@ export default function AdminDashboard() {
               <SettingsIcon sx={{ fontSize: 32, color: 'primary.main' }} />
               <Box>
                 <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
-                  Configurar POAP
+                  Configure POAP
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
-                  Evento, hashtag y mensajes
+                  Event, hashtag and messages
                 </Typography>
               </Box>
             </Paper>
@@ -307,10 +307,10 @@ export default function AdminDashboard() {
               <LinkIcon sx={{ fontSize: 32, color: 'primary.main' }} />
               <Box>
                 <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
-                  Importar Enlaces
+                  Import Links
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
-                  Agregar nuevos mint links
+                  Add new mint links
                 </Typography>
               </Box>
             </Paper>
@@ -337,10 +337,10 @@ export default function AdminDashboard() {
               <SmartToyIcon sx={{ fontSize: 32, color: 'primary.main' }} />
               <Box>
                 <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
-                  Controlar Bot
+                  Control Bot
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
-                  Iniciar/detener automatización
+                  Start/stop automation
                 </Typography>
               </Box>
             </Paper>

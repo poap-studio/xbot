@@ -134,7 +134,7 @@ export default function CronLogsPage() {
           severity="error"
           action={
             <Button color="inherit" size="small" onClick={fetchLogs}>
-              Reintentar
+              Retry
             </Button>
           }
         >
@@ -150,10 +150,10 @@ export default function CronLogsPage() {
         {/* Header */}
         <Box>
           <Typography variant="h4" gutterBottom sx={{ fontWeight: 'bold' }}>
-            Logs de Cron Jobs
+            Cron Job Logs
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Monitorea las ejecuciones automáticas del bot y errores
+            Monitor automatic bot executions and errors
           </Typography>
         </Box>
 
@@ -177,7 +177,7 @@ export default function CronLogsPage() {
           }}>
             <Card sx={{ p: 3 }}>
               <Typography variant="body2" color="text.secondary" gutterBottom sx={{ fontWeight: 'medium' }}>
-                Total Ejecuciones
+                Total Executions
               </Typography>
               <Typography variant="h3" sx={{ fontWeight: 'bold' }}>
                 {data.stats.total}
@@ -186,7 +186,7 @@ export default function CronLogsPage() {
 
             <Card sx={{ p: 3 }}>
               <Typography variant="body2" color="text.secondary" gutterBottom sx={{ fontWeight: 'medium' }}>
-                Últimas 24 Horas
+                Last 24 Hours
               </Typography>
               <Typography variant="h3" sx={{ fontWeight: 'bold' }}>
                 {data.stats.last24Hours}
@@ -195,7 +195,7 @@ export default function CronLogsPage() {
 
             <Card sx={{ p: 3 }}>
               <Typography variant="body2" color="text.secondary" gutterBottom sx={{ fontWeight: 'medium' }}>
-                Tasa de Éxito
+                Success Rate
               </Typography>
               <Typography variant="h3" sx={{ fontWeight: 'bold', color: 'success.main' }}>
                 {data.stats.successRate}%
@@ -204,7 +204,7 @@ export default function CronLogsPage() {
 
             <Card sx={{ p: 3 }}>
               <Typography variant="body2" color="text.secondary" gutterBottom sx={{ fontWeight: 'medium' }}>
-                Errores
+                Errors
               </Typography>
               <Typography variant="h3" sx={{ fontWeight: 'bold', color: 'error.main' }}>
                 {data.stats.byStatus.error || 0}
@@ -226,10 +226,10 @@ export default function CronLogsPage() {
               }}
               size="small"
             >
-              <ToggleButton value="all">Todos</ToggleButton>
-              <ToggleButton value="success">Exitosos</ToggleButton>
-              <ToggleButton value="warning">Advertencias</ToggleButton>
-              <ToggleButton value="error">Errores</ToggleButton>
+              <ToggleButton value="all">All</ToggleButton>
+              <ToggleButton value="success">Successful</ToggleButton>
+              <ToggleButton value="warning">Warnings</ToggleButton>
+              <ToggleButton value="error">Errors</ToggleButton>
             </ToggleButtonGroup>
 
             <Button
@@ -238,7 +238,7 @@ export default function CronLogsPage() {
               onClick={fetchLogs}
               disabled={loading}
             >
-              {loading ? 'Actualizando...' : 'Actualizar'}
+              {loading ? 'Updating...' : 'Refresh'}
             </Button>
           </Stack>
         </Card>
@@ -248,13 +248,13 @@ export default function CronLogsPage() {
           <Table>
             <TableHead>
               <TableRow sx={{ bgcolor: 'action.hover' }}>
-                <TableCell sx={{ fontWeight: 'bold' }}>Estado</TableCell>
-                <TableCell sx={{ fontWeight: 'bold' }}>Inicio</TableCell>
-                <TableCell sx={{ fontWeight: 'bold' }}>Duración</TableCell>
+                <TableCell sx={{ fontWeight: 'bold' }}>Status</TableCell>
+                <TableCell sx={{ fontWeight: 'bold' }}>Started</TableCell>
+                <TableCell sx={{ fontWeight: 'bold' }}>Duration</TableCell>
                 <TableCell sx={{ fontWeight: 'bold' }}>Tweets</TableCell>
-                <TableCell sx={{ fontWeight: 'bold' }}>Procesados</TableCell>
-                <TableCell sx={{ fontWeight: 'bold' }}>Fallidos</TableCell>
-                <TableCell sx={{ fontWeight: 'bold' }}>Detalles</TableCell>
+                <TableCell sx={{ fontWeight: 'bold' }}>Processed</TableCell>
+                <TableCell sx={{ fontWeight: 'bold' }}>Failed</TableCell>
+                <TableCell sx={{ fontWeight: 'bold' }}>Details</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -262,7 +262,7 @@ export default function CronLogsPage() {
                 <TableRow>
                   <TableCell colSpan={7} align="center" sx={{ py: 8 }}>
                     <Typography variant="body2" color="text.secondary">
-                      No se encontraron logs
+                      No logs found
                     </Typography>
                   </TableCell>
                 </TableRow>
@@ -322,7 +322,7 @@ export default function CronLogsPage() {
                               <Stack spacing={2}>
                                 <Box>
                                   <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1 }}>
-                                    Mensaje de Error:
+                                    Error Message:
                                   </Typography>
                                   <Typography variant="body2" color="error">
                                     {log.errorMessage}
@@ -331,7 +331,7 @@ export default function CronLogsPage() {
                                 {log.errorDetails && (
                                   <Box>
                                     <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1 }}>
-                                      Detalles:
+                                      Details:
                                     </Typography>
                                     <Paper
                                       variant="outlined"

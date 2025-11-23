@@ -118,7 +118,7 @@ export default function PoapConfigPage() {
         throw new Error(data.error || 'Failed to save configuration');
       }
 
-      setSuccess('Configuración guardada correctamente');
+      setSuccess('Configuration saved successfully');
     } catch (error) {
       console.error('Error saving config:', error);
       setError(error instanceof Error ? error.message : 'Failed to save configuration');
@@ -129,7 +129,7 @@ export default function PoapConfigPage() {
 
   const handleLoadQRCodes = async () => {
     if (!config.eventId || !config.editCode) {
-      setError('Debes guardar Event ID y Edit Code antes de cargar QR codes');
+      setError('You must save Event ID and Edit Code before loading QR codes');
       return;
     }
 
@@ -155,7 +155,7 @@ export default function PoapConfigPage() {
         throw new Error(data.error || 'Failed to load QR codes');
       }
 
-      setSuccess(`${data.loaded} QR codes cargados correctamente (${data.newCodes} nuevos, ${data.existing} ya existían)`);
+      setSuccess(`${data.loaded} QR codes loaded successfully (${data.newCodes} new, ${data.existing} already existed)`);
       await fetchQRStats();
     } catch (error) {
       console.error('Error loading QR codes:', error);
@@ -181,10 +181,10 @@ export default function PoapConfigPage() {
         {/* Header */}
         <Box>
           <Typography variant="h4" gutterBottom sx={{ fontWeight: 'bold' }}>
-            Configuración POAP
+            POAP Configuration
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Configura el evento POAP y carga los QR codes disponibles
+            Configure the POAP event and load available QR codes
           </Typography>
         </Box>
 
@@ -204,7 +204,7 @@ export default function PoapConfigPage() {
         {/* Event Configuration */}
         <Card sx={{ p: 3 }}>
           <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', mb: 3 }}>
-            Configuración del Evento
+            Event Configuration
           </Typography>
 
           <Stack spacing={3}>
@@ -214,7 +214,7 @@ export default function PoapConfigPage() {
               onChange={(e) => setConfig({ ...config, eventId: e.target.value })}
               fullWidth
               placeholder="123456"
-              helperText="El ID del evento POAP del cual cargar los QR codes"
+              helperText="The POAP event ID from which to load QR codes"
             />
 
             <TextField
@@ -223,8 +223,8 @@ export default function PoapConfigPage() {
               onChange={(e) => setConfig({ ...config, editCode: e.target.value })}
               fullWidth
               type="password"
-              placeholder="tu-edit-code-secreto"
-              helperText="El código de edición del evento POAP (necesario para acceder a los QR codes)"
+              placeholder="your-secret-edit-code"
+              helperText="The POAP event edit code (required to access QR codes)"
             />
 
             <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
@@ -233,7 +233,7 @@ export default function PoapConfigPage() {
                 onClick={fetchConfig}
                 disabled={saving}
               >
-                Cancelar
+                Cancel
               </Button>
               <Button
                 variant="contained"
@@ -241,7 +241,7 @@ export default function PoapConfigPage() {
                 onClick={handleSave}
                 disabled={saving}
               >
-                {saving ? 'Guardando...' : 'Guardar Configuración'}
+                {saving ? 'Saving...' : 'Save Configuration'}
               </Button>
             </Box>
           </Stack>
@@ -251,7 +251,7 @@ export default function PoapConfigPage() {
         <Card sx={{ p: 3 }}>
           <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 3 }}>
             <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-              QR Codes del Evento
+              Event QR Codes
             </Typography>
             <Button
               variant="outlined"
@@ -259,7 +259,7 @@ export default function PoapConfigPage() {
               onClick={fetchQRStats}
               size="small"
             >
-              Actualizar
+              Refresh
             </Button>
           </Stack>
 
@@ -287,7 +287,7 @@ export default function PoapConfigPage() {
                 {qrStats.available}
               </Typography>
               <Typography variant="caption" color="text.secondary">
-                Disponibles
+                Available
               </Typography>
             </Box>
             <Box sx={{ p: 2, bgcolor: 'action.hover', borderRadius: 1, textAlign: 'center' }}>
@@ -295,7 +295,7 @@ export default function PoapConfigPage() {
                 {qrStats.reserved}
               </Typography>
               <Typography variant="caption" color="text.secondary">
-                Reservados
+                Reserved
               </Typography>
             </Box>
             <Box sx={{ p: 2, bgcolor: 'action.hover', borderRadius: 1, textAlign: 'center' }}>
@@ -303,7 +303,7 @@ export default function PoapConfigPage() {
                 {qrStats.claimed}
               </Typography>
               <Typography variant="caption" color="text.secondary">
-                Reclamados
+                Claimed
               </Typography>
             </Box>
           </Box>
@@ -319,12 +319,11 @@ export default function PoapConfigPage() {
             onClick={handleLoadQRCodes}
             disabled={loadingQRCodes || !config.eventId || !config.editCode}
           >
-            {loadingQRCodes ? 'Cargando QR Codes...' : 'Cargar/Actualizar QR Codes desde POAP'}
+            {loadingQRCodes ? 'Loading QR Codes...' : 'Load/Update QR Codes from POAP'}
           </Button>
 
           <Alert severity="info" sx={{ mt: 2 }} icon={<InfoIcon />}>
-            Este botón carga todos los QR codes del evento desde la API de POAP. Si se agregan nuevos
-            QR codes en POAP, haz clic aquí para actualizarlos.
+            This button loads all QR codes from the event via the POAP API. If new QR codes are added to POAP, click here to update them.
           </Alert>
         </Card>
       </Stack>
