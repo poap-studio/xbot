@@ -40,11 +40,14 @@ export async function GET(request: NextRequest) {
     });
 
     if (!validCode) {
+      console.error(`Code not found: ${code}`);
       return NextResponse.json(
         { error: 'Invalid code' },
         { status: 404 }
       );
     }
+
+    console.log(`Processing QR scan for code: ${code}, isUsed: ${validCode.isUsed}`);
 
     // Mark code as used (only if not already used)
     if (!validCode.isUsed) {
@@ -56,15 +59,21 @@ export async function GET(request: NextRequest) {
         },
       });
 
-      console.log(`Hidden code ${code} marked as used via QR scan`);
+      console.log(`✓ Hidden code ${code} marked as used via QR scan`);
 
       // Notify SSE clients to update QR - IMPORTANT: Do this AFTER marking as used
       notifyQrUpdate();
       console.log('SSE update notification sent to all connected clients');
+    } else {
+      console.log(`⚠ Code ${code} was already used`);
     }
 
     // Generate tweet text from template
-    const tweetText = config.qrPageTweetTemplate.replace('{{code}}', code);
+    // Use replaceAll to replace ALL occurrences of {{code}} with the SAME code
+    const tweetText = config.qrPageTweetTemplate.replaceAll('{{code}}', code);
+
+    console.log(`Tweet template: ${config.qrPageTweetTemplate}`);
+    console.log(`Generated tweet text: ${tweetText}`);
 
     // Create Twitter app deep link with fallback to web
     // For mobile: twitter://post?message=...

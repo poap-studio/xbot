@@ -32,17 +32,22 @@ export async function GET(request: NextRequest) {
     });
 
     if (!availableCode) {
+      console.error('No available hidden codes found');
       return NextResponse.json(
         { error: 'No hidden codes available. Please upload more codes in the admin panel.' },
         { status: 503 }
       );
     }
 
+    console.log(`Generating QR for code: ${availableCode.code}`);
+
     // Get base URL
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
     // Create tracking URL that will redirect to Twitter
     const trackingUrl = `${baseUrl}/api/qr/track?code=${encodeURIComponent(availableCode.code)}`;
+
+    console.log(`Tracking URL: ${trackingUrl}`);
 
     // Generate QR code as data URL
     const qrDataUrl = await QRCode.toDataURL(trackingUrl, {
@@ -53,6 +58,8 @@ export async function GET(request: NextRequest) {
         light: '#FFFFFF',
       },
     });
+
+    console.log(`✓ QR generated successfully for code: ${availableCode.code}`);
 
     return NextResponse.json({
       qrDataUrl,

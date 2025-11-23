@@ -149,9 +149,31 @@ export default function QrPageConfigPage() {
               fullWidth
               multiline
               rows={4}
-              placeholder="Join our event! Use code {{code}} and share your experience. #POAP"
+              placeholder="I visited the POAP Studio booth at ETH Global, and here's the proof! The secret word is {{code}} #ethglobalxpoap"
               helperText="Use {{code}} as placeholder for the hidden code. This will be replaced with an actual code when users scan the QR."
+              error={!!(config.tweetTemplate && !config.tweetTemplate.includes('{{code}}'))}
             />
+
+            {config.tweetTemplate && (
+              <Alert severity="info">
+                <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 'bold' }}>
+                  Preview with example code "ABC123":
+                </Typography>
+                <Typography
+                  variant="body2"
+                  sx={{
+                    fontFamily: 'monospace',
+                    bgcolor: 'background.default',
+                    p: 2,
+                    borderRadius: 1,
+                    whiteSpace: 'pre-wrap',
+                    wordBreak: 'break-word',
+                  }}
+                >
+                  {config.tweetTemplate.replaceAll('{{code}}', 'ABC123')}
+                </Typography>
+              </Alert>
+            )}
 
             <Box sx={{ display: 'flex', gap: 2 }}>
               <Button
