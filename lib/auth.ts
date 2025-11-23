@@ -6,17 +6,23 @@
 import NextAuth from 'next-auth';
 import Twitter from 'next-auth/providers/twitter';
 
+const baseUrl = process.env.NEXTAUTH_URL?.trim() || process.env.NEXT_PUBLIC_APP_URL?.trim() || 'https://xbot.poap.studio';
+
 export const { handlers, signIn, signOut, auth } = NextAuth({
+  basePath: '/api/auth',
   trustHost: true, // Required for Vercel and other hosted environments
   providers: [
     Twitter({
       clientId: process.env.TWITTER_CLIENT_ID?.trim()!,
       clientSecret: process.env.TWITTER_CLIENT_SECRET?.trim()!,
       authorization: {
+        url: 'https://twitter.com/i/oauth2/authorize',
         params: {
           scope: 'tweet.read users.read offline.access', // Minimal scopes for user login
         },
       },
+      token: 'https://api.twitter.com/2/oauth2/token',
+      userinfo: 'https://api.twitter.com/2/users/me',
       profile(profile: any) {
         console.log('=== RAW TWITTER PROFILE ===');
         console.log('Full profile:', JSON.stringify(profile, null, 2));
