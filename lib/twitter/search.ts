@@ -9,7 +9,6 @@ import prisma from '@/lib/prisma';
 
 export interface SearchCriteria {
   hashtag: string;
-  requiredCode: string;
   requireImage: boolean;
   sinceId?: string; // Only get tweets after this ID
   maxResults?: number; // Max tweets to retrieve (default: 100, max: 100)
@@ -234,7 +233,6 @@ export async function searchNewEligibleTweets(): Promise<ProcessedTweet[]> {
     // Build criteria from config
     const criteria: SearchCriteria = {
       hashtag: config.twitterHashtag,
-      requiredCode: config.requiredCode,
       requireImage: true, // Always require images for POAP eligibility
       sinceId,
       maxResults: 100,

@@ -110,7 +110,7 @@ export async function POST(request: NextRequest) {
         data: updateData,
       });
     } else {
-      // Create new config - requires poapSecretCode
+      // Create new config - requires poapEditCode
       return NextResponse.json(
         { error: 'No configuration found. Please initialize the database first.' },
         { status: 400 }
