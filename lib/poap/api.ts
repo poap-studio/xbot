@@ -400,6 +400,20 @@ export async function getEventQRCodes(
 
   if (!response.ok) {
     const errorText = await response.text();
+
+    // Provide helpful error messages
+    if (response.status === 400 && errorText.includes('Invalid edit code')) {
+      throw new Error(
+        `Invalid edit code for event ${eventId}. Please verify the edit code is correct.`
+      );
+    }
+
+    if (response.status === 403) {
+      throw new Error(
+        `Access denied to event ${eventId}. Verify the event exists and you have permissions.`
+      );
+    }
+
     throw new Error(
       `Failed to fetch QR codes from POAP: ${response.status} - ${errorText}`
     );
