@@ -276,9 +276,13 @@ export async function validateBotConfiguration(): Promise<void> {
     errors.push('Bot configuration not found');
   }
 
-  // Check POAP credentials
-  if (!config?.poapClientId || !config?.poapClientSecret) {
-    errors.push('POAP API credentials not configured');
+  // Check POAP credentials (now from environment variables)
+  if (!process.env.POAP_CLIENT_ID || !process.env.POAP_CLIENT_SECRET) {
+    errors.push('POAP API credentials not configured (POAP_CLIENT_ID or POAP_CLIENT_SECRET missing)');
+  }
+
+  if (!process.env.POAP_API_KEY) {
+    errors.push('POAP_API_KEY not configured');
   }
 
   // Check mint links availability
