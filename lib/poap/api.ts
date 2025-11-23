@@ -367,3 +367,139 @@ export async function getMintLinkStats(): Promise<{
 
   return { total, available, reserved, claimed };
 }
+
+/**
+ * Get all QR codes for an event using Event ID and Edit Code
+ * This uses the edit code endpoint, not OAuth
+ * @param {string} eventId - POAP event ID
+ * @param {string} editCode - Edit code for the event
+ * @returns {Promise<Array>} Array of QR code hashes
+ */
+export async function getEventQRCodes(
+  eventId: string,
+  editCode: string
+): Promise<string[]> {
+  const url = `${POAP_API_BASE}/event/${eventId}/qr-codes`;
+
+  const response = await fetch(url, {
+    headers: {
+      'accept': 'application/json',
+      'x-api-key': process.env.POAP_API_KEY || '',
+      'x-edit-code': editCode,
+    },
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(
+      `Failed to fetch QR codes from POAP: ${response.status} - ${errorText}`
+    );
+  }
+
+  const data = await response.json();
+  // The API returns an array of objects with qr_hash property
+  return data.map((item: any) => item.qr_hash);
+}
+
+/**
+ * Get claim delivery secret for a QR hash
+ * Documentation: https://documentation.poap.tech/reference/postactionsclaim-delivery-v2
+ * @param {string} qrHash - QR hash
+ * @returns {Promise<string>} Secret for claim delivery
+ */
+export async function getClaimDeliverySecret(qrHash: string): Promise<string> {
+  const url = `${POAP_API_BASE}/actions/claim-delivery`;
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'accept': 'application/json',
+      'x-api-key': process.env.POAP_API_KEY || '',
+    },
+    body: JSON.stringify({
+      qr_hash: qrHash,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(
+      `Failed to get claim delivery secret: ${response.status} - ${errorText}`
+    );
+  }
+
+  const data = await response.json();
+  return data.secret;
+}
+
+/**
+ * Load QR codes from POAP API and store them in database
+ * @param {string} eventId - POAP event ID
+ * @param {string} editCode - Edit code for the event
+ * @returns {Promise<{loaded: number, newCodes: number, existing: number}>} Result
+ */
+export async function loadQRCodesFromPOAP(
+  eventId: string,
+  editCode: string
+): Promise<{ loaded: number; newCodes: number; existing: number }> {
+  console.log(`Loading QR codes for event ${eventId}...`);
+
+  // Get all QR hashes for the event
+  const qrHashes = await getEventQRCodes(eventId, editCode);
+
+  if (qrHashes.length === 0) {
+    throw new Error('No QR codes found for this event');
+  }
+
+  console.log(`Found ${qrHashes.length} QR codes`);
+
+  let newCodes = 0;
+  let existing = 0;
+
+  // Process each QR hash
+  for (const qrHash of qrHashes) {
+    try {
+      // Check if already exists
+      const existingQR = await prisma.qRCode.findUnique({
+        where: { qrHash },
+      });
+
+      if (existingQR) {
+        existing++;
+        continue;
+      }
+
+      // Get the secret for this QR hash
+      console.log(`Getting secret for ${qrHash}...`);
+      const secret = await getClaimDeliverySecret(qrHash);
+
+      // Build mint link
+      const mintLink = `https://poap.xyz/claim/${qrHash}`;
+
+      // Store in database
+      await prisma.qRCode.create({
+        data: {
+          qrHash,
+          mintLink,
+          secret,
+        },
+      });
+
+      newCodes++;
+      console.log(`Loaded QR code: ${qrHash}`);
+
+      // Add small delay to avoid rate limiting
+      await new Promise(resolve => setTimeout(resolve, 100));
+    } catch (error) {
+      console.error(`Failed to process QR code ${qrHash}:`, error);
+    }
+  }
+
+  const loaded = newCodes + existing;
+  console.log(
+    `QR codes loaded: ${loaded} total (${newCodes} new, ${existing} existing)`
+  );
+
+  return { loaded, newCodes, existing };
+}

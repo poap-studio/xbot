@@ -22,6 +22,7 @@ export interface ProcessedTweet {
   authorUsername: string;
   hasImage: boolean;
   hasCode: boolean;
+  hiddenCode?: string; // The hidden code found in the tweet
   isEligible: boolean;
   createdAt: Date;
 }
@@ -56,19 +57,33 @@ function buildSearchQuery(criteria: SearchCriteria): string {
 }
 
 /**
- * Check if tweet text contains the required code
+ * Find a valid hidden code in the tweet text
+ * Searches for any unused hidden code from the database
  * @param {string} text - Tweet text
- * @param {string} requiredCode - Code to search for
- * @returns {boolean} True if code is found
+ * @returns {Promise<string | null>} The found hidden code or null
  */
-function containsRequiredCode(text: string, requiredCode: string): boolean {
-  if (!requiredCode) return true;
+async function findHiddenCode(text: string): Promise<string | null> {
+  // Get all available (unused) hidden codes
+  const availableCodes = await prisma.validCode.findMany({
+    where: { isUsed: false },
+    select: { code: true },
+  });
 
-  // Case-insensitive search
+  if (availableCodes.length === 0) {
+    return null;
+  }
+
+  // Check if any of the codes appear in the tweet text
   const lowerText = text.toLowerCase();
-  const lowerCode = requiredCode.toLowerCase();
 
-  return lowerText.includes(lowerCode);
+  for (const { code } of availableCodes) {
+    const lowerCode = code.toLowerCase();
+    if (lowerText.includes(lowerCode)) {
+      return code; // Return the original case code
+    }
+  }
+
+  return null;
 }
 
 /**
@@ -95,14 +110,15 @@ function hasImages(tweet: any): boolean {
  * Process tweet to determine eligibility
  * @param {any} tweet - Raw tweet from API
  * @param {SearchCriteria} criteria - Search criteria
+ * @param {string | null} hiddenCode - Hidden code found in tweet (if any)
  * @returns {ProcessedTweet} Processed tweet with eligibility info
  */
-function processTweet(tweet: any, criteria: SearchCriteria): ProcessedTweet {
+function processTweet(tweet: any, criteria: SearchCriteria, hiddenCode: string | null): ProcessedTweet {
   const hasImage = hasImages(tweet);
-  const hasCode = containsRequiredCode(tweet.text, criteria.requiredCode);
+  const hasCode = hiddenCode !== null;
 
   // Tweet is eligible if:
-  // 1. Has the required code (if specified)
+  // 1. Has a valid (unused) hidden code
   // 2. Has an image (if required)
   const isEligible = hasCode && (!criteria.requireImage || hasImage);
 
@@ -113,6 +129,7 @@ function processTweet(tweet: any, criteria: SearchCriteria): ProcessedTweet {
     authorUsername: tweet.includes?.users?.[0]?.username || 'unknown',
     hasImage,
     hasCode,
+    hiddenCode: hiddenCode || undefined,
     isEligible,
     createdAt: new Date(tweet.created_at),
   };
@@ -147,15 +164,21 @@ export async function searchTweets(
       return [];
     }
 
-    // Process tweets
-    const processedTweets = response.data.data.map((tweet: any) =>
-      processTweet(
-        {
-          ...tweet,
-          includes: response.data.includes,
-        },
-        criteria
-      )
+    // Process tweets (need to be async to check hidden codes)
+    const processedTweets = await Promise.all(
+      response.data.data.map(async (tweet: any) => {
+        // Find hidden code in tweet text
+        const hiddenCode = await findHiddenCode(tweet.text);
+
+        return processTweet(
+          {
+            ...tweet,
+            includes: response.data.includes,
+          },
+          criteria,
+          hiddenCode
+        );
+      })
     );
 
     console.log(

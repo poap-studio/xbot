@@ -7,6 +7,29 @@ import { searchNewEligibleTweets, saveTweets, type ProcessedTweet } from '@/lib/
 import { replyWithClaimUrl, hasBeenRepliedTo } from '@/lib/twitter/reply';
 import { reserveMintLink } from '@/lib/poap/api';
 import { recordDelivery, hasDelivery } from './delivery';
+import prisma from '@/lib/prisma';
+
+/**
+ * Mark a hidden code as used
+ * @param {string} code - The hidden code to mark as used
+ * @param {string} twitterId - The Twitter user ID who used it
+ */
+async function markHiddenCodeAsUsed(code: string, twitterId: string): Promise<void> {
+  try {
+    await prisma.validCode.update({
+      where: { code },
+      data: {
+        isUsed: true,
+        usedBy: twitterId,
+        usedAt: new Date(),
+      },
+    });
+    console.log(`Hidden code "${code}" marked as used by ${twitterId}`);
+  } catch (error) {
+    console.error(`Failed to mark hidden code as used:`, error);
+    throw error;
+  }
+}
 
 export interface ProcessResult {
   tweetsFound: number;
@@ -90,6 +113,11 @@ export async function processSingleTweet(
 
     // 6. Record delivery
     await recordDelivery(twitterUserId, username, tweetId, mintLink, qrHash);
+
+    // 7. Mark hidden code as used (if present)
+    if (tweet.hiddenCode) {
+      await markHiddenCodeAsUsed(tweet.hiddenCode, twitterUserId);
+    }
 
     console.log(
       `✅ Successfully delivered POAP to @${username} for tweet ${tweetId}`

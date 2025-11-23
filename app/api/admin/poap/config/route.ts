@@ -29,6 +29,7 @@ export async function GET() {
 
     return NextResponse.json({
       eventId: config.poapEventId || '',
+      editCode: config.poapEditCode || '',
       eventName: '', // Not stored in database
       searchQuery: config.twitterHashtag || '',
       replyTemplate: config.botReplyEligible || '',
@@ -56,12 +57,12 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
-    const { eventId, searchQuery, replyTemplate, replyEligible, replyNotEligible } = body;
+    const { eventId, editCode, searchQuery, replyTemplate, replyEligible, replyNotEligible } = body;
 
     // Validate required fields
-    if (!eventId || !searchQuery) {
+    if (!eventId) {
       return NextResponse.json(
-        { error: 'Event ID and search query are required' },
+        { error: 'Event ID is required' },
         { status: 400 }
       );
     }
@@ -86,8 +87,15 @@ export async function POST(request: NextRequest) {
       // Update existing config
       const updateData: any = {
         poapEventId: eventId,
-        twitterHashtag: searchQuery,
       };
+
+      if (editCode) {
+        updateData.poapEditCode = editCode;
+      }
+
+      if (searchQuery) {
+        updateData.twitterHashtag = searchQuery;
+      }
 
       if (eligibleMsg) {
         updateData.botReplyEligible = eligibleMsg;
@@ -113,6 +121,7 @@ export async function POST(request: NextRequest) {
       success: true,
       config: {
         eventId: config.poapEventId,
+        editCode: config.poapEditCode,
         searchQuery: config.twitterHashtag,
         replyTemplate: config.botReplyEligible,
         replyEligible: config.botReplyEligible,

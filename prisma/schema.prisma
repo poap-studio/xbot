@@ -9,8 +9,8 @@ generator client {
 
 model Config {
   id              String   @id @default(cuid())
-  poapEventId     String
-  poapSecretCode  String
+  poapEventId     String   @default("")
+  poapEditCode    String   @default("") // Edit code for POAP API to load QR codes
 
   // Reply messages
   botReplyEligible    String   @default("¡Felicidades! Has compartido el código correcto. Reclama tu POAP aquí: {{claimUrl}}")
@@ -18,7 +18,6 @@ model Config {
 
   // Search configuration
   twitterHashtag  String   @default("#POAP")
-  requiredCode    String   @default("ELIGIBLE") // Legacy: mantener por compatibilidad
 
   // POAP API credentials (encrypted)
   poapClientId    String?
