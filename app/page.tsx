@@ -117,7 +117,7 @@ export default function Home() {
             }}
           >
             <Typography variant="h1" sx={{ fontSize: '4rem', mb: 2 }}>
-              🎫
+              🏅
             </Typography>
             <Typography variant="h3" gutterBottom>
               POAP Twitter Bot
