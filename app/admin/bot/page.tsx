@@ -1,6 +1,6 @@
 /**
- * Bot Control Page
- * Start, stop and monitor the bot
+ * Bot Configuration Page
+ * Configure bot monitoring settings and response messages
  */
 
 'use client';
@@ -13,130 +13,105 @@ import {
   Card,
   Stack,
   Chip,
-  Button,
   CircularProgress,
   Alert,
   AlertTitle,
+  TextField,
+  Button,
+  Divider,
 } from '@mui/material';
 import {
-  PlayArrow as PlayArrowIcon,
-  Stop as StopIcon,
+  CheckCircle as CheckCircleIcon,
+  Error as ErrorIcon,
+  Save as SaveIcon,
   Refresh as RefreshIcon,
-  PlayCircle as PlayCircleIcon,
+  Schedule as ScheduleIcon,
 } from '@mui/icons-material';
 
-interface BotStatus {
-  running: boolean;
-  connected: boolean;
-  username?: string;
+interface BotConfig {
+  twitterHashtag: string;
+  botReplyEligible: string;
+  botReplyNotEligible: string;
+  botConnected: boolean;
+  botUsername?: string;
   lastRun?: string;
   processedToday: number;
   errors: number;
 }
 
-export default function BotControlPage() {
+export default function BotConfigPage() {
   const [loading, setLoading] = useState(true);
-  const [status, setStatus] = useState<BotStatus | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [config, setConfig] = useState<BotConfig>({
+    twitterHashtag: '',
+    botReplyEligible: '',
+    botReplyNotEligible: '',
+    botConnected: false,
+    processedToday: 0,
+    errors: 0,
+  });
   const [error, setError] = useState<string | null>(null);
-  const [actionLoading, setActionLoading] = useState(false);
+  const [success, setSuccess] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchStatus();
-    // Poll status every 10 seconds
-    const interval = setInterval(fetchStatus, 10000);
+    fetchConfig();
+    // Refresh stats every 30 seconds
+    const interval = setInterval(fetchConfig, 30000);
     return () => clearInterval(interval);
   }, []);
 
-  const fetchStatus = async () => {
+  const fetchConfig = async () => {
     try {
-      const response = await fetch('/api/admin/bot/status');
+      const response = await fetch('/api/admin/bot/config');
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to fetch status');
+        throw new Error(data.error || 'Failed to fetch configuration');
       }
 
-      setStatus(data);
+      setConfig(data);
       setError(null);
     } catch (error) {
-      console.error('Error fetching status:', error);
+      console.error('Error fetching config:', error);
       if (loading) {
-        setError(error instanceof Error ? error.message : 'Failed to load status');
+        setError(error instanceof Error ? error.message : 'Failed to load configuration');
       }
     } finally {
       setLoading(false);
     }
   };
 
-  const handleStart = async () => {
-    setActionLoading(true);
+  const handleSave = async () => {
+    setSaving(true);
     setError(null);
+    setSuccess(null);
 
     try {
-      const response = await fetch('/api/admin/bot/start', {
+      const response = await fetch('/api/admin/bot/config', {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          twitterHashtag: config.twitterHashtag,
+          botReplyEligible: config.botReplyEligible,
+          botReplyNotEligible: config.botReplyNotEligible,
+        }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to start bot');
+        throw new Error(data.error || 'Failed to save configuration');
       }
 
-      await fetchStatus();
+      setSuccess('Configuración guardada correctamente');
+      await fetchConfig();
     } catch (error) {
-      console.error('Error starting bot:', error);
-      setError(error instanceof Error ? error.message : 'Failed to start bot');
+      console.error('Error saving config:', error);
+      setError(error instanceof Error ? error.message : 'Failed to save configuration');
     } finally {
-      setActionLoading(false);
-    }
-  };
-
-  const handleStop = async () => {
-    setActionLoading(true);
-    setError(null);
-
-    try {
-      const response = await fetch('/api/admin/bot/stop', {
-        method: 'POST',
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to stop bot');
-      }
-
-      await fetchStatus();
-    } catch (error) {
-      console.error('Error stopping bot:', error);
-      setError(error instanceof Error ? error.message : 'Failed to stop bot');
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
-  const handleRunOnce = async () => {
-    setActionLoading(true);
-    setError(null);
-
-    try {
-      const response = await fetch('/api/admin/bot/run-once', {
-        method: 'POST',
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to run bot');
-      }
-
-      await fetchStatus();
-    } catch (error) {
-      console.error('Error running bot:', error);
-      setError(error instanceof Error ? error.message : 'Failed to run bot');
-    } finally {
-      setActionLoading(false);
+      setSaving(false);
     }
   };
 
@@ -156,31 +131,45 @@ export default function BotControlPage() {
         {/* Header */}
         <Box>
           <Typography variant="h4" gutterBottom sx={{ fontWeight: 'bold' }}>
-            Control del Bot
+            Configuración del Bot
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Inicia, detiene y monitorea el bot
+            El bot está siempre activo escuchando el hashtag configurado y respondiendo automáticamente
           </Typography>
         </Box>
 
-        {/* Error Alert */}
+        {/* Alerts */}
         {error && (
           <Alert severity="error" onClose={() => setError(null)}>
             {error}
           </Alert>
         )}
 
-        {/* Bot Status */}
+        {success && (
+          <Alert severity="success" onClose={() => setSuccess(null)}>
+            {success}
+          </Alert>
+        )}
+
+        {/* Bot Status Card */}
         <Card sx={{ p: 3 }}>
           <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 3 }}>
             <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-              Estado Actual
+              Estado del Bot
             </Typography>
-            <Chip
-              label={status?.running ? 'Ejecutándose' : 'Detenido'}
-              color={status?.running ? 'success' : 'default'}
-              icon={status?.running ? <PlayCircleIcon /> : <StopIcon />}
-            />
+            <Stack direction="row" spacing={1}>
+              <Chip
+                icon={<ScheduleIcon />}
+                label="Ejecuta cada minuto"
+                color="primary"
+                variant="outlined"
+              />
+              <Chip
+                icon={config.botConnected ? <CheckCircleIcon /> : <ErrorIcon />}
+                label={config.botConnected ? 'Conectado' : 'Desconectado'}
+                color={config.botConnected ? 'success' : 'error'}
+              />
+            </Stack>
           </Stack>
 
           <Box sx={{
@@ -188,6 +177,7 @@ export default function BotControlPage() {
             gridTemplateColumns: {
               xs: '1fr',
               sm: 'repeat(2, 1fr)',
+              md: 'repeat(4, 1fr)',
             },
             gap: 3,
           }}>
@@ -195,9 +185,9 @@ export default function BotControlPage() {
               <Typography variant="body2" color="text.secondary" gutterBottom>
                 Cuenta del Bot
               </Typography>
-              {status?.connected ? (
+              {config.botConnected && config.botUsername ? (
                 <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-                  @{status.username}
+                  @{config.botUsername}
                 </Typography>
               ) : (
                 <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'error.main' }}>
@@ -211,8 +201,8 @@ export default function BotControlPage() {
                 Última Ejecución
               </Typography>
               <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-                {status?.lastRun
-                  ? new Date(status.lastRun).toLocaleString('es-ES')
+                {config.lastRun
+                  ? new Date(config.lastRun).toLocaleString('es-ES')
                   : 'Nunca'}
               </Typography>
             </Box>
@@ -221,8 +211,8 @@ export default function BotControlPage() {
               <Typography variant="body2" color="text.secondary" gutterBottom>
                 Procesados Hoy
               </Typography>
-              <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-                {status?.processedToday || 0} tweets
+              <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'success.main' }}>
+                {config.processedToday || 0} tweets
               </Typography>
             </Box>
 
@@ -230,76 +220,104 @@ export default function BotControlPage() {
               <Typography variant="body2" color="text.secondary" gutterBottom>
                 Errores Hoy
               </Typography>
-              <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-                {status?.errors || 0}
+              <Typography variant="h6" sx={{ fontWeight: 'bold', color: config.errors > 0 ? 'error.main' : 'text.primary' }}>
+                {config.errors || 0}
               </Typography>
             </Box>
           </Box>
-        </Card>
 
-        {/* Control Actions */}
-        <Card sx={{ p: 3 }}>
-          <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', mb: 3 }}>
-            Acciones
-          </Typography>
-
-          <Stack direction="row" spacing={2} flexWrap="wrap" useFlexGap>
-            {!status?.running ? (
-              <Button
-                variant="contained"
-                color="success"
-                startIcon={actionLoading ? <CircularProgress size={20} color="inherit" /> : <PlayArrowIcon />}
-                onClick={handleStart}
-                disabled={actionLoading || !status?.connected}
-              >
-                {actionLoading ? 'Iniciando...' : 'Iniciar Bot'}
-              </Button>
-            ) : (
-              <Button
-                variant="contained"
-                color="error"
-                startIcon={actionLoading ? <CircularProgress size={20} color="inherit" /> : <StopIcon />}
-                onClick={handleStop}
-                disabled={actionLoading}
-              >
-                {actionLoading ? 'Deteniendo...' : 'Detener Bot'}
-              </Button>
-            )}
-
-            <Button
-              variant="contained"
-              startIcon={actionLoading ? <CircularProgress size={20} color="inherit" /> : <PlayCircleIcon />}
-              onClick={handleRunOnce}
-              disabled={actionLoading || status?.running || !status?.connected}
-            >
-              {actionLoading ? 'Ejecutando...' : 'Ejecutar Una Vez'}
-            </Button>
-
+          <Box sx={{ mt: 3, display: 'flex', justifyContent: 'flex-end' }}>
             <Button
               variant="outlined"
               startIcon={<RefreshIcon />}
-              onClick={fetchStatus}
-              disabled={actionLoading}
+              onClick={fetchConfig}
+              size="small"
             >
               Actualizar Estado
             </Button>
-          </Stack>
+          </Box>
 
-          {!status?.connected && (
+          {!config.botConnected && (
             <Alert severity="warning" sx={{ mt: 3 }}>
               <AlertTitle>Cuenta No Conectada</AlertTitle>
-              La cuenta del bot no está conectada. Por favor, conecta la cuenta del bot en el Dashboard antes de iniciar.
+              La cuenta del bot no está conectada. Por favor, conecta la cuenta del bot en el Dashboard.
             </Alert>
           )}
         </Card>
 
+        {/* Configuration Form */}
+        <Card sx={{ p: 3 }}>
+          <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', mb: 3 }}>
+            Configuración de Monitoreo
+          </Typography>
+
+          <Stack spacing={3}>
+            <TextField
+              label="Hashtag a Monitorear"
+              value={config.twitterHashtag}
+              onChange={(e) => setConfig({ ...config, twitterHashtag: e.target.value })}
+              fullWidth
+              placeholder="#POAP"
+              helperText="El bot buscará tweets con este hashtag. Incluye el símbolo #"
+            />
+
+            <Divider />
+
+            <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+              Mensajes de Respuesta
+            </Typography>
+
+            <TextField
+              label="Mensaje para Tweets Elegibles"
+              value={config.botReplyEligible}
+              onChange={(e) => setConfig({ ...config, botReplyEligible: e.target.value })}
+              fullWidth
+              multiline
+              rows={3}
+              placeholder="¡Felicidades! Has compartido el código correcto. Reclama tu POAP aquí: {{claimUrl}}"
+              helperText="Usa {{claimUrl}} donde quieres que aparezca el enlace de reclamación"
+            />
+
+            <TextField
+              label="Mensaje para Tweets No Elegibles"
+              value={config.botReplyNotEligible}
+              onChange={(e) => setConfig({ ...config, botReplyNotEligible: e.target.value })}
+              fullWidth
+              multiline
+              rows={3}
+              placeholder="Gracias por tu interés. Asegúrate de incluir un código válido y una imagen en tu tweet."
+              helperText="Este mensaje se enviará cuando el tweet no cumpla los requisitos"
+            />
+
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
+              <Button
+                variant="outlined"
+                onClick={fetchConfig}
+                disabled={saving}
+              >
+                Cancelar
+              </Button>
+              <Button
+                variant="contained"
+                startIcon={saving ? <CircularProgress size={20} color="inherit" /> : <SaveIcon />}
+                onClick={handleSave}
+                disabled={saving}
+              >
+                {saving ? 'Guardando...' : 'Guardar Configuración'}
+              </Button>
+            </Box>
+          </Stack>
+        </Card>
+
         {/* Information */}
         <Alert severity="info">
-          <AlertTitle>Acerca del Control del Bot</AlertTitle>
+          <AlertTitle>¿Cómo Funciona el Bot?</AlertTitle>
           <Box component="ul" sx={{ m: 0, pl: 2 }}>
-            <li><strong>Iniciar Bot</strong>: Ejecuta el bot continuamente en segundo plano</li>
-            <li><strong>Detener Bot</strong>: Detiene el proceso en segundo plano</li>
-            <li><strong>Ejecutar Una Vez</strong>: Procesa tweets una vez sin monitoreo continuo</li>
+            <li>El bot se ejecuta automáticamente <strong>cada minuto</strong> mediante un cron job de Vercel</li>
+            <li>Busca tweets nuevos que contengan el <strong>hashtag configurado</strong></li>
+            <li>Verifica que el tweet tenga un <strong>código válido</strong> y una <strong>imagen</strong></li>
+            <li>Si es elegible, responde automáticamente con el mensaje configurado y un enlace de reclamación</li>
+            <li>Si no es elegible, responde con el mensaje de "no elegible"</li>
           </Box>
         </Alert>
       </Stack>

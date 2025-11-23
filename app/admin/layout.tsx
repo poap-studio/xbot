@@ -36,7 +36,7 @@ const navigation = [
   { name: 'Dashboard', href: '/admin', icon: <DashboardIcon /> },
   { name: 'POAP Config', href: '/admin/poap', icon: <SettingsIcon /> },
   { name: 'Mint Links', href: '/admin/mint-links', icon: <LinkIcon /> },
-  { name: 'Bot Control', href: '/admin/bot', icon: <SmartToyIcon /> },
+  { name: 'Bot Config', href: '/admin/bot', icon: <SmartToyIcon /> },
   { name: 'Deliveries', href: '/admin/deliveries', icon: <DeliveryIcon /> },
   { name: 'Cron Logs', href: '/admin/cron-logs', icon: <LogsIcon /> },
 ];
