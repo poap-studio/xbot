@@ -151,6 +151,34 @@ export default function BotConfigPage() {
           </Alert>
         )}
 
+        {/* Connection Alert for disconnected bot */}
+        {!config.botConnected && (
+          <Alert
+            severity="error"
+            sx={{
+              '& .MuiAlert-message': { width: '100%' },
+            }}
+          >
+            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems="center" justifyContent="space-between">
+              <Box>
+                <AlertTitle sx={{ fontWeight: 'bold' }}>Cuenta del Bot No Conectada</AlertTitle>
+                <Typography variant="body2">
+                  Necesitas conectar una cuenta de Twitter con permisos de escritura para que el bot pueda responder automáticamente a los tweets.
+                </Typography>
+              </Box>
+              <Button
+                variant="contained"
+                color="error"
+                size="large"
+                href="/api/auth/bot-twitter"
+                sx={{ whiteSpace: 'nowrap', minWidth: 200 }}
+              >
+                Conectar Cuenta de Twitter
+              </Button>
+            </Stack>
+          </Alert>
+        )}
+
         {/* Bot Status Card */}
         <Card sx={{ p: 3 }}>
           <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 3 }}>
@@ -236,13 +264,6 @@ export default function BotConfigPage() {
               Actualizar Estado
             </Button>
           </Box>
-
-          {!config.botConnected && (
-            <Alert severity="warning" sx={{ mt: 3 }}>
-              <AlertTitle>Cuenta No Conectada</AlertTitle>
-              La cuenta del bot no está conectada. Por favor, conecta la cuenta del bot en el Dashboard.
-            </Alert>
-          )}
         </Card>
 
         {/* Configuration Form */}
