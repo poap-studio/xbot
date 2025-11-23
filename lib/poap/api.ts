@@ -376,23 +376,18 @@ export async function getMintLinkStats(): Promise<{
  * @param {string} editCode - Edit code (secret_code) for the event (6 digit code)
  * @returns {Promise<Array>} Array of QR code hashes
  */
-export async function getEventQRCodes(
+/**
+ * Internal function to make QR codes request
+ */
+async function makeQRCodesRequest(
   eventId: string,
-  editCode: string
-): Promise<string[]> {
+  editCode: string,
+  token: string,
+  apiKey: string
+): Promise<Response> {
   const url = `${POAP_API_BASE}/event/${eventId}/qr-codes`;
 
-  console.log(`[POAP API] Getting QR codes for event ${eventId}...`);
-
-  // This endpoint requires OAuth2 Bearer token
-  const token = await getValidToken();
-  const apiKey = (process.env.POAP_API_KEY || '').trim();
-
-  console.log(`[POAP API] Token length: ${token?.length || 0}`);
-  console.log(`[POAP API] API Key length: ${apiKey?.length || 0}`);
-  console.log(`[POAP API] Edit code: ${editCode}`);
-
-  const response = await fetch(url, {
+  return await fetch(url, {
     method: 'POST',
     headers: {
       'accept': 'application/json',
@@ -404,12 +399,45 @@ export async function getEventQRCodes(
       secret_code: editCode,
     }),
   });
+}
+
+export async function getEventQRCodes(
+  eventId: string,
+  editCode: string,
+  retryOnAuth: boolean = true
+): Promise<string[]> {
+  console.log(`[POAP API] Getting QR codes for event ${eventId}...`);
+
+  // This endpoint requires OAuth2 Bearer token
+  const token = await getValidToken();
+  const apiKey = (process.env.POAP_API_KEY || '').trim();
+
+  console.log(`[POAP API] Token length: ${token?.length || 0}`);
+  console.log(`[POAP API] API Key length: ${apiKey?.length || 0}`);
+  console.log(`[POAP API] Edit code: ${editCode}`);
+
+  const response = await makeQRCodesRequest(eventId, editCode, token, apiKey);
 
   if (!response.ok) {
     const errorText = await response.text();
 
     console.error(`[POAP API] Request failed: ${response.status}`);
     console.error(`[POAP API] Error response: ${errorText}`);
+
+    // If we get 401/403 and haven't retried yet, refresh token and retry
+    if ((response.status === 401 || response.status === 403) && retryOnAuth) {
+      console.log('[POAP API] Authentication failed, refreshing token and retrying...');
+
+      // Clear current token from database
+      await prisma.poapAuth.deleteMany({});
+
+      // Get new token
+      const newToken = await getValidToken();
+      console.log(`[POAP API] New token obtained, length: ${newToken?.length || 0}`);
+
+      // Retry request with new token (retryOnAuth = false to prevent infinite loop)
+      return await getEventQRCodes(eventId, editCode, false);
+    }
 
     // Provide helpful error messages
     if (response.status === 400 && errorText.includes('Invalid edit code')) {
@@ -430,8 +458,30 @@ export async function getEventQRCodes(
   }
 
   const data = await response.json();
+  console.log(`[POAP API] Successfully retrieved ${data.length} QR codes`);
+
   // The API returns an array of objects with qr_hash property
   return data.map((item: any) => item.qr_hash);
+}
+
+/**
+ * Internal function to make claim secret request
+ */
+async function makeClaimSecretRequest(
+  qrHash: string,
+  token: string,
+  apiKey: string
+): Promise<Response> {
+  const url = `${POAP_API_BASE}/actions/claim-qr?qr_hash=${qrHash}`;
+
+  return await fetch(url, {
+    method: 'GET',
+    headers: {
+      'accept': 'application/json',
+      'Authorization': `Bearer ${token}`,
+      'X-API-Key': apiKey,
+    },
+  });
 }
 
 /**
@@ -439,31 +489,45 @@ export async function getEventQRCodes(
  * This endpoint requires OAuth2 Bearer token authentication
  * Documentation: https://documentation.poap.tech/reference/getactionsclaim-qr
  * @param {string} qrHash - QR hash
+ * @param {boolean} retryOnAuth - Whether to retry on auth failure (default: true)
  * @returns {Promise<string>} Secret for claiming the POAP
  */
-export async function getClaimSecret(qrHash: string): Promise<string> {
-  const url = `${POAP_API_BASE}/actions/claim-qr?qr_hash=${qrHash}`;
+export async function getClaimSecret(
+  qrHash: string,
+  retryOnAuth: boolean = true
+): Promise<string> {
+  console.log(`[POAP API] Getting secret for QR hash ${qrHash}...`);
 
   // This endpoint requires OAuth2 Bearer token
   const token = await getValidToken();
+  const apiKey = (process.env.POAP_API_KEY || '').trim();
 
-  const response = await fetch(url, {
-    method: 'GET',
-    headers: {
-      'accept': 'application/json',
-      'Authorization': `Bearer ${token}`,
-      'X-API-Key': (process.env.POAP_API_KEY || '').trim(),
-    },
-  });
+  const response = await makeClaimSecretRequest(qrHash, token, apiKey);
 
   if (!response.ok) {
     const errorText = await response.text();
+
+    console.error(`[POAP API] Get secret failed: ${response.status}`);
+    console.error(`[POAP API] Error response: ${errorText}`);
+
+    // If we get 401/403 and haven't retried yet, refresh token and retry
+    if ((response.status === 401 || response.status === 403) && retryOnAuth) {
+      console.log('[POAP API] Authentication failed, refreshing token and retrying...');
+
+      // Clear current token from database
+      await prisma.poapAuth.deleteMany({});
+
+      // Get new token and retry (retryOnAuth = false to prevent infinite loop)
+      return await getClaimSecret(qrHash, false);
+    }
+
     throw new Error(
       `Failed to get claim secret: ${response.status} - ${errorText}`
     );
   }
 
   const data = await response.json();
+  console.log(`[POAP API] Secret obtained for ${qrHash}`);
   return data.secret;
 }
 
