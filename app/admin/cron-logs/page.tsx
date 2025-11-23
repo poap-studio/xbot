@@ -6,7 +6,36 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
+import {
+  Box,
+  Container,
+  Typography,
+  Card,
+  Stack,
+  Button,
+  CircularProgress,
+  Alert,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  Chip,
+  ToggleButton,
+  ToggleButtonGroup,
+  Collapse,
+  IconButton,
+} from '@mui/material';
+import {
+  Refresh as RefreshIcon,
+  CheckCircle as CheckCircleIcon,
+  Error as ErrorIcon,
+  Warning as WarningIcon,
+  ExpandMore as ExpandMoreIcon,
+  ExpandLess as ExpandLessIcon,
+} from '@mui/icons-material';
 
 interface CronLog {
   id: string;
@@ -68,16 +97,16 @@ export default function CronLogsPage() {
     }
   };
 
-  const getStatusColor = (status: string) => {
+  const getStatusChip = (status: string) => {
     switch (status) {
       case 'success':
-        return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
+        return <Chip icon={<CheckCircleIcon />} label="Success" color="success" size="small" />;
       case 'error':
-        return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
+        return <Chip icon={<ErrorIcon />} label="Error" color="error" size="small" />;
       case 'warning':
-        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
+        return <Chip icon={<WarningIcon />} label="Warning" color="warning" size="small" />;
       default:
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200';
+        return <Chip label={status} size="small" />;
     }
   };
 
@@ -90,229 +119,254 @@ export default function CronLogsPage() {
 
   if (loading && !data) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-      </div>
+      <Container maxWidth="lg" sx={{ py: 4 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
+          <CircularProgress />
+        </Box>
+      </Container>
     );
   }
 
-  if (error) {
+  if (error && !data) {
     return (
-      <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
-        <p className="text-sm text-red-800 dark:text-red-200">{error}</p>
-        <button
-          onClick={fetchLogs}
-          className="mt-2 text-sm font-medium text-red-600 dark:text-red-400 hover:underline"
+      <Container maxWidth="lg" sx={{ py: 4 }}>
+        <Alert
+          severity="error"
+          action={
+            <Button color="inherit" size="small" onClick={fetchLogs}>
+              Reintentar
+            </Button>
+          }
         >
-          Try again
-        </button>
-      </div>
+          {error}
+        </Alert>
+      </Container>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-            Cron Job Logs
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400">
-            Monitor automated bot executions and errors
-          </p>
-        </div>
-        <Link
-          href="/admin"
-          className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-        >
-          ← Back to Dashboard
-        </Link>
-      </div>
+    <Container maxWidth="lg" sx={{ py: 4 }}>
+      <Stack spacing={3}>
+        {/* Header */}
+        <Box>
+          <Typography variant="h4" gutterBottom sx={{ fontWeight: 'bold' }}>
+            Logs de Cron Jobs
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Monitorea las ejecuciones automáticas del bot y errores
+          </Typography>
+        </Box>
 
-      {/* Stats */}
-      {data && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">
-              Total Executions
-            </h3>
-            <p className="text-3xl font-bold text-gray-900 dark:text-white">
-              {data.stats.total}
-            </p>
-          </div>
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">
-              Last 24 Hours
-            </h3>
-            <p className="text-3xl font-bold text-gray-900 dark:text-white">
-              {data.stats.last24Hours}
-            </p>
-          </div>
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">
-              Success Rate
-            </h3>
-            <p className="text-3xl font-bold text-gray-900 dark:text-white">
-              {data.stats.successRate}%
-            </p>
-          </div>
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">
-              Errors
-            </h3>
-            <p className="text-3xl font-bold text-gray-900 dark:text-white">
-              {data.stats.byStatus.error || 0}
-            </p>
-          </div>
-        </div>
-      )}
+        {/* Error Alert */}
+        {error && (
+          <Alert severity="error" onClose={() => setError(null)}>
+            {error}
+          </Alert>
+        )}
 
-      {/* Filters */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-            Filter:
-          </span>
-          {['all', 'success', 'warning', 'error'].map((f) => (
-            <button
-              key={f}
-              onClick={() => setFilter(f)}
-              className={`px-3 py-1 text-sm font-medium rounded-lg transition-colors ${
-                filter === f
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-              }`}
+        {/* Stats Grid */}
+        {data && (
+          <Box sx={{
+            display: 'grid',
+            gridTemplateColumns: {
+              xs: '1fr',
+              sm: 'repeat(2, 1fr)',
+              md: 'repeat(4, 1fr)',
+            },
+            gap: 2,
+          }}>
+            <Card sx={{ p: 3 }}>
+              <Typography variant="body2" color="text.secondary" gutterBottom sx={{ fontWeight: 'medium' }}>
+                Total Ejecuciones
+              </Typography>
+              <Typography variant="h3" sx={{ fontWeight: 'bold' }}>
+                {data.stats.total}
+              </Typography>
+            </Card>
+
+            <Card sx={{ p: 3 }}>
+              <Typography variant="body2" color="text.secondary" gutterBottom sx={{ fontWeight: 'medium' }}>
+                Últimas 24 Horas
+              </Typography>
+              <Typography variant="h3" sx={{ fontWeight: 'bold' }}>
+                {data.stats.last24Hours}
+              </Typography>
+            </Card>
+
+            <Card sx={{ p: 3 }}>
+              <Typography variant="body2" color="text.secondary" gutterBottom sx={{ fontWeight: 'medium' }}>
+                Tasa de Éxito
+              </Typography>
+              <Typography variant="h3" sx={{ fontWeight: 'bold', color: 'success.main' }}>
+                {data.stats.successRate}%
+              </Typography>
+            </Card>
+
+            <Card sx={{ p: 3 }}>
+              <Typography variant="body2" color="text.secondary" gutterBottom sx={{ fontWeight: 'medium' }}>
+                Errores
+              </Typography>
+              <Typography variant="h3" sx={{ fontWeight: 'bold', color: 'error.main' }}>
+                {data.stats.byStatus.error || 0}
+              </Typography>
+            </Card>
+          </Box>
+        )}
+
+        {/* Filters */}
+        <Card sx={{ p: 3 }}>
+          <Stack direction="row" spacing={2} alignItems="center" justifyContent="space-between" flexWrap="wrap">
+            <ToggleButtonGroup
+              value={filter}
+              exclusive
+              onChange={(_, newFilter) => {
+                if (newFilter !== null) {
+                  setFilter(newFilter);
+                }
+              }}
+              size="small"
             >
-              {f.charAt(0).toUpperCase() + f.slice(1)}
-            </button>
-          ))}
-          <button
-            onClick={fetchLogs}
-            className="ml-auto px-3 py-1 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-            disabled={loading}
-          >
-            {loading ? 'Refreshing...' : 'Refresh'}
-          </button>
-        </div>
-      </div>
+              <ToggleButton value="all">Todos</ToggleButton>
+              <ToggleButton value="success">Exitosos</ToggleButton>
+              <ToggleButton value="warning">Advertencias</ToggleButton>
+              <ToggleButton value="error">Errores</ToggleButton>
+            </ToggleButtonGroup>
 
-      {/* Logs Table */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-            <thead className="bg-gray-50 dark:bg-gray-900">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Started At
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Duration
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Tweets
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Processed
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Failed
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Details
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-              {data?.logs.map((log) => (
-                <>
-                  <tr key={log.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(
-                          log.status
-                        )}`}
-                      >
-                        {log.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                      {new Date(log.startedAt).toLocaleString()}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
-                      {formatDuration(log.executionTime)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                      {log.tweetsFound}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600 dark:text-green-400">
-                      {log.processed}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-red-600 dark:text-red-400">
-                      {log.failed}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      {log.errorMessage && (
-                        <button
-                          onClick={() =>
-                            setExpandedLog(
-                              expandedLog === log.id ? null : log.id
-                            )
-                          }
-                          className="text-blue-600 dark:text-blue-400 hover:underline"
-                        >
-                          {expandedLog === log.id ? 'Hide' : 'Show'} Error
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                  {expandedLog === log.id && log.errorMessage && (
-                    <tr>
-                      <td colSpan={7} className="px-6 py-4 bg-gray-50 dark:bg-gray-900">
-                        <div className="space-y-2">
-                          <div>
-                            <span className="text-sm font-medium text-gray-900 dark:text-white">
-                              Error Message:
-                            </span>
-                            <p className="text-sm text-red-600 dark:text-red-400 mt-1">
-                              {log.errorMessage}
-                            </p>
-                          </div>
-                          {log.errorDetails && (
-                            <div>
-                              <span className="text-sm font-medium text-gray-900 dark:text-white">
-                                Details:
-                              </span>
-                              <pre className="text-xs text-gray-600 dark:text-gray-400 mt-1 overflow-x-auto bg-white dark:bg-gray-800 p-2 rounded border border-gray-200 dark:border-gray-700">
-                                {typeof log.errorDetails === 'string'
-                                  ? log.errorDetails
-                                  : JSON.stringify(log.errorDetails, null, 2)}
-                              </pre>
-                            </div>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  )}
-                </>
-              ))}
-              {data?.logs.length === 0 && (
-                <tr>
-                  <td
-                    colSpan={7}
-                    className="px-6 py-8 text-center text-sm text-gray-500 dark:text-gray-400"
-                  >
-                    No cron logs found
-                  </td>
-                </tr>
+            <Button
+              variant="outlined"
+              startIcon={loading ? <CircularProgress size={20} /> : <RefreshIcon />}
+              onClick={fetchLogs}
+              disabled={loading}
+            >
+              {loading ? 'Actualizando...' : 'Actualizar'}
+            </Button>
+          </Stack>
+        </Card>
+
+        {/* Logs Table */}
+        <TableContainer component={Paper}>
+          <Table>
+            <TableHead>
+              <TableRow sx={{ bgcolor: 'action.hover' }}>
+                <TableCell sx={{ fontWeight: 'bold' }}>Estado</TableCell>
+                <TableCell sx={{ fontWeight: 'bold' }}>Inicio</TableCell>
+                <TableCell sx={{ fontWeight: 'bold' }}>Duración</TableCell>
+                <TableCell sx={{ fontWeight: 'bold' }}>Tweets</TableCell>
+                <TableCell sx={{ fontWeight: 'bold' }}>Procesados</TableCell>
+                <TableCell sx={{ fontWeight: 'bold' }}>Fallidos</TableCell>
+                <TableCell sx={{ fontWeight: 'bold' }}>Detalles</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {data?.logs.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} align="center" sx={{ py: 8 }}>
+                    <Typography variant="body2" color="text.secondary">
+                      No se encontraron logs
+                    </Typography>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                data?.logs.map((log) => (
+                  <>
+                    <TableRow
+                      key={log.id}
+                      sx={{
+                        '&:hover': { bgcolor: 'action.hover' },
+                        transition: 'background-color 0.2s',
+                      }}
+                    >
+                      <TableCell>{getStatusChip(log.status)}</TableCell>
+                      <TableCell>
+                        <Typography variant="body2">
+                          {new Date(log.startedAt).toLocaleDateString('es-ES')}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {new Date(log.startedAt).toLocaleTimeString('es-ES')}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2" color="text.secondary">
+                          {formatDuration(log.executionTime)}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2">{log.tweetsFound}</Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2" sx={{ color: 'success.main', fontWeight: 'medium' }}>
+                          {log.processed}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2" sx={{ color: 'error.main', fontWeight: 'medium' }}>
+                          {log.failed}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        {log.errorMessage && (
+                          <IconButton
+                            size="small"
+                            onClick={() => setExpandedLog(expandedLog === log.id ? null : log.id)}
+                          >
+                            {expandedLog === log.id ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+                          </IconButton>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                    {log.errorMessage && (
+                      <TableRow>
+                        <TableCell colSpan={7} sx={{ py: 0, border: 0 }}>
+                          <Collapse in={expandedLog === log.id} timeout="auto" unmountOnExit>
+                            <Box sx={{ p: 3, bgcolor: 'action.hover', m: 2, borderRadius: 1 }}>
+                              <Stack spacing={2}>
+                                <Box>
+                                  <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1 }}>
+                                    Mensaje de Error:
+                                  </Typography>
+                                  <Typography variant="body2" color="error">
+                                    {log.errorMessage}
+                                  </Typography>
+                                </Box>
+                                {log.errorDetails && (
+                                  <Box>
+                                    <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1 }}>
+                                      Detalles:
+                                    </Typography>
+                                    <Paper
+                                      variant="outlined"
+                                      sx={{
+                                        p: 2,
+                                        bgcolor: 'background.paper',
+                                        overflow: 'auto',
+                                        maxHeight: 300,
+                                      }}
+                                    >
+                                      <Typography
+                                        component="pre"
+                                        variant="caption"
+                                        sx={{ fontFamily: 'monospace', whiteSpace: 'pre-wrap' }}
+                                      >
+                                        {typeof log.errorDetails === 'string'
+                                          ? log.errorDetails
+                                          : JSON.stringify(log.errorDetails, null, 2)}
+                                      </Typography>
+                                    </Paper>
+                                  </Box>
+                                )}
+                              </Stack>
+                            </Box>
+                          </Collapse>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </>
+                ))
               )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </Stack>
+    </Container>
   );
 }

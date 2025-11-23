@@ -6,6 +6,35 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import {
+  Box,
+  Container,
+  Typography,
+  Card,
+  Stack,
+  Button,
+  CircularProgress,
+  Alert,
+  TextField,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  Chip,
+  ToggleButton,
+  ToggleButtonGroup,
+  Link as MuiLink,
+} from '@mui/material';
+import {
+  Download as DownloadIcon,
+  CheckCircle as CheckCircleIcon,
+  HourglassEmpty as HourglassEmptyIcon,
+  FilterList as FilterListIcon,
+  Search as SearchIcon,
+} from '@mui/icons-material';
 
 interface Delivery {
   id: string;
@@ -80,184 +109,236 @@ export default function DeliveriesPage() {
     setFilteredDeliveries(filtered);
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-      </div>
-    );
-  }
-
   const handleExportCSV = () => {
     window.location.href = '/api/admin/deliveries/csv';
   };
 
+  if (loading) {
+    return (
+      <Container maxWidth="lg" sx={{ py: 4 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
+          <CircularProgress />
+        </Box>
+      </Container>
+    );
+  }
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-            Deliveries
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400">
-            Monitor all POAP deliveries
-          </p>
-        </div>
-        <button
-          onClick={handleExportCSV}
-          className="px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600 rounded-lg transition-colors flex items-center gap-2"
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-          </svg>
-          Export CSV
-        </button>
-      </div>
-
-      {error && (
-        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
-          <p className="text-sm text-red-800 dark:text-red-200">{error}</p>
-          <button
-            onClick={fetchDeliveries}
-            className="mt-2 text-sm font-medium text-red-600 dark:text-red-400 hover:underline"
+    <Container maxWidth="lg" sx={{ py: 4 }}>
+      <Stack spacing={3}>
+        {/* Header */}
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <Box>
+            <Typography variant="h4" gutterBottom sx={{ fontWeight: 'bold' }}>
+              Entregas
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Monitorea todas las entregas de POAP
+            </Typography>
+          </Box>
+          <Button
+            variant="contained"
+            color="success"
+            startIcon={<DownloadIcon />}
+            onClick={handleExportCSV}
           >
-            Try again
-          </button>
-        </div>
-      )}
+            Exportar CSV
+          </Button>
+        </Box>
 
-      {/* Filters */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
-        <div className="flex flex-col sm:flex-row gap-4">
-          {/* Search */}
-          <div className="flex-1">
-            <input
-              type="text"
+        {/* Error Alert */}
+        {error && (
+          <Alert
+            severity="error"
+            onClose={() => setError(null)}
+            action={
+              <Button color="inherit" size="small" onClick={fetchDeliveries}>
+                Reintentar
+              </Button>
+            }
+          >
+            {error}
+          </Alert>
+        )}
+
+        {/* Filters Card */}
+        <Card sx={{ p: 3 }}>
+          <Stack spacing={3}>
+            {/* Search */}
+            <TextField
+              fullWidth
+              placeholder="Buscar por usuario, ID de tweet o QR hash..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by username, tweet ID, or QR hash..."
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              InputProps={{
+                startAdornment: <SearchIcon sx={{ mr: 1, color: 'text.secondary' }} />,
+              }}
             />
-          </div>
 
-          {/* Status Filter */}
-          <div className="flex gap-2">
-            <button
-              onClick={() => setFilter('all')}
-              className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-                filter === 'all'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-              }`}
-            >
-              All ({deliveries.length})
-            </button>
-            <button
-              onClick={() => setFilter('claimed')}
-              className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-                filter === 'claimed'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-              }`}
-            >
-              Claimed ({deliveries.filter((d) => d.claimed).length})
-            </button>
-            <button
-              onClick={() => setFilter('unclaimed')}
-              className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-                filter === 'unclaimed'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-              }`}
-            >
-              Unclaimed ({deliveries.filter((d) => !d.claimed).length})
-            </button>
-          </div>
-        </div>
-      </div>
+            {/* Status Filter */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <FilterListIcon sx={{ color: 'text.secondary' }} />
+              <ToggleButtonGroup
+                value={filter}
+                exclusive
+                onChange={(_, newFilter) => {
+                  if (newFilter !== null) {
+                    setFilter(newFilter);
+                  }
+                }}
+                size="small"
+              >
+                <ToggleButton value="all">
+                  Todas ({deliveries.length})
+                </ToggleButton>
+                <ToggleButton value="claimed">
+                  Reclamadas ({deliveries.filter((d) => d.claimed).length})
+                </ToggleButton>
+                <ToggleButton value="unclaimed">
+                  Pendientes ({deliveries.filter((d) => !d.claimed).length})
+                </ToggleButton>
+              </ToggleButtonGroup>
+            </Box>
+          </Stack>
+        </Card>
 
-      {/* Deliveries Table */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-            <thead className="bg-gray-50 dark:bg-gray-900">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  User
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Tweet
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  QR Hash
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Delivered
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Status
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+        {/* Deliveries Table */}
+        <TableContainer component={Paper}>
+          <Table>
+            <TableHead>
+              <TableRow sx={{ bgcolor: 'action.hover' }}>
+                <TableCell sx={{ fontWeight: 'bold' }}>Usuario</TableCell>
+                <TableCell sx={{ fontWeight: 'bold' }}>Tweet</TableCell>
+                <TableCell sx={{ fontWeight: 'bold' }}>QR Hash</TableCell>
+                <TableCell sx={{ fontWeight: 'bold' }}>Entregado</TableCell>
+                <TableCell sx={{ fontWeight: 'bold' }}>Estado</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
               {filteredDeliveries.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={5}
-                    className="px-6 py-4 text-center text-sm text-gray-500 dark:text-gray-400"
-                  >
-                    No deliveries found
-                  </td>
-                </tr>
+                <TableRow>
+                  <TableCell colSpan={5} align="center" sx={{ py: 8 }}>
+                    <Typography variant="body2" color="text.secondary">
+                      No se encontraron entregas
+                    </Typography>
+                  </TableCell>
+                </TableRow>
               ) : (
                 filteredDeliveries.map((delivery) => (
-                  <tr key={delivery.id}>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900 dark:text-white">
+                  <TableRow
+                    key={delivery.id}
+                    sx={{
+                      '&:hover': { bgcolor: 'action.hover' },
+                      transition: 'background-color 0.2s',
+                    }}
+                  >
+                    <TableCell>
+                      <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
                         @{delivery.username}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <a
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <MuiLink
                         href={`https://twitter.com/i/web/status/${delivery.tweetId}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
+                        underline="hover"
+                        sx={{ fontFamily: 'monospace', fontSize: '0.875rem' }}
                       >
                         {delivery.tweetId}
-                      </a>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <code className="text-sm text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">
+                      </MuiLink>
+                    </TableCell>
+                    <TableCell>
+                      <Box
+                        component="code"
+                        sx={{
+                          px: 1,
+                          py: 0.5,
+                          borderRadius: 1,
+                          bgcolor: 'action.hover',
+                          fontSize: '0.875rem',
+                          fontFamily: 'monospace',
+                        }}
+                      >
                         {delivery.qrHash.substring(0, 8)}...
-                      </code>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900 dark:text-white">
-                        {new Date(delivery.deliveredAt).toLocaleDateString()}
-                      </div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400">
-                        {new Date(delivery.deliveredAt).toLocaleTimeString()}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                      </Box>
+                    </TableCell>
+                    <TableCell>
+                      <Box>
+                        <Typography variant="body2">
+                          {new Date(delivery.deliveredAt).toLocaleDateString('es-ES')}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {new Date(delivery.deliveredAt).toLocaleTimeString('es-ES')}
+                        </Typography>
+                      </Box>
+                    </TableCell>
+                    <TableCell>
                       {delivery.claimed ? (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-                          Claimed
-                        </span>
+                        <Chip
+                          icon={<CheckCircleIcon />}
+                          label="Reclamado"
+                          color="success"
+                          size="small"
+                        />
                       ) : (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
-                          Pending
-                        </span>
+                        <Chip
+                          icon={<HourglassEmptyIcon />}
+                          label="Pendiente"
+                          color="warning"
+                          size="small"
+                        />
                       )}
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))
               )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
+            </TableBody>
+          </Table>
+        </TableContainer>
+
+        {/* Stats Summary */}
+        {deliveries.length > 0 && (
+          <Card sx={{ p: 2, bgcolor: 'action.hover' }}>
+            <Stack direction="row" spacing={4} justifyContent="center">
+              <Box sx={{ textAlign: 'center' }}>
+                <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+                  {deliveries.length}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  Total Entregas
+                </Typography>
+              </Box>
+              <Box sx={{ textAlign: 'center' }}>
+                <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'success.main' }}>
+                  {deliveries.filter((d) => d.claimed).length}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  Reclamados
+                </Typography>
+              </Box>
+              <Box sx={{ textAlign: 'center' }}>
+                <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'warning.main' }}>
+                  {deliveries.filter((d) => !d.claimed).length}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  Pendientes
+                </Typography>
+              </Box>
+              <Box sx={{ textAlign: 'center' }}>
+                <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'info.main' }}>
+                  {deliveries.length > 0
+                    ? Math.round((deliveries.filter((d) => d.claimed).length / deliveries.length) * 100)
+                    : 0}%
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  Tasa de Reclamo
+                </Typography>
+              </Box>
+            </Stack>
+          </Card>
+        )}
+      </Stack>
+    </Container>
   );
 }
