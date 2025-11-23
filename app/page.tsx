@@ -143,7 +143,7 @@ export default function Home() {
               Sign in with Twitter
             </Button>
             <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 3 }}>
-              By signing in, you agree to access your Twitter deliveries
+              By signing in, you agree to access your Twitter POAP achievements
             </Typography>
           </Card>
         </Container>
