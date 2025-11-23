@@ -371,8 +371,9 @@ export async function getMintLinkStats(): Promise<{
 /**
  * Get all QR codes for an event using Event ID and Edit Code
  * This uses the edit code endpoint, not OAuth
+ * Documentation: https://documentation.poap.tech/reference/posteventqr-codes
  * @param {string} eventId - POAP event ID
- * @param {string} editCode - Edit code for the event
+ * @param {string} editCode - Edit code (secret_code) for the event (6 digit code)
  * @returns {Promise<Array>} Array of QR code hashes
  */
 export async function getEventQRCodes(
@@ -382,11 +383,15 @@ export async function getEventQRCodes(
   const url = `${POAP_API_BASE}/event/${eventId}/qr-codes`;
 
   const response = await fetch(url, {
+    method: 'POST',
     headers: {
       'accept': 'application/json',
-      'x-api-key': process.env.POAP_API_KEY || '',
-      'x-edit-code': editCode,
+      'Content-Type': 'application/json',
+      'X-API-Key': process.env.POAP_API_KEY || '',
     },
+    body: JSON.stringify({
+      secret_code: editCode,
+    }),
   });
 
   if (!response.ok) {
@@ -415,7 +420,7 @@ export async function getClaimDeliverySecret(qrHash: string): Promise<string> {
     headers: {
       'Content-Type': 'application/json',
       'accept': 'application/json',
-      'x-api-key': process.env.POAP_API_KEY || '',
+      'X-API-Key': process.env.POAP_API_KEY || '',
     },
     body: JSON.stringify({
       qr_hash: qrHash,
