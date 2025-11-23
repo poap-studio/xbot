@@ -4,7 +4,7 @@
  */
 
 import { searchNewEligibleTweets, saveTweets, type ProcessedTweet } from '@/lib/twitter/search';
-import { replyWithClaimUrl, replyWithAlreadyClaimed, hasBeenRepliedTo } from '@/lib/twitter/reply';
+import { replyWithClaimUrl, replyWithAlreadyClaimed, replyWithNotEligible, hasBeenRepliedTo } from '@/lib/twitter/reply';
 import { reserveMintLink } from '@/lib/poap/api';
 import { recordDelivery, hasDelivery, userHasDelivery } from './delivery';
 import prisma from '@/lib/prisma';
@@ -34,8 +34,10 @@ async function markHiddenCodeAsUsed(code: string, twitterId: string): Promise<vo
 export interface ProcessResult {
   tweetsFound: number;
   tweetsEligible: number;
+  tweetsNotEligible: number;
   deliveriesSuccessful: number;
   deliveriesFailed: number;
+  notEligibleReplies: number;
   errors: Array<{
     tweetId: string;
     error: string;
@@ -49,6 +51,47 @@ export interface DeliveryAttempt {
   error?: string;
   mintLink?: string;
   replyId?: string;
+}
+
+/**
+ * Process a single non-eligible tweet
+ * Replies with "not eligible" message
+ * @param {ProcessedTweet} tweet - Tweet to process
+ * @returns {Promise<boolean>} True if reply was successful
+ */
+export async function processNotEligibleTweet(
+  tweet: ProcessedTweet
+): Promise<boolean> {
+  const tweetId = tweet.id;
+  const username = tweet.authorUsername;
+
+  try {
+    // 1. Check if already replied
+    const alreadyReplied = await hasBeenRepliedTo(tweetId);
+    if (alreadyReplied) {
+      console.log(`Tweet ${tweetId} already replied to. Skipping.`);
+      return false;
+    }
+
+    // 2. Reply with "not eligible" message
+    await replyWithNotEligible(tweetId);
+
+    console.log(
+      `✅ Replied to non-eligible tweet ${tweetId} from @${username}`
+    );
+
+    return true;
+  } catch (error) {
+    const errorMessage =
+      error instanceof Error ? error.message : 'Unknown error';
+
+    console.error(
+      `❌ Failed to reply to non-eligible tweet ${tweetId} from @${username}:`,
+      errorMessage
+    );
+
+    return false;
+  }
 }
 
 /**
@@ -176,6 +219,7 @@ export async function processSingleTweet(
 
 /**
  * Main bot process - searches for eligible tweets and delivers POAPs
+ * Also replies to non-eligible tweets with appropriate message
  * @param {number} maxTweets - Maximum number of tweets to process (default: 10)
  * @returns {Promise<ProcessResult>} Process results
  */
@@ -187,21 +231,24 @@ export async function runBotProcess(
   const result: ProcessResult = {
     tweetsFound: 0,
     tweetsEligible: 0,
+    tweetsNotEligible: 0,
     deliveriesSuccessful: 0,
     deliveriesFailed: 0,
+    notEligibleReplies: 0,
     errors: [],
   };
 
   try {
-    // 1. Search for new eligible tweets
-    console.log('🔍 Searching for new eligible tweets...');
+    // 1. Search for new tweets (both eligible and non-eligible)
+    console.log('🔍 Searching for new tweets...');
     const tweets = await searchNewEligibleTweets();
 
     result.tweetsFound = tweets.length;
     result.tweetsEligible = tweets.filter((t) => t.isEligible).length;
+    result.tweetsNotEligible = tweets.filter((t) => !t.isEligible).length;
 
     if (tweets.length === 0) {
-      console.log('✅ No new eligible tweets found');
+      console.log('✅ No new tweets found');
       return result;
     }
 
@@ -233,7 +280,26 @@ export async function runBotProcess(
       }
 
       // Rate limiting: wait 2 seconds between tweets
-      if (tweetsToProcess.indexOf(tweet) < tweetsToProcess.length - 1) {
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+    }
+
+    // 4. Process non-eligible tweets (reply with "not eligible" message)
+    const notEligibleTweets = tweets.filter((t) => !t.isEligible);
+    const notEligibleToProcess = notEligibleTweets.slice(0, maxTweets);
+
+    if (notEligibleToProcess.length > 0) {
+      console.log(
+        `📨 Replying to ${notEligibleToProcess.length} non-eligible tweets...`
+      );
+
+      for (const tweet of notEligibleToProcess) {
+        const success = await processNotEligibleTweet(tweet);
+
+        if (success) {
+          result.notEligibleReplies++;
+        }
+
+        // Rate limiting: wait 2 seconds between tweets
         await new Promise((resolve) => setTimeout(resolve, 2000));
       }
     }
@@ -241,8 +307,10 @@ export async function runBotProcess(
     console.log('✅ Bot process completed');
     console.log(`   - Tweets found: ${result.tweetsFound}`);
     console.log(`   - Eligible: ${result.tweetsEligible}`);
+    console.log(`   - Not eligible: ${result.tweetsNotEligible}`);
     console.log(`   - Delivered: ${result.deliveriesSuccessful}`);
     console.log(`   - Failed: ${result.deliveriesFailed}`);
+    console.log(`   - Not eligible replies: ${result.notEligibleReplies}`);
 
     return result;
   } catch (error) {

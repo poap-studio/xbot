@@ -208,6 +208,58 @@ export async function replyWithAlreadyClaimed(
 }
 
 /**
+ * Generate "not eligible" reply text
+ * Uses template from config
+ * @returns {Promise<string>} Reply text
+ */
+export async function generateNotEligibleText(): Promise<string> {
+  try {
+    const config = await prisma.config.findFirst();
+
+    if (!config) {
+      throw new Error('Configuration not found');
+    }
+
+    const text = config.botReplyNotEligible || 'Thank you for your interest. Make sure to include a valid code and an image in your tweet.';
+
+    // Validate length
+    if (text.length > 280) {
+      console.warn(
+        `Generated "not eligible" reply text is too long (${text.length} chars). Truncating...`
+      );
+      return text.substring(0, 277) + '...';
+    }
+
+    return text;
+  } catch (error) {
+    console.error('Failed to generate "not eligible" reply text:', error);
+    return 'Thank you for your interest. Make sure to include a valid code and an image in your tweet.';
+  }
+}
+
+/**
+ * Reply to a tweet with "not eligible" message
+ * @param {string} tweetId - Tweet ID to reply to
+ * @returns {Promise<string>} Reply tweet ID
+ */
+export async function replyWithNotEligible(
+  tweetId: string
+): Promise<string> {
+  try {
+    const text = await generateNotEligibleText();
+    const replyId = await replyToTweet(tweetId, text);
+    await markTweetAsReplied(tweetId, replyId);
+
+    return replyId;
+  } catch (error) {
+    if (error instanceof Error) {
+      throw new Error(`Failed to reply with not eligible message: ${error.message}`);
+    }
+    throw new Error('Failed to reply with not eligible message: Unknown error');
+  }
+}
+
+/**
  * Check if tweet has already been replied to
  * @param {string} tweetId - Tweet ID
  * @returns {Promise<boolean>} True if already replied

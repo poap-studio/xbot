@@ -118,8 +118,8 @@ function processTweet(tweet: any, criteria: SearchCriteria, hiddenCode: string |
 
   // Tweet is eligible if:
   // 1. Has a valid (unused) hidden code
-  // 2. Has an image (if required)
-  const isEligible = hasCode && (!criteria.requireImage || hasImage);
+  // 2. AND has an image (always required for POAP eligibility)
+  const isEligible = hasCode && hasImage;
 
   return {
     id: tweet.id,
@@ -234,7 +234,7 @@ export async function searchNewEligibleTweets(): Promise<ProcessedTweet[]> {
     // Build criteria from config
     const criteria: SearchCriteria = {
       hashtag: config.twitterHashtag,
-      requireImage: true, // Always require images for POAP eligibility
+      requireImage: false, // Don't filter by image - we want to reply to all tweets with hashtag
       sinceId,
       maxResults: 100,
     };
@@ -244,7 +244,8 @@ export async function searchNewEligibleTweets(): Promise<ProcessedTweet[]> {
 
     // Return all tweets (caller will filter eligible ones if needed)
     const eligibleCount = tweets.filter((tweet) => tweet.isEligible).length;
-    console.log(`Found ${tweets.length} tweets, ${eligibleCount} eligible`);
+    const notEligibleCount = tweets.filter((tweet) => !tweet.isEligible).length;
+    console.log(`Found ${tweets.length} tweets, ${eligibleCount} eligible, ${notEligibleCount} not eligible`);
 
     return tweets;
   } catch (error) {
