@@ -1,10 +1,10 @@
 /**
  * API Route: QR Page Configuration
  * GET/POST configuration for dynamic QR codes
+ * Note: Protected by middleware - only accessible to authenticated admins
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { isAdmin } from '@/lib/admin-auth';
 import prisma from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
@@ -15,12 +15,6 @@ export const dynamic = 'force-dynamic';
  */
 export async function GET(request: NextRequest) {
   try {
-    // Check admin authentication
-    const admin = await isAdmin();
-    if (!admin) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     // Get configuration
     const config = await prisma.config.findFirst();
 
@@ -47,12 +41,6 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
-    // Check admin authentication
-    const admin = await isAdmin();
-    if (!admin) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     const body = await request.json();
     const { tweetTemplate } = body;
 

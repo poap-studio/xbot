@@ -29,7 +29,9 @@ import {
   Description as LogsIcon,
   Home as HomeIcon,
   QrCode2 as QrCodeIcon,
+  Logout as LogoutIcon,
 } from '@mui/icons-material';
+import { useRouter } from 'next/navigation';
 
 const DRAWER_WIDTH = 240;
 
@@ -49,9 +51,22 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
 
   // Don't show navigation on login and unauthorized pages
   const showNavigation = pathname !== '/admin/login' && pathname !== '/admin/unauthorized';
+
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/admin/auth/logout', {
+        method: 'POST',
+      });
+      router.push('/admin/login');
+      router.refresh();
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
+  };
 
   return (
     <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'background.default' }}>
@@ -81,6 +96,7 @@ export default function AdminLayout({
             startIcon={<HomeIcon />}
             sx={{
               color: 'text.secondary',
+              mr: 1,
               '&:hover': {
                 color: 'primary.main',
                 bgcolor: 'action.hover',
@@ -88,6 +104,19 @@ export default function AdminLayout({
             }}
           >
             Back to Home
+          </Button>
+          <Button
+            onClick={handleLogout}
+            startIcon={<LogoutIcon />}
+            sx={{
+              color: 'text.secondary',
+              '&:hover': {
+                color: 'error.main',
+                bgcolor: 'action.hover',
+              },
+            }}
+          >
+            Logout
           </Button>
         </Toolbar>
       </AppBar>}

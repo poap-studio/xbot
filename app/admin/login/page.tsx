@@ -1,12 +1,11 @@
 /**
  * Admin Login Page
- * Sign in with Twitter to access admin panel
+ * Password authentication for admin panel
  */
 
 'use client';
 
-import { useEffect, Suspense } from 'react';
-import { useSession, signIn } from 'next-auth/react';
+import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Box,
@@ -14,48 +13,51 @@ import {
   Container,
   Typography,
   Card,
+  TextField,
   CircularProgress,
+  Alert,
 } from '@mui/material';
-import { Twitter as TwitterIcon } from '@mui/icons-material';
+import { Lock as LockIcon } from '@mui/icons-material';
 
 function AdminLoginContent() {
-  const { data: session, status } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get('callbackUrl') || '/admin';
 
-  useEffect(() => {
-    // If already authenticated, check if user is admin
-    if (status === 'authenticated' && session?.user) {
-      const adminUsername = process.env.NEXT_PUBLIC_ADMIN_USERNAME?.toLowerCase();
-      const userUsername = session.user.username?.toLowerCase();
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-      if (adminUsername && adminUsername === userUsername) {
-        // User is admin, redirect to admin panel
-        router.push(callbackUrl);
-      } else {
-        // User is not admin, redirect to unauthorized page
-        router.push('/admin/unauthorized');
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+
+    try {
+      const response = await fetch('/api/admin/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ password }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.error || 'Invalid password');
+        setLoading(false);
+        return;
       }
-    }
-  }, [status, session, router, callbackUrl]);
 
-  // Loading state
-  if (status === 'loading') {
-    return (
-      <Box
-        sx={{
-          minHeight: '100vh',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          bgcolor: 'background.default',
-        }}
-      >
-        <Typography color="text.secondary">Loading...</Typography>
-      </Box>
-    );
-  }
+      // Login successful, redirect to admin panel
+      router.push(callbackUrl);
+      router.refresh();
+    } catch (err) {
+      setError('Login failed. Please try again.');
+      setLoading(false);
+    }
+  };
 
   return (
     <Box
@@ -85,25 +87,43 @@ function AdminLoginContent() {
             Admin Access
           </Typography>
           <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
-            Sign in with your authorized Twitter account to access the admin panel
+            Enter the admin password to access the panel
           </Typography>
-          <Button
-            variant="contained"
-            size="large"
-            startIcon={<TwitterIcon />}
-            onClick={() => signIn('twitter', { callbackUrl })}
-            fullWidth
-            sx={{
-              py: 1.5,
-              fontSize: '1.125rem',
-              bgcolor: '#1DA1F2',
-              '&:hover': {
-                bgcolor: '#1A8CD8',
-              },
-            }}
-          >
-            Sign in with Twitter
-          </Button>
+
+          {error && (
+            <Alert severity="error" sx={{ mb: 3, textAlign: 'left' }}>
+              {error}
+            </Alert>
+          )}
+
+          <Box component="form" onSubmit={handleSubmit}>
+            <TextField
+              fullWidth
+              type="password"
+              label="Admin Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              disabled={loading}
+              autoFocus
+              sx={{ mb: 3 }}
+              required
+            />
+            <Button
+              type="submit"
+              variant="contained"
+              size="large"
+              startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <LockIcon />}
+              disabled={loading || !password}
+              fullWidth
+              sx={{
+                py: 1.5,
+                fontSize: '1.125rem',
+              }}
+            >
+              {loading ? 'Signing in...' : 'Sign in'}
+            </Button>
+          </Box>
+
           <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 3 }}>
             Only authorized administrators can access this panel
           </Typography>
