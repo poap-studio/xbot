@@ -6,6 +6,26 @@
 'use client';
 
 import { useState } from 'react';
+import {
+  Card,
+  CardContent,
+  Typography,
+  Button,
+  Chip,
+  Box,
+  Stack,
+  Link,
+  TextField,
+  InputAdornment,
+  IconButton,
+  Alert,
+} from '@mui/material';
+import {
+  ContentCopy as CopyIcon,
+  CheckCircle as CheckIcon,
+  Launch as LaunchIcon,
+  Twitter as TwitterIcon,
+} from '@mui/icons-material';
 
 export interface DeliveryData {
   id: string;
@@ -50,79 +70,143 @@ export function DeliveryCard({ delivery }: DeliveryCardProps) {
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
-      {/* Header */}
-      <div className="flex items-start justify-between mb-4">
-        <div className="flex-1">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
-            POAP Delivery
-          </h3>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
-            Delivered {formatDate(delivery.deliveredAt)}
-          </p>
-        </div>
+    <Card
+      sx={{
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        bgcolor: 'background.paper',
+        border: '1px solid',
+        borderColor: 'divider',
+      }}
+    >
+      <CardContent sx={{ flexGrow: 1, p: 3 }}>
+        {/* Header */}
+        <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ mb: 3 }}>
+          <Box>
+            <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>
+              POAP Delivery
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              Delivered {formatDate(delivery.deliveredAt)}
+            </Typography>
+          </Box>
 
-        {/* Status Badge */}
-        {delivery.claimed ? (
-          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-            ✓ Claimed
-          </span>
-        ) : (
-          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
-            Pending
-          </span>
-        )}
-      </div>
+          {/* Status Badge */}
+          {delivery.claimed ? (
+            <Chip
+              icon={<CheckIcon />}
+              label="Claimed"
+              color="success"
+              size="small"
+              sx={{ fontWeight: 'medium' }}
+            />
+          ) : (
+            <Chip
+              label="Pending"
+              color="warning"
+              size="small"
+              sx={{ fontWeight: 'medium' }}
+            />
+          )}
+        </Stack>
 
-      {/* Tweet Link */}
-      <div className="mb-4">
-        <a
-          href={`https://twitter.com/anyuser/status/${delivery.tweetId}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
-        >
-          View original tweet →
-        </a>
-      </div>
-
-      {/* Claim Section */}
-      {!delivery.claimed && (
-        <div className="space-y-3">
-          <div className="bg-gray-50 dark:bg-gray-900 rounded-md p-4">
-            <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">
-              Claim Link
-            </p>
-            <div className="flex items-center gap-2">
-              <code className="flex-1 text-sm text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-800 px-3 py-2 rounded border border-gray-200 dark:border-gray-700 overflow-x-auto">
-                {delivery.mintLink}
-              </code>
-              <button
-                onClick={handleCopy}
-                className="px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
-              >
-                {copied ? '✓ Copied' : 'Copy'}
-              </button>
-            </div>
-          </div>
-
-          <button
-            onClick={handleClaim}
-            className="w-full px-4 py-3 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 rounded-lg transition-colors shadow-sm"
+        {/* Tweet Link */}
+        <Box sx={{ mb: 3 }}>
+          <Link
+            href={`https://twitter.com/anyuser/status/${delivery.tweetId}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            sx={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 0.5,
+              fontSize: '0.875rem',
+              textDecoration: 'none',
+              color: 'primary.main',
+              '&:hover': {
+                textDecoration: 'underline',
+              },
+            }}
           >
-            Claim POAP Now →
-          </button>
-        </div>
-      )}
+            <TwitterIcon sx={{ fontSize: 16 }} />
+            View original tweet
+            <LaunchIcon sx={{ fontSize: 14 }} />
+          </Link>
+        </Box>
 
-      {/* Claimed Info */}
-      {delivery.claimed && delivery.claimedAt && (
-        <div className="bg-green-50 dark:bg-green-900/20 rounded-md p-4">
-          <p className="text-sm text-green-800 dark:text-green-200">
-            Claimed on {formatDate(delivery.claimedAt)}
-          </p>
-        </div>
-      )}
-    </div>
+        {/* Claim Section */}
+        {!delivery.claimed && (
+          <Stack spacing={2}>
+            <Box
+              sx={{
+                bgcolor: 'background.default',
+                borderRadius: 1,
+                p: 2,
+                border: '1px solid',
+                borderColor: 'divider',
+              }}
+            >
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{ display: 'block', mb: 1, fontWeight: 'medium' }}
+              >
+                Claim Link
+              </Typography>
+              <TextField
+                fullWidth
+                size="small"
+                value={delivery.mintLink}
+                InputProps={{
+                  readOnly: true,
+                  sx: {
+                    fontFamily: 'monospace',
+                    fontSize: '0.875rem',
+                  },
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        onClick={handleCopy}
+                        edge="end"
+                        size="small"
+                        sx={{
+                          color: copied ? 'success.main' : 'text.secondary',
+                        }}
+                      >
+                        {copied ? <CheckIcon fontSize="small" /> : <CopyIcon fontSize="small" />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
+              />
+            </Box>
+
+            <Button
+              variant="contained"
+              fullWidth
+              onClick={handleClaim}
+              endIcon={<LaunchIcon />}
+              sx={{
+                py: 1.5,
+                fontWeight: 'bold',
+                textTransform: 'none',
+              }}
+            >
+              Claim POAP Now
+            </Button>
+          </Stack>
+        )}
+
+        {/* Claimed Info */}
+        {delivery.claimed && delivery.claimedAt && (
+          <Alert severity="success" sx={{ mt: 2 }}>
+            <Typography variant="body2">
+              Claimed on {formatDate(delivery.claimedAt)}
+            </Typography>
+          </Alert>
+        )}
+      </CardContent>
+    </Card>
   );
 }
