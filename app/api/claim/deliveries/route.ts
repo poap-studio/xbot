@@ -6,6 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { getUserDeliveries } from '@/lib/bot/delivery';
+import prisma from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
 
@@ -35,6 +36,29 @@ export async function GET(request: NextRequest) {
     // Get user's deliveries
     const deliveries = await getUserDeliveries(twitterId);
 
+    // Get POAP event name from config
+    const config = await prisma.config.findFirst();
+    let poapEventName = 'POAP Achievement';
+
+    if (config?.poapEventId) {
+      try {
+        // Fetch event details from POAP API
+        const response = await fetch(`https://api.poap.tech/events/id/${config.poapEventId}`, {
+          headers: {
+            'X-API-Key': process.env.POAP_API_KEY || '',
+          },
+        });
+
+        if (response.ok) {
+          const eventData = await response.json();
+          poapEventName = eventData.name || 'POAP Achievement';
+        }
+      } catch (error) {
+        console.error('Error fetching POAP event name:', error);
+        // Continue with default name
+      }
+    }
+
     // Transform deliveries for frontend
     const formattedDeliveries = deliveries.map((delivery) => ({
       id: delivery.id,
@@ -44,6 +68,7 @@ export async function GET(request: NextRequest) {
       deliveredAt: delivery.deliveredAt.toISOString(),
       claimed: delivery.claimed,
       claimedAt: delivery.claimedAt?.toISOString() || null,
+      poapName: poapEventName,
     }));
 
     return NextResponse.json({

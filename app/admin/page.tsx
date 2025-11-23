@@ -6,26 +6,19 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
 import {
   Box,
   Container,
   Typography,
   Card,
   Stack,
-  Chip,
   Button,
   CircularProgress,
   Alert,
-  Paper,
 } from '@mui/material';
 import {
-  Settings as SettingsIcon,
-  Link as LinkIcon,
-  SmartToy as SmartToyIcon,
   LocalShipping as DeliveryIcon,
-  CheckCircle as CheckCircleIcon,
-  Cancel as CancelIcon,
+  Link as LinkIcon,
   Twitter as TwitterIcon,
   TrendingUp as TrendingUpIcon,
 } from '@mui/icons-material';
@@ -130,43 +123,6 @@ export default function AdminDashboard() {
         {/* Bot Connection */}
         <BotConnection />
 
-        {/* Bot Status Card */}
-        <Card sx={{ p: 3 }}>
-          <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
-            <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-              Bot Status
-            </Typography>
-            <Chip
-              icon={stats?.bot.connected ? <CheckCircleIcon /> : <CancelIcon />}
-              label={stats?.bot.connected ? 'Connected' : 'Disconnected'}
-              color={stats?.bot.connected ? 'success' : 'error'}
-            />
-          </Stack>
-
-          {stats?.bot.connected && stats.bot.username && (
-            <Typography variant="body2" color="text.secondary">
-              Connected as <Typography component="span" sx={{ fontWeight: 'bold' }}>@{stats.bot.username}</Typography>
-            </Typography>
-          )}
-
-          {!stats?.bot.connected && (
-            <Box sx={{ mt: 2 }}>
-              <Button
-                component={Link}
-                href="/api/auth/bot-twitter"
-                variant="contained"
-                startIcon={<TwitterIcon />}
-                sx={{
-                  bgcolor: '#1DA1F2',
-                  '&:hover': { bgcolor: '#1A8CD8' },
-                }}
-              >
-                Connect Bot Account
-              </Button>
-            </Box>
-          )}
-        </Card>
-
         {/* Stats Grid */}
         <Box sx={{
           display: 'grid',
@@ -241,111 +197,6 @@ export default function AdminDashboard() {
             </Typography>
           </Card>
         </Box>
-
-        {/* Quick Actions */}
-        <Card sx={{ p: 3 }}>
-          <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', mb: 3 }}>
-            Quick Actions
-          </Typography>
-          <Box sx={{
-            display: 'grid',
-            gridTemplateColumns: {
-              xs: '1fr',
-              md: 'repeat(3, 1fr)',
-            },
-            gap: 2,
-          }}>
-            <Paper
-              component={Link}
-              href="/admin/poap"
-              sx={{
-                p: 2,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 2,
-                textDecoration: 'none',
-                color: 'inherit',
-                border: '2px solid',
-                borderColor: 'divider',
-                transition: 'all 0.2s',
-                '&:hover': {
-                  borderColor: 'primary.main',
-                  bgcolor: 'action.hover',
-                },
-              }}
-            >
-              <SettingsIcon sx={{ fontSize: 32, color: 'primary.main' }} />
-              <Box>
-                <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
-                  Configure POAP
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  Event, hashtag and messages
-                </Typography>
-              </Box>
-            </Paper>
-
-            <Paper
-              component={Link}
-              href="/admin/mint-links"
-              sx={{
-                p: 2,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 2,
-                textDecoration: 'none',
-                color: 'inherit',
-                border: '2px solid',
-                borderColor: 'divider',
-                transition: 'all 0.2s',
-                '&:hover': {
-                  borderColor: 'primary.main',
-                  bgcolor: 'action.hover',
-                },
-              }}
-            >
-              <LinkIcon sx={{ fontSize: 32, color: 'primary.main' }} />
-              <Box>
-                <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
-                  Import Links
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  Add new mint links
-                </Typography>
-              </Box>
-            </Paper>
-
-            <Paper
-              component={Link}
-              href="/admin/bot"
-              sx={{
-                p: 2,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 2,
-                textDecoration: 'none',
-                color: 'inherit',
-                border: '2px solid',
-                borderColor: 'divider',
-                transition: 'all 0.2s',
-                '&:hover': {
-                  borderColor: 'primary.main',
-                  bgcolor: 'action.hover',
-                },
-              }}
-            >
-              <SmartToyIcon sx={{ fontSize: 32, color: 'primary.main' }} />
-              <Box>
-                <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
-                  Control Bot
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  Start/stop automation
-                </Typography>
-              </Box>
-            </Paper>
-          </Box>
-        </Card>
       </Stack>
     </Container>
   );

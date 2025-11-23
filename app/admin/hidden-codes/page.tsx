@@ -25,7 +25,6 @@ import {
 import {
   Upload as UploadIcon,
   Delete as DeleteIcon,
-  Refresh as RefreshIcon,
   Add as AddIcon,
   Download as DownloadIcon,
 } from '@mui/icons-material';
@@ -250,15 +249,6 @@ export default function HiddenCodesPage() {
               fullWidth
             >
               Download CSV
-            </Button>
-
-            <Button
-              variant="outlined"
-              startIcon={<RefreshIcon />}
-              onClick={fetchStats}
-              fullWidth
-            >
-              Refresh
             </Button>
 
             <Button

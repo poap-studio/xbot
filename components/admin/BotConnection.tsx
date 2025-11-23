@@ -22,7 +22,6 @@ import {
   Twitter as TwitterIcon,
   CheckCircle as CheckCircleIcon,
   Cancel as CancelIcon,
-  Refresh as RefreshIcon,
   LinkOff as LinkOffIcon,
 } from '@mui/icons-material';
 
@@ -102,9 +101,9 @@ export function BotConnection({ className = '' }: BotConnectionProps) {
 
   async function disconnectBot() {
     if (!window.confirm(
-      '¿Desconectar cuenta del bot?\n\n' +
-      'El bot dejará de funcionar hasta que conectes una nueva cuenta.\n\n' +
-      '¿Estás seguro?'
+      'Disconnect bot account?\n\n' +
+      'The bot will stop working until you connect a new account.\n\n' +
+      'Are you sure?'
     )) {
       return;
     }
@@ -147,7 +146,7 @@ export function BotConnection({ className = '' }: BotConnectionProps) {
   return (
     <Card sx={{ p: 3 }}>
       <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', mb: 2 }}>
-        Cuenta del Bot de Twitter
+        Twitter Bot Account
       </Typography>
 
       {error && (
@@ -161,8 +160,7 @@ export function BotConnection({ className = '' }: BotConnectionProps) {
         <Box sx={{ textAlign: 'center', py: 4 }}>
           <TwitterIcon sx={{ fontSize: 60, color: 'text.disabled', mb: 2 }} />
           <Typography variant="body2" color="text.secondary" sx={{ mb: 3, maxWidth: '600px', mx: 'auto' }}>
-            No hay ninguna cuenta conectada. Conecta una cuenta de Twitter para que el bot
-            pueda responder a tweets.
+            No account connected. Connect a Twitter account so the bot can reply to tweets.
           </Typography>
           <Button
             variant="contained"
@@ -174,7 +172,7 @@ export function BotConnection({ className = '' }: BotConnectionProps) {
               '&:hover': { bgcolor: '#1A8CD8' },
             }}
           >
-            Conectar Cuenta de Twitter
+            Connect Twitter Account
           </Button>
         </Box>
       ) : (
@@ -197,13 +195,13 @@ export function BotConnection({ className = '' }: BotConnectionProps) {
                 <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 1 }}>
                   <Chip
                     icon={botAccount.isConnected ? <CheckCircleIcon /> : <CancelIcon />}
-                    label={botAccount.isConnected ? 'Conectada' : 'Desconectada'}
+                    label={botAccount.isConnected ? 'Connected' : 'Disconnected'}
                     color={botAccount.isConnected ? 'success' : 'error'}
                     size="small"
                   />
                 </Stack>
                 <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
-                  Conectada: {new Date(botAccount.connectedAt).toLocaleDateString('es-ES', {
+                  Connected: {new Date(botAccount.connectedAt).toLocaleDateString('en-US', {
                     year: 'numeric',
                     month: 'long',
                     day: 'numeric',
@@ -211,7 +209,7 @@ export function BotConnection({ className = '' }: BotConnectionProps) {
                 </Typography>
                 {botAccount.lastUsedAt && (
                   <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-                    Último uso: {new Date(botAccount.lastUsedAt).toLocaleDateString('es-ES', {
+                    Last used: {new Date(botAccount.lastUsedAt).toLocaleDateString('en-US', {
                       year: 'numeric',
                       month: 'long',
                       day: 'numeric',
@@ -227,31 +225,24 @@ export function BotConnection({ className = '' }: BotConnectionProps) {
             <Stack direction="row" spacing={1}>
               <Button
                 variant="outlined"
-                startIcon={<RefreshIcon />}
-                onClick={connectBot}
-              >
-                Reconectar
-              </Button>
-              <Button
-                variant="outlined"
                 color="error"
                 startIcon={<LinkOffIcon />}
                 onClick={disconnectBot}
                 disabled={disconnecting}
               >
-                {disconnecting ? 'Desconectando...' : 'Desconectar'}
+                {disconnecting ? 'Disconnecting...' : 'Disconnect'}
               </Button>
             </Stack>
           </Stack>
 
           {/* Important Notice */}
           <Alert severity="warning" sx={{ mt: 3 }}>
-            <AlertTitle>Importante</AlertTitle>
+            <AlertTitle>Important</AlertTitle>
             <Box component="ul" sx={{ m: 0, pl: 2 }}>
-              <li>La cuenta conectada será la que responda a los tweets elegibles</li>
-              <li>Asegúrate de que la cuenta tenga permisos de escritura (Read and Write)</li>
-              <li>Puedes reconectar en cualquier momento si los tokens expiran</li>
-              <li>El bot dejará de funcionar si desconectas la cuenta</li>
+              <li>The connected account will be the one that replies to eligible tweets</li>
+              <li>Make sure the account has write permissions (Read and Write)</li>
+              <li>You can reconnect at any time if tokens expire</li>
+              <li>The bot will stop working if you disconnect the account</li>
             </Box>
           </Alert>
         </Box>

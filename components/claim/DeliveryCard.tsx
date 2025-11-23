@@ -30,6 +30,7 @@ export interface DeliveryData {
   deliveredAt: string;
   claimed: boolean;
   claimedAt: string | null;
+  poapName: string;
 }
 
 interface DeliveryCardProps {
@@ -68,7 +69,7 @@ export function DeliveryCard({ delivery }: DeliveryCardProps) {
         <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ mb: 3 }}>
           <Box>
             <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>
-              POAP Achievement
+              {delivery.poapName}
             </Typography>
             <Typography variant="caption" color="text.secondary">
               Earned {formatDate(delivery.deliveredAt)}
