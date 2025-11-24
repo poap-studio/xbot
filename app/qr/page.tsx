@@ -1,16 +1,25 @@
 /**
  * Public Dynamic QR Code Page
- * Displays a QR code that auto-updates when scanned
+ * Displays a customizable QR code page with logo, background, and POAP artwork
  */
 
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
-import { Box, Typography, CircularProgress, Alert } from '@mui/material';
+import { Box, Typography, CircularProgress, Alert, Container, Grid } from '@mui/material';
 import Image from 'next/image';
+
+interface PageConfig {
+  logoUrl: string | null;
+  backgroundUrl: string | null;
+  customText: string | null;
+  poapArtworkUrl: string | null;
+  poapEventName: string | null;
+}
 
 export default function DynamicQrPage() {
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
+  const [pageConfig, setPageConfig] = useState<PageConfig | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentCode, setCurrentCode] = useState<string | null>(null);
@@ -18,7 +27,8 @@ export default function DynamicQrPage() {
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    // Initial QR load
+    // Initial load
+    fetchPageConfig();
     fetchQrCode();
 
     // Set up Server-Sent Events for real-time updates
@@ -40,7 +50,6 @@ export default function DynamicQrPage() {
     };
 
     // Polling backup: Check for new codes every 3 seconds
-    // This ensures the QR updates even if SSE doesn't work in serverless environments
     pollingIntervalRef.current = setInterval(() => {
       checkForNewCode();
     }, 3000);
@@ -56,14 +65,26 @@ export default function DynamicQrPage() {
     };
   }, []);
 
+  const fetchPageConfig = async () => {
+    try {
+      const response = await fetch('/api/qr/page-config');
+      const data = await response.json();
+
+      if (response.ok) {
+        setPageConfig(data);
+      }
+    } catch (error) {
+      console.error('Error fetching page config:', error);
+      // Don't show error - just use defaults
+    }
+  };
+
   const checkForNewCode = async () => {
     if (!currentCode) {
-      // Don't poll until we have an initial code
       return;
     }
 
     try {
-      // Fetch the current available code without generating a new QR
       const response = await fetch('/api/qr/current-code');
       const data = await response.json();
 
@@ -72,7 +93,6 @@ export default function DynamicQrPage() {
         fetchQrCode();
       }
     } catch (error) {
-      // Silently fail - this is just a backup mechanism
       console.debug('Polling check error (expected):', error);
     }
   };
@@ -142,46 +162,238 @@ export default function DynamicQrPage() {
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        bgcolor: 'background.default',
-        p: 3,
+        position: 'relative',
+        overflow: 'hidden',
+        // Background image
+        ...(pageConfig?.backgroundUrl && {
+          backgroundImage: `url(${pageConfig.backgroundUrl})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+        }),
+        // Fallback background
+        bgcolor: pageConfig?.backgroundUrl ? 'transparent' : 'background.default',
+        p: { xs: 2, sm: 3, md: 4 },
       }}
     >
-      <Typography variant="h4" gutterBottom sx={{ fontWeight: 'bold', mb: 4 }}>
-        Scan to Tweet
-      </Typography>
-
-      {qrDataUrl && (
+      {/* Optional overlay for better text readability */}
+      {pageConfig?.backgroundUrl && (
         <Box
           sx={{
-            position: 'relative',
-            width: 400,
-            height: 400,
-            bgcolor: 'white',
-            p: 2,
-            borderRadius: 2,
-            boxShadow: 3,
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            bgcolor: 'rgba(0, 0, 0, 0.3)',
+            zIndex: 0,
           }}
+        />
+      )}
+
+      <Container
+        maxWidth="lg"
+        sx={{
+          position: 'relative',
+          zIndex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: { xs: 3, sm: 4, md: 5 },
+        }}
+      >
+        {/* Logo */}
+        {pageConfig?.logoUrl && (
+          <Box
+            sx={{
+              mb: 2,
+              maxWidth: { xs: '200px', sm: '250px', md: '300px' },
+              width: '100%',
+            }}
+          >
+            <img
+              src={pageConfig.logoUrl}
+              alt="Logo"
+              style={{
+                width: '100%',
+                height: 'auto',
+                maxHeight: '150px',
+                objectFit: 'contain',
+              }}
+            />
+          </Box>
+        )}
+
+        {/* Main Content: POAP Artwork + QR Code */}
+        <Grid
+          container
+          spacing={{ xs: 3, sm: 4, md: 6 }}
+          justifyContent="center"
+          alignItems="center"
+          sx={{ maxWidth: '900px' }}
         >
-          <Image
-            src={qrDataUrl}
-            alt="Dynamic QR Code"
-            width={368}
-            height={368}
-            style={{ width: '100%', height: '100%' }}
-            priority
-          />
-        </Box>
-      )}
+          {/* POAP Artwork */}
+          {pageConfig?.poapArtworkUrl && (
+            <Grid item xs={12} sm={6} md={5}>
+              <Box
+                sx={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: 2,
+                }}
+              >
+                <Box
+                  sx={{
+                    width: '100%',
+                    maxWidth: { xs: '250px', sm: '300px', md: '350px' },
+                    aspectRatio: '1',
+                    borderRadius: '50%',
+                    overflow: 'hidden',
+                    boxShadow: 6,
+                    bgcolor: 'white',
+                  }}
+                >
+                  <img
+                    src={pageConfig.poapArtworkUrl}
+                    alt={pageConfig.poapEventName || 'POAP'}
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover',
+                    }}
+                  />
+                </Box>
+                {pageConfig.poapEventName && (
+                  <Typography
+                    variant="h6"
+                    sx={{
+                      color: pageConfig?.backgroundUrl ? 'white' : 'text.primary',
+                      fontWeight: 'bold',
+                      textAlign: 'center',
+                      textShadow: pageConfig?.backgroundUrl ? '2px 2px 4px rgba(0,0,0,0.8)' : 'none',
+                    }}
+                  >
+                    {pageConfig.poapEventName}
+                  </Typography>
+                )}
+              </Box>
+            </Grid>
+          )}
 
-      <Typography variant="body2" color="text.secondary" sx={{ mt: 3, textAlign: 'center' }}>
-        Scan this QR code to share on Twitter
-      </Typography>
+          {/* QR Code with Custom Text Overlay */}
+          <Grid item xs={12} sm={6} md={pageConfig?.poapArtworkUrl ? 5 : 12}>
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: 2,
+              }}
+            >
+              {/* Heading (shown if no POAP artwork) */}
+              {!pageConfig?.poapArtworkUrl && (
+                <Typography
+                  variant="h4"
+                  sx={{
+                    fontWeight: 'bold',
+                    mb: 2,
+                    color: pageConfig?.backgroundUrl ? 'white' : 'text.primary',
+                    textShadow: pageConfig?.backgroundUrl ? '2px 2px 4px rgba(0,0,0,0.8)' : 'none',
+                    textAlign: 'center',
+                  }}
+                >
+                  Scan to Tweet
+                </Typography>
+              )}
 
-      {loading && qrDataUrl && (
-        <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
-          Updating...
-        </Typography>
-      )}
+              {qrDataUrl && (
+                <Box sx={{ position: 'relative', display: 'inline-block' }}>
+                  {/* QR Code */}
+                  <Box
+                    sx={{
+                      position: 'relative',
+                      width: { xs: 280, sm: 320, md: 380 },
+                      height: { xs: 280, sm: 320, md: 380 },
+                      bgcolor: 'white',
+                      p: 2,
+                      borderRadius: 2,
+                      boxShadow: 6,
+                    }}
+                  >
+                    <Image
+                      src={qrDataUrl}
+                      alt="Dynamic QR Code"
+                      width={400}
+                      height={400}
+                      style={{ width: '100%', height: '100%' }}
+                      priority
+                    />
+                  </Box>
+
+                  {/* Custom Text Overlay */}
+                  {pageConfig?.customText && (
+                    <Box
+                      sx={{
+                        position: 'absolute',
+                        bottom: -10,
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        bgcolor: 'rgba(0, 0, 0, 0.85)',
+                        color: 'white',
+                        px: 3,
+                        py: 1.5,
+                        borderRadius: 2,
+                        boxShadow: 4,
+                        minWidth: '80%',
+                        textAlign: 'center',
+                      }}
+                    >
+                      <Typography
+                        variant="body1"
+                        sx={{
+                          fontWeight: 'bold',
+                          fontSize: { xs: '0.9rem', sm: '1rem', md: '1.1rem' },
+                        }}
+                      >
+                        {pageConfig.customText}
+                      </Typography>
+                    </Box>
+                  )}
+
+                  {/* Default text if no custom text */}
+                  {!pageConfig?.customText && (
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        mt: 3,
+                        textAlign: 'center',
+                        color: pageConfig?.backgroundUrl ? 'white' : 'text.secondary',
+                        textShadow: pageConfig?.backgroundUrl ? '1px 1px 2px rgba(0,0,0,0.8)' : 'none',
+                      }}
+                    >
+                      Scan this QR code to share on Twitter
+                    </Typography>
+                  )}
+                </Box>
+              )}
+
+              {/* Updating indicator */}
+              {loading && qrDataUrl && (
+                <Typography
+                  variant="caption"
+                  sx={{
+                    color: pageConfig?.backgroundUrl ? 'white' : 'text.secondary',
+                    textShadow: pageConfig?.backgroundUrl ? '1px 1px 2px rgba(0,0,0,0.8)' : 'none',
+                  }}
+                >
+                  Updating...
+                </Typography>
+              )}
+            </Box>
+          </Grid>
+        </Grid>
+      </Container>
     </Box>
   );
 }

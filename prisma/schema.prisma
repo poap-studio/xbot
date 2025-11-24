@@ -26,6 +26,12 @@ model Config {
   // QR Page configuration
   qrPageTweetTemplate String @default("I visited the POAP Studio booth at ETH Global, and here's the proof! The secret word is {{code}} {{hashtag}}")
 
+  // QR Page Display customization
+  qrPageLogoUrl        String? // e.g., "/qr-page-assets/logo.png"
+  qrPageBackgroundUrl  String? // e.g., "/qr-page-assets/background.jpg"
+  qrPageCustomText     String? // Custom text overlay on QR code
+  qrPagePoapEventId    String? // POAP event ID to fetch artwork
+
   // POAP API credentials (encrypted)
   poapClientId    String?
   poapClientSecret String?
