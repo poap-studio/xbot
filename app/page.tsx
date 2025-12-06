@@ -1,80 +1,36 @@
 /**
- * Home Page / Claim Page
- * Users can sign in with Twitter and view/claim their POAP deliveries
+ * Home Page - Login
+ * Users sign in with Twitter to access their POAP dashboard
  */
 
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useSession, signIn, signOut } from 'next-auth/react';
-import { DeliveryCard, type DeliveryData } from '@/components/claim/DeliveryCard';
+import { useEffect } from 'react';
+import { useSession, signIn } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import {
   Box,
   Button,
   Container,
   Typography,
   Card,
-  CardContent,
   CircularProgress,
-  Alert,
-  AppBar,
-  Toolbar,
-  Stack,
 } from '@mui/material';
-import { Twitter as TwitterIcon, Logout as LogoutIcon } from '@mui/icons-material';
-
-interface DeliveriesResponse {
-  success: boolean;
-  deliveries: DeliveryData[];
-  total: number;
-  claimed: number;
-  unclaimed: number;
-  error?: string;
-}
+import { Twitter as TwitterIcon } from '@mui/icons-material';
 
 export default function Home() {
   const { data: session, status } = useSession();
-  const [deliveries, setDeliveries] = useState<DeliveryData[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [stats, setStats] = useState({ total: 0, claimed: 0, unclaimed: 0 });
+  const router = useRouter();
 
+  // Redirect to dashboard if already authenticated
   useEffect(() => {
     if (status === 'authenticated') {
-      fetchDeliveries();
+      router.push('/dashboard');
     }
-  }, [status]);
-
-  const fetchDeliveries = async () => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const response = await fetch('/api/claim/deliveries');
-      const data: DeliveriesResponse = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to fetch deliveries');
-      }
-
-      // Filter to show only unclaimed deliveries
-      const unclaimedDeliveries = data.deliveries.filter((d: DeliveryData) => !d.claimed);
-      setDeliveries(unclaimedDeliveries);
-      setStats({
-        total: data.total,
-        claimed: data.claimed,
-        unclaimed: data.unclaimed,
-      });
-    } catch (error) {
-      console.error('Error fetching deliveries:', error);
-      setError(error instanceof Error ? error.message : 'Failed to load deliveries');
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [status, router]);
 
   // Loading state
-  if (status === 'loading') {
+  if (status === 'loading' || status === 'authenticated') {
     return (
       <Box
         sx={{
@@ -87,168 +43,66 @@ export default function Home() {
       >
         <Box sx={{ textAlign: 'center' }}>
           <CircularProgress size={48} sx={{ mb: 2 }} />
-          <Typography color="text.secondary">Loading...</Typography>
+          <Typography color="text.secondary">
+            {status === 'authenticated' ? 'Redirecting to dashboard...' : 'Loading...'}
+          </Typography>
         </Box>
       </Box>
     );
   }
 
   // Not authenticated - show login
-  if (status === 'unauthenticated') {
-    return (
-      <Box
-        sx={{
-          minHeight: '100vh',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          bgcolor: 'background.default',
-          backgroundImage: 'radial-gradient(circle at 50% 0%, rgba(101, 52, 255, 0.1) 0%, transparent 50%)',
-        }}
-      >
-        <Container maxWidth="sm">
-          <Card
-            sx={{
-              p: 4,
-              textAlign: 'center',
-              border: '1px solid',
-              borderColor: 'divider',
-              bgcolor: 'background.paper',
-            }}
-          >
-            <Typography variant="h1" sx={{ fontSize: '4rem', mb: 2 }}>
-              🏅
-            </Typography>
-            <Typography variant="h3" gutterBottom>
-              POAP Twitter Bot
-            </Typography>
-            <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
-              Sign in with Twitter to claim your POAPs
-            </Typography>
-            <Button
-              variant="contained"
-              size="large"
-              startIcon={<TwitterIcon />}
-              onClick={() => signIn('twitter')}
-              fullWidth
-              sx={{
-                py: 1.5,
-                fontSize: '1.125rem',
-                bgcolor: '#1DA1F2',
-                '&:hover': {
-                  bgcolor: '#1A8CD8',
-                },
-              }}
-            >
-              Sign in with Twitter
-            </Button>
-            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 3 }}>
-              By signing in, you agree to access your Twitter POAP achievements
-            </Typography>
-          </Card>
-        </Container>
-      </Box>
-    );
-  }
-
-  // Authenticated - show deliveries
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
-      {/* Header */}
-      <AppBar
-        position="fixed"
-        elevation={0}
-        sx={{
-          bgcolor: 'background.paper',
-          borderBottom: 1,
-          borderColor: 'divider',
-          zIndex: (theme) => theme.zIndex.drawer + 1,
-        }}
-      >
-        <Toolbar>
-          <Box sx={{ flexGrow: 1 }}>
-            <Typography variant="h6" component="h1" sx={{ fontWeight: 'bold', color: 'text.primary' }}>
-              My POAP Achievements
-            </Typography>
-            {session?.user && (
-              <Typography variant="caption" color="text.secondary">
-                Signed in as @{session.user.username}
-              </Typography>
-            )}
-          </Box>
+    <Box
+      sx={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        bgcolor: 'background.default',
+        backgroundImage: 'radial-gradient(circle at 50% 0%, rgba(101, 52, 255, 0.1) 0%, transparent 50%)',
+      }}
+    >
+      <Container maxWidth="sm">
+        <Card
+          sx={{
+            p: 4,
+            textAlign: 'center',
+            border: '1px solid',
+            borderColor: 'divider',
+            bgcolor: 'background.paper',
+          }}
+        >
+          <Typography variant="h1" sx={{ fontSize: '4rem', mb: 2 }}>
+            🏅
+          </Typography>
+          <Typography variant="h3" gutterBottom>
+            POAP Twitter Bot
+          </Typography>
+          <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
+            Sign in with Twitter to claim your POAPs
+          </Typography>
           <Button
-            variant="outlined"
-            startIcon={<LogoutIcon />}
-            onClick={() => signOut()}
+            variant="contained"
+            size="large"
+            startIcon={<TwitterIcon />}
+            onClick={() => signIn('twitter', { callbackUrl: '/dashboard' })}
+            fullWidth
             sx={{
-              borderColor: 'divider',
-              color: 'text.secondary',
+              py: 1.5,
+              fontSize: '1.125rem',
+              bgcolor: '#1DA1F2',
               '&:hover': {
-                borderColor: 'primary.main',
-                color: 'primary.main',
-              }
-            }}
-          >
-            Sign Out
-          </Button>
-        </Toolbar>
-      </AppBar>
-
-      {/* Spacer for fixed AppBar */}
-      <Toolbar />
-
-      <Container maxWidth="lg" sx={{ py: 4 }}>
-        {/* Error Message */}
-        {error && (
-          <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
-            {error}
-            <Button size="small" onClick={fetchDeliveries} sx={{ ml: 2 }}>
-              Try again
-            </Button>
-          </Alert>
-        )}
-
-        {/* Loading State */}
-        {loading && (
-          <Box sx={{ textAlign: 'center', py: 8 }}>
-            <CircularProgress size={48} sx={{ mb: 2 }} />
-            <Typography color="text.secondary">Loading your achievements...</Typography>
-          </Box>
-        )}
-
-        {/* No Deliveries */}
-        {!loading && !error && deliveries.length === 0 && (
-          <Card sx={{ p: 6, textAlign: 'center', bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider' }}>
-            <Typography variant="h1" sx={{ fontSize: '4rem', mb: 3 }}>
-              ✨
-            </Typography>
-            <Typography variant="h5" gutterBottom sx={{ fontWeight: 'bold', mb: 2 }}>
-              No pending POAPs to claim
-            </Typography>
-            <Typography variant="body1" color="text.secondary">
-              You have no POAPs waiting to be claimed. Post a tweet with the campaign hashtag and code to earn your next POAP!
-            </Typography>
-          </Card>
-        )}
-
-        {/* Deliveries Grid */}
-        {!loading && deliveries.length > 0 && (
-          <Box
-            sx={{
-              display: 'grid',
-              gridTemplateColumns: {
-                xs: '1fr',
-                md: 'repeat(2, 1fr)',
-                lg: 'repeat(3, 1fr)',
+                bgcolor: '#1A8CD8',
               },
-              gap: 3,
             }}
           >
-            {deliveries.map((delivery) => (
-              <DeliveryCard key={delivery.id} delivery={delivery} />
-            ))}
-          </Box>
-        )}
+            Sign in with Twitter
+          </Button>
+          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 3 }}>
+            By signing in, you agree to access your Twitter POAP achievements
+          </Typography>
+        </Card>
       </Container>
     </Box>
   );

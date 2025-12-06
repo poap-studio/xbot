@@ -1,6 +1,6 @@
 /**
- * Claim Page - Redirect to Home
- * This route redirects to the home page (/) which handles claim functionality
+ * Claim Page - Redirect to Dashboard
+ * This route redirects to the dashboard page which handles claim functionality
  */
 
 'use client';
@@ -12,14 +12,14 @@ export default function ClaimRedirect() {
   const router = useRouter();
 
   useEffect(() => {
-    router.replace('/');
+    router.replace('/dashboard');
   }, [router]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
       <div className="text-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-        <p className="text-gray-600 dark:text-gray-400">Redirecting...</p>
+        <p className="text-gray-600 dark:text-gray-400">Redirecting to dashboard...</p>
       </div>
     </div>
   );

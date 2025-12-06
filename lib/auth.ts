@@ -83,8 +83,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     },
   },
   pages: {
-    signIn: '/claim', // Redirect to claim page for sign in
-    error: '/claim',
+    signIn: '/', // Redirect to home page for sign in
+    error: '/',
   },
   session: {
     strategy: 'jwt',
