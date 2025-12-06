@@ -39,29 +39,15 @@ export function getBearerClient(): TwitterApi {
  */
 export async function getBotClient(): Promise<TwitterApi> {
   try {
-    // Get current config
-    const config = await prisma.config.findFirst();
-
-    if (!config?.botAccountId) {
-      throw new Error(
-        'No bot account connected. Please connect a bot account in the admin panel.'
-      );
-    }
-
-    // Get bot account
-    const botAccount = await prisma.botAccount.findUnique({
-      where: { id: config.botAccountId },
+    // Get any connected bot account
+    const botAccount = await prisma.botAccount.findFirst({
+      where: { isConnected: true },
+      orderBy: { lastUsedAt: 'desc' },
     });
 
     if (!botAccount) {
       throw new Error(
-        'Bot account not found. The configured bot account may have been deleted.'
-      );
-    }
-
-    if (!botAccount.isConnected) {
-      throw new Error(
-        'Bot account is disconnected. Please reconnect it in the admin panel.'
+        'No bot account connected. Please connect a bot account in the admin panel.'
       );
     }
 
@@ -155,17 +141,11 @@ export async function getBotInfo(): Promise<{
  */
 export async function isBotConnected(): Promise<boolean> {
   try {
-    const config = await prisma.config.findFirst();
-
-    if (!config?.botAccountId) {
-      return false;
-    }
-
-    const botAccount = await prisma.botAccount.findUnique({
-      where: { id: config.botAccountId },
+    const botAccount = await prisma.botAccount.findFirst({
+      where: { isConnected: true },
     });
 
-    return botAccount?.isConnected || false;
+    return !!botAccount;
   } catch (error) {
     console.error('Error checking bot connection:', error);
     return false;

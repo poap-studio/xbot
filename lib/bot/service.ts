@@ -13,18 +13,19 @@ import prisma from '@/lib/prisma';
  * Mark a hidden code as used
  * @param {string} code - The hidden code to mark as used
  * @param {string} twitterId - The Twitter user ID who used it
+ * @param {string} projectId - The project ID
  */
-async function markHiddenCodeAsUsed(code: string, twitterId: string): Promise<void> {
+async function markHiddenCodeAsUsed(code: string, twitterId: string, projectId: string): Promise<void> {
   try {
     await prisma.validCode.update({
-      where: { code },
+      where: { code_projectId: { code, projectId } },
       data: {
         isUsed: true,
         usedBy: twitterId,
         usedAt: new Date(),
       },
     });
-    console.log(`Hidden code "${code}" marked as used by ${twitterId}`);
+    console.log(`Hidden code "${code}" marked as used by ${twitterId} for project ${projectId}`);
   } catch (error) {
     console.error(`Failed to mark hidden code as used:`, error);
     throw error;
@@ -108,10 +109,29 @@ export async function processSingleTweet(
   const twitterUserId = tweet.authorId;
 
   try {
-    // 1. Check if already delivered
-    const alreadyDelivered = await hasDelivery(tweetId);
+    // 0. Find project for this tweet based on hidden code
+    if (!tweet.hiddenCode) {
+      throw new Error('No hidden code found in tweet');
+    }
+
+    const validCode = await prisma.validCode.findFirst({
+      where: { code: tweet.hiddenCode },
+      include: { project: true },
+    });
+
+    if (!validCode || !validCode.project) {
+      throw new Error(`Hidden code "${tweet.hiddenCode}" not found or not associated with a project`);
+    }
+
+    const projectId = validCode.projectId;
+    const project = validCode.project;
+
+    console.log(`Processing tweet ${tweetId} for project "${project.name}" (${projectId})`);
+
+    // 1. Check if already delivered for this project
+    const alreadyDelivered = await hasDelivery(tweetId, projectId);
     if (alreadyDelivered) {
-      console.log(`Tweet ${tweetId} already has a delivery. Skipping.`);
+      console.log(`Tweet ${tweetId} already has a delivery for project ${projectId}. Skipping.`);
       return {
         tweetId,
         username,
@@ -132,17 +152,18 @@ export async function processSingleTweet(
       };
     }
 
-    // 3. Check if multiple claims are allowed
-    const config = await prisma.config.findFirst();
-    if (!config) {
-      throw new Error('Configuration not found');
-    }
+    // 3. Check if multiple claims are allowed for this project
+    // If multiple claims are NOT allowed, check if user already has a delivery for this project
+    if (!project.allowMultipleClaims) {
+      const userAlreadyClaimed = await prisma.delivery.findFirst({
+        where: {
+          twitterUser: { twitterId: twitterUserId },
+          projectId,
+        },
+      });
 
-    // If multiple claims are NOT allowed, check if user already has a delivery
-    if (!config.allowMultipleClaims) {
-      const userAlreadyClaimed = await userHasDelivery(twitterUserId);
       if (userAlreadyClaimed) {
-        console.log(`User ${username} (${twitterUserId}) already has a delivery. Multiple claims not allowed.`);
+        console.log(`User ${username} (${twitterUserId}) already has a delivery for project ${projectId}. Multiple claims not allowed.`);
 
         // Reply with "already claimed" message
         const replyId = await replyWithAlreadyClaimed(tweetId);
@@ -157,10 +178,10 @@ export async function processSingleTweet(
       }
     }
 
-    // 4. Reserve mint link
-    const mintLink = await reserveMintLink(twitterUserId);
+    // 4. Reserve mint link for this project
+    const mintLink = await reserveMintLink(twitterUserId, projectId);
     if (!mintLink) {
-      console.warn(`No available mint links for tweet ${tweetId}`);
+      console.warn(`No available mint links for tweet ${tweetId} in project ${projectId}`);
       return {
         tweetId,
         username,
@@ -180,16 +201,14 @@ export async function processSingleTweet(
       throw new Error('Invalid mint link format');
     }
 
-    // 7. Record delivery
-    await recordDelivery(twitterUserId, username, tweetId, mintLink, qrHash);
+    // 7. Record delivery with project ID
+    await recordDelivery(twitterUserId, username, tweetId, mintLink, qrHash, projectId);
 
-    // 8. Mark hidden code as used (if present)
-    if (tweet.hiddenCode) {
-      await markHiddenCodeAsUsed(tweet.hiddenCode, twitterUserId);
-    }
+    // 8. Mark hidden code as used
+    await markHiddenCodeAsUsed(tweet.hiddenCode, twitterUserId, projectId);
 
     console.log(
-      `✅ Successfully delivered POAP to @${username} for tweet ${tweetId}`
+      `✅ Successfully delivered POAP to @${username} for tweet ${tweetId} (project: ${project.name})`
     );
 
     return {

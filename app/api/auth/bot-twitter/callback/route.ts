@@ -107,21 +107,8 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    // Update or create config to use this bot account
-    // Note: If config doesn't exist, only update botAccountId to avoid overwriting existing config
-    const existingConfig = await prisma.config.findFirst();
-
-    if (existingConfig) {
-      // Config exists, just update the bot account
-      await prisma.config.update({
-        where: { id: existingConfig.id },
-        data: {
-          botAccountId: botAccount.id,
-        },
-      });
-    }
-    // If no config exists, it should be created from the admin panel first
-
+    // Bot account is now created and can be assigned to projects
+    // Projects can be updated separately to use this bot account
     console.log(`Bot account connected: @${user.data.username} (${user.data.id})`);
 
     // Clear OAuth cookies

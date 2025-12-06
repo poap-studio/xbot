@@ -11,12 +11,31 @@ export const dynamic = 'force-dynamic';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { codes } = body;
+    const { codes, projectId } = body;
+
+    if (!projectId) {
+      return NextResponse.json(
+        { error: 'Project ID is required' },
+        { status: 400 }
+      );
+    }
 
     if (!Array.isArray(codes) || codes.length === 0) {
       return NextResponse.json(
         { error: 'Codes array is required' },
         { status: 400 }
+      );
+    }
+
+    // Verify project exists
+    const project = await prisma.project.findUnique({
+      where: { id: projectId },
+    });
+
+    if (!project) {
+      return NextResponse.json(
+        { error: 'Project not found' },
+        { status: 404 }
       );
     }
 
@@ -32,9 +51,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check for existing codes
+    // Check for existing codes in this project
     const existing = await prisma.validCode.findMany({
       where: {
+        projectId,
         code: {
           in: validCodes,
         },
@@ -48,7 +68,7 @@ export async function POST(request: NextRequest) {
     // Insert new codes
     if (newCodes.length > 0) {
       await prisma.validCode.createMany({
-        data: newCodes.map((code) => ({ code })),
+        data: newCodes.map((code) => ({ code, projectId })),
       });
     }
 

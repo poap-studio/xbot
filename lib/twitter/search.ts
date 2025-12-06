@@ -217,37 +217,54 @@ export async function getLastProcessedTweetId(): Promise<string | undefined> {
 /**
  * Search for new tweets since last check
  * Returns all matching tweets (eligible and non-eligible)
+ * Searches across all active projects
  * @returns {Promise<ProcessedTweet[]>} Array of new tweets
  */
 export async function searchNewEligibleTweets(): Promise<ProcessedTweet[]> {
   try {
-    // Get configuration
-    const config = await prisma.config.findFirst();
+    // Get all active projects
+    const activeProjects = await prisma.project.findMany({
+      where: { isActive: true },
+      select: { twitterHashtag: true },
+    });
 
-    if (!config) {
-      throw new Error('Configuration not found. Please configure the bot first.');
+    if (activeProjects.length === 0) {
+      throw new Error('No active projects found. Please create and activate a project first.');
     }
+
+    // Get unique hashtags from all active projects
+    const hashtags = [...new Set(activeProjects.map(p => p.twitterHashtag))];
+    console.log(`Searching tweets for hashtags: ${hashtags.join(', ')}`);
 
     // Get last processed tweet ID
     const sinceId = await getLastProcessedTweetId();
 
-    // Build criteria from config
-    const criteria: SearchCriteria = {
-      hashtag: config.twitterHashtag,
-      requireImage: false, // Don't filter by image - we want to reply to all tweets with hashtag
-      sinceId,
-      maxResults: 100,
-    };
+    // Search tweets for all hashtags
+    let allTweets: ProcessedTweet[] = [];
 
-    // Search tweets
-    const tweets = await searchTweets(criteria);
+    for (const hashtag of hashtags) {
+      const criteria: SearchCriteria = {
+        hashtag,
+        requireImage: false, // Don't filter by image - we want to reply to all tweets with hashtag
+        sinceId,
+        maxResults: 100,
+      };
+
+      const tweets = await searchTweets(criteria);
+      allTweets = allTweets.concat(tweets);
+    }
+
+    // Remove duplicates (if a tweet has multiple hashtags)
+    const uniqueTweets = Array.from(
+      new Map(allTweets.map(tweet => [tweet.id, tweet])).values()
+    );
 
     // Return all tweets (caller will filter eligible ones if needed)
-    const eligibleCount = tweets.filter((tweet) => tweet.isEligible).length;
-    const notEligibleCount = tweets.filter((tweet) => !tweet.isEligible).length;
-    console.log(`Found ${tweets.length} tweets, ${eligibleCount} eligible, ${notEligibleCount} not eligible`);
+    const eligibleCount = uniqueTweets.filter((tweet) => tweet.isEligible).length;
+    const notEligibleCount = uniqueTweets.filter((tweet) => !tweet.isEligible).length;
+    console.log(`Found ${uniqueTweets.length} tweets, ${eligibleCount} eligible, ${notEligibleCount} not eligible`);
 
-    return tweets;
+    return uniqueTweets;
   } catch (error) {
     if (error instanceof Error) {
       throw new Error(`Failed to search new eligible tweets: ${error.message}`);
@@ -258,15 +275,57 @@ export async function searchNewEligibleTweets(): Promise<ProcessedTweet[]> {
 
 /**
  * Save processed tweet to database
+ * Associates tweet with project based on hidden code
  * @param {ProcessedTweet} tweet - Processed tweet
  * @returns {Promise<void>}
  */
 export async function saveTweet(tweet: ProcessedTweet): Promise<void> {
   try {
+    // Determine which project this tweet belongs to
+    let projectId: string;
+
+    if (tweet.hiddenCode) {
+      // Find project by hidden code
+      const validCode = await prisma.validCode.findFirst({
+        where: { code: tweet.hiddenCode },
+        select: { projectId: true },
+      });
+
+      if (validCode) {
+        projectId = validCode.projectId;
+      } else {
+        // Fallback: use first active project
+        const project = await prisma.project.findFirst({
+          where: { isActive: true },
+          select: { id: true },
+        });
+
+        if (!project) {
+          throw new Error('No active project found');
+        }
+
+        projectId = project.id;
+      }
+    } else {
+      // No code found - use first active project for tracking
+      const project = await prisma.project.findFirst({
+        where: { isActive: true },
+        select: { id: true },
+      });
+
+      if (!project) {
+        throw new Error('No active project found');
+      }
+
+      projectId = project.id;
+    }
+
+    // Save tweet with project association
     await prisma.tweet.upsert({
-      where: { tweetId: tweet.id },
+      where: { tweetId_projectId: { tweetId: tweet.id, projectId } },
       create: {
         tweetId: tweet.id,
+        projectId,
         twitterUserId: tweet.authorId,
         username: tweet.authorUsername,
         text: tweet.text,
@@ -283,7 +342,7 @@ export async function saveTweet(tweet: ProcessedTweet): Promise<void> {
       },
     });
 
-    console.log(`Tweet ${tweet.id} saved to database`);
+    console.log(`Tweet ${tweet.id} saved to database (project: ${projectId})`);
   } catch (error) {
     console.error(`Failed to save tweet ${tweet.id}:`, error);
     throw error;

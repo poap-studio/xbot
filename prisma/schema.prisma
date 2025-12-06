@@ -7,13 +7,14 @@ generator client {
   provider = "prisma-client-js"
 }
 
-model Config {
+model Project {
   id              String   @id @default(cuid())
-  poapEventId     String   @default("")
-  poapEditCode    String   @default("") // Edit code for POAP API to load QR codes
+  name            String   // POAP event name
+  poapEventId     String
+  poapEditCode    String   // Edit code for POAP API to load QR codes
 
   // Multiple claims configuration
-  allowMultipleClaims Boolean  @default(false) // Allow users to claim multiple POAPs for same event
+  allowMultipleClaims Boolean  @default(false)
 
   // Reply messages
   botReplyEligible    String   @default("¡Felicidades! Has compartido el código correcto. Reclama tu POAP aquí: {{claimUrl}}")
@@ -26,13 +27,31 @@ model Config {
   // QR Page configuration
   qrPageTweetTemplate String @default("I visited the POAP Studio booth at ETH Global, and here's the proof! The secret word is {{code}} {{hashtag}}")
 
-  // POAP API credentials (encrypted)
+  // Status
+  isActive        Boolean  @default(true)
+
+  // Relations
+  validCodes      ValidCode[]
+  qrCodes         QRCode[]
+  deliveries      Delivery[]
+  tweets          Tweet[]
+  botAccountId    String?
+  botAccount      BotAccount? @relation(fields: [botAccountId], references: [id])
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([isActive])
+  @@map("projects")
+}
+
+// Global config (for POAP API credentials shared across projects)
+model Config {
+  id              String   @id @default(cuid())
+
+  // POAP API credentials (encrypted) - shared across all projects
   poapClientId    String?
   poapClientSecret String?
-
-  // Relación con cuenta del bot
-  botAccountId    String?  @unique
-  botAccount      BotAccount? @relation(fields: [botAccountId], references: [id])
 
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
@@ -42,15 +61,19 @@ model Config {
 
 model ValidCode {
   id              String   @id @default(cuid())
-  code            String   @unique
+  code            String
+  projectId       String
+  project         Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
   isUsed          Boolean  @default(false)
   usedBy          String?  // twitterId
   usedAt          DateTime?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
+  @@unique([code, projectId])
   @@index([code])
   @@index([isUsed])
+  @@index([projectId])
   @@map("valid_codes")
 }
 
@@ -73,7 +96,7 @@ model BotAccount {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  config          Config?
+  projects        Project[]
 
   @@map("bot_accounts")
 }
@@ -94,23 +117,30 @@ model TwitterUser {
 
 model Delivery {
   id              String   @id @default(cuid())
-  twitterUserId   String   // References TwitterUser.id (cuid)
+  projectId       String
+  project         Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  twitterUserId   String
   twitterUser     TwitterUser @relation(fields: [twitterUserId], references: [id])
-  tweetId         String   @unique
+  tweetId         String
   mintLink        String
-  qrHash          String   @unique
+  qrHash          String
   deliveredAt     DateTime @default(now())
   claimed         Boolean  @default(false)
   claimedAt       DateTime?
 
+  @@unique([tweetId, projectId])
+  @@unique([qrHash, projectId])
   @@index([twitterUserId])
   @@index([claimed])
+  @@index([projectId])
   @@map("deliveries")
 }
 
 model Tweet {
   id              String   @id @default(cuid())
-  tweetId         String   @unique
+  projectId       String
+  project         Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  tweetId         String
   twitterUserId   String
   username        String
   text            String
@@ -121,8 +151,10 @@ model Tweet {
   botReplied      Boolean  @default(false)
   botReplyTweetId String?
 
+  @@unique([tweetId, projectId])
   @@index([tweetId])
   @@index([isEligible])
+  @@index([projectId])
   @@map("tweets")
 }
 
@@ -138,7 +170,9 @@ model PoapAuth {
 
 model QRCode {
   id              String   @id @default(cuid())
-  qrHash          String   @unique
+  projectId       String
+  project         Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  qrHash          String
   mintLink        String   // Full mint link (e.g., https://poap.xyz/claim/abc123)
   secret          String?  // Secret from POAP API (if retrieved)
   claimed         Boolean  @default(false)
@@ -149,8 +183,10 @@ model QRCode {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
+  @@unique([qrHash, projectId])
   @@index([claimed])
   @@index([reservedFor])
+  @@index([projectId])
   @@map("qr_codes")
 }
 

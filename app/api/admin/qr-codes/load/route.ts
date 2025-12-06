@@ -12,7 +12,7 @@ export const maxDuration = 300; // 5 minutes for loading many QR codes
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { eventId, editCode } = body;
+    const { eventId, editCode, projectId } = body;
 
     if (!eventId || !editCode) {
       return NextResponse.json(
@@ -21,9 +21,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log(`Loading QR codes for event ${eventId}...`);
+    if (!projectId) {
+      return NextResponse.json(
+        { error: 'Project ID is required' },
+        { status: 400 }
+      );
+    }
 
-    const result = await loadQRCodesFromPOAP(eventId, editCode);
+    console.log(`Loading QR codes for event ${eventId} (project ${projectId})...`);
+
+    const result = await loadQRCodesFromPOAP(eventId, editCode, projectId);
 
     return NextResponse.json(result);
   } catch (error) {

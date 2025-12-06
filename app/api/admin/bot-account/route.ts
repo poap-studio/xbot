@@ -16,17 +16,9 @@ export const dynamic = 'force-dynamic';
  */
 export async function GET(request: NextRequest) {
   try {
-    const config = await prisma.config.findFirst();
-
-    if (!config?.botAccountId) {
-      return NextResponse.json({
-        botAccount: null,
-        message: 'No bot account connected',
-      });
-    }
-
-    const botAccount = await prisma.botAccount.findUnique({
-      where: { id: config.botAccountId },
+    // Get all bot accounts (multi-project support)
+    const botAccounts = await prisma.botAccount.findMany({
+      where: { isConnected: true },
       select: {
         id: true,
         twitterId: true,
@@ -44,28 +36,15 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    if (!botAccount) {
-      // Config points to non-existent bot account, clean it up
-      await prisma.config.update({
-        where: { id: config.id },
-        data: { botAccountId: null },
-      });
-
-      return NextResponse.json({
-        botAccount: null,
-        message: 'Bot account reference was invalid and has been cleared',
-      });
-    }
-
     return NextResponse.json({
-      botAccount,
-      message: 'Bot account retrieved successfully',
+      botAccounts,
+      message: 'Bot accounts retrieved successfully',
     });
   } catch (error) {
-    console.error('Error fetching bot account:', error);
+    console.error('Error fetching bot accounts:', error);
     return NextResponse.json(
       {
-        error: 'Failed to fetch bot account',
+        error: 'Failed to fetch bot accounts',
         message: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
@@ -75,45 +54,33 @@ export async function GET(request: NextRequest) {
 
 /**
  * DELETE /api/admin/bot-account
- * Disconnects the current bot account
+ * Disconnects a bot account by ID
  */
 export async function DELETE(request: NextRequest) {
   try {
-    const config = await prisma.config.findFirst();
+    const { searchParams } = new URL(request.url);
+    const botAccountId = searchParams.get('id');
 
-    if (!config?.botAccountId) {
+    if (!botAccountId) {
       return NextResponse.json(
         {
-          error: 'No bot account connected',
-          message: 'There is no bot account to disconnect',
+          error: 'Bot account ID is required',
+          message: 'Please provide a bot account ID to disconnect',
         },
-        { status: 404 }
+        { status: 400 }
       );
     }
 
-    // Use a transaction to ensure atomicity
-    const botAccountId = config.botAccountId; // Store before nulling
-
-    await prisma.$transaction(async (tx) => {
-      // Update config to remove bot account reference
-      await tx.config.update({
-        where: { id: config.id },
-        data: { botAccountId: null },
-      });
-
-      // Mark bot account as disconnected (keep for audit trail)
-      if (botAccountId) {
-        await tx.botAccount.update({
-          where: { id: botAccountId },
-          data: {
-            isConnected: false,
-            lastUsedAt: new Date(), // Update last used to disconnection time
-          },
-        });
-      }
+    // Mark bot account as disconnected (keep for audit trail)
+    await prisma.botAccount.update({
+      where: { id: botAccountId },
+      data: {
+        isConnected: false,
+        lastUsedAt: new Date(), // Update last used to disconnection time
+      },
     });
 
-    console.log(`Bot account disconnected: ${config.botAccountId}`);
+    console.log(`Bot account disconnected: ${botAccountId}`);
 
     return NextResponse.json({
       success: true,
@@ -160,30 +127,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Update config and bot account
-    await prisma.$transaction(async (tx) => {
-      // Update config to use this bot account
-      await tx.config.upsert({
-        where: { id: 'default' },
-        create: {
-          id: 'default',
-          poapEventId: '',
-          poapEditCode: '',
-          botAccountId: botAccount.id,
-        },
-        update: {
-          botAccountId: botAccount.id,
-        },
-      });
-
-      // Mark as connected
-      await tx.botAccount.update({
-        where: { id: botAccount.id },
-        data: {
-          isConnected: true,
-          connectedAt: new Date(),
-        },
-      });
+    // Mark as connected
+    await prisma.botAccount.update({
+      where: { id: botAccount.id },
+      data: {
+        isConnected: true,
+        connectedAt: new Date(),
+      },
     });
 
     return NextResponse.json({

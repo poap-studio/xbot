@@ -14,6 +14,7 @@ export interface DeliveryRecord {
   deliveredAt: Date;
   claimed: boolean;
   claimedAt: Date | null;
+  projectId: string;
 }
 
 export interface DeliveryStats {
@@ -30,6 +31,7 @@ export interface DeliveryStats {
  * @param {string} tweetId - Tweet ID
  * @param {string} mintLink - POAP mint link
  * @param {string} qrHash - QR code hash
+ * @param {string} projectId - Project ID
  * @returns {Promise<DeliveryRecord>} Delivery record
  */
 export async function recordDelivery(
@@ -37,7 +39,8 @@ export async function recordDelivery(
   username: string,
   tweetId: string,
   mintLink: string,
-  qrHash: string
+  qrHash: string,
+  projectId: string
 ): Promise<DeliveryRecord> {
   try {
     // Ensure Twitter user exists and get their internal ID
@@ -59,6 +62,7 @@ export async function recordDelivery(
         tweetId,
         mintLink,
         qrHash,
+        projectId,
       },
     });
 
@@ -76,12 +80,13 @@ export async function recordDelivery(
 /**
  * Check if a tweet already has a delivery
  * @param {string} tweetId - Tweet ID
+ * @param {string} projectId - Project ID (optional)
  * @returns {Promise<boolean>} True if delivery exists
  */
-export async function hasDelivery(tweetId: string): Promise<boolean> {
+export async function hasDelivery(tweetId: string, projectId?: string): Promise<boolean> {
   try {
-    const delivery = await prisma.delivery.findUnique({
-      where: { tweetId },
+    const delivery = await prisma.delivery.findFirst({
+      where: projectId ? { tweetId, projectId } : { tweetId },
     });
 
     return !!delivery;
@@ -122,14 +127,16 @@ export async function userHasDelivery(twitterUserId: string): Promise<boolean> {
 /**
  * Get delivery by tweet ID
  * @param {string} tweetId - Tweet ID
+ * @param {string} projectId - Project ID (optional)
  * @returns {Promise<DeliveryRecord | null>} Delivery record or null
  */
 export async function getDeliveryByTweet(
-  tweetId: string
+  tweetId: string,
+  projectId?: string
 ): Promise<DeliveryRecord | null> {
   try {
-    const delivery = await prisma.delivery.findUnique({
-      where: { tweetId },
+    const delivery = await prisma.delivery.findFirst({
+      where: projectId ? { tweetId, projectId } : { tweetId },
     });
 
     return delivery;
@@ -175,16 +182,28 @@ export async function getUserDeliveries(
 /**
  * Mark a delivery as claimed
  * @param {string} tweetId - Tweet ID
+ * @param {string} projectId - Project ID (optional - will search all projects if not provided)
  * @param {string} claimedBy - Ethereum address or email
  * @returns {Promise<void>}
  */
 export async function markDeliveryClaimed(
   tweetId: string,
+  projectId?: string,
   claimedBy?: string
 ): Promise<void> {
   try {
+    // Find the delivery first
+    const delivery = await prisma.delivery.findFirst({
+      where: projectId ? { tweetId, projectId } : { tweetId },
+    });
+
+    if (!delivery) {
+      throw new Error(`Delivery not found for tweet ${tweetId}`);
+    }
+
+    // Update delivery using the ID
     await prisma.delivery.update({
-      where: { tweetId },
+      where: { id: delivery.id },
       data: {
         claimed: true,
         claimedAt: new Date(),
@@ -192,20 +211,14 @@ export async function markDeliveryClaimed(
     });
 
     // Also update the QRCode
-    const delivery = await prisma.delivery.findUnique({
-      where: { tweetId },
+    await prisma.qRCode.updateMany({
+      where: { qrHash: delivery.qrHash, projectId: delivery.projectId },
+      data: {
+        claimed: true,
+        claimedBy,
+        claimedAt: new Date(),
+      },
     });
-
-    if (delivery) {
-      await prisma.qRCode.update({
-        where: { qrHash: delivery.qrHash },
-        data: {
-          claimed: true,
-          claimedBy,
-          claimedAt: new Date(),
-        },
-      });
-    }
 
     console.log(`Delivery for tweet ${tweetId} marked as claimed`);
   } catch (error) {

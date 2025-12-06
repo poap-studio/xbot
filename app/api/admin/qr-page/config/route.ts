@@ -15,16 +15,18 @@ export const dynamic = 'force-dynamic';
  */
 export async function GET(request: NextRequest) {
   try {
-    // Get configuration
-    const config = await prisma.config.findFirst();
+    // Get first active project for legacy compatibility
+    const project = await prisma.project.findFirst({
+      where: { isActive: true },
+    });
 
-    if (!config) {
-      return NextResponse.json({ error: 'Configuration not found' }, { status: 404 });
+    if (!project) {
+      return NextResponse.json({ error: 'No active project found' }, { status: 404 });
     }
 
     return NextResponse.json({
-      tweetTemplate: config.qrPageTweetTemplate,
-      hashtag: config.twitterHashtag,
+      tweetTemplate: project.qrPageTweetTemplate,
+      hashtag: project.twitterHashtag,
     });
   } catch (error) {
     console.error('Error fetching QR page config:', error);
@@ -42,7 +44,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { tweetTemplate } = body;
+    const { tweetTemplate, projectId } = body;
 
     // Validate tweet template
     if (!tweetTemplate || typeof tweetTemplate !== 'string') {
@@ -60,15 +62,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Update configuration
-    const config = await prisma.config.findFirst();
+    // Find project to update (use projectId if provided, otherwise first active)
+    const whereClause = projectId ? { id: projectId } : { isActive: true };
+    const project = await prisma.project.findFirst({ where: whereClause });
 
-    if (!config) {
-      return NextResponse.json({ error: 'Configuration not found' }, { status: 404 });
+    if (!project) {
+      return NextResponse.json({ error: 'No project found' }, { status: 404 });
     }
 
-    await prisma.config.update({
-      where: { id: config.id },
+    await prisma.project.update({
+      where: { id: project.id },
       data: {
         qrPageTweetTemplate: tweetTemplate,
       },

@@ -1,82 +1,110 @@
 /**
  * Admin Dashboard Page
- * Main page for bot administration
+ * Shows list of all projects
  */
 
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Box,
   Container,
   Typography,
   Card,
+  CardContent,
   Stack,
   Button,
   CircularProgress,
   Alert,
+  Chip,
+  IconButton,
 } from '@mui/material';
 import {
-  LocalShipping as DeliveryIcon,
-  Link as LinkIcon,
+  Add as AddIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+  QrCode as QrCodeIcon,
   Twitter as TwitterIcon,
-  TrendingUp as TrendingUpIcon,
+  Check as CheckIcon,
+  Close as CloseIcon,
 } from '@mui/icons-material';
-import { BotConnection } from '@/components/admin/BotConnection';
 
-interface DashboardStats {
-  bot: {
-    connected: boolean;
-    username?: string;
-    lastUsed?: string;
-  };
-  deliveries: {
-    total: number;
-    claimed: number;
-    unclaimed: number;
-    claimRate: number;
-  };
-  mintLinks: {
-    total: number;
-    available: number;
-    reserved: number;
-    claimed: number;
-  };
-  tweets: {
-    total: number;
-    eligible: number;
-    replied: number;
-    pending: number;
-  };
+interface ProjectStats {
+  validCodes: number;
+  qrCodes: number;
+  deliveries: number;
+  claimedDeliveries: number;
+  tweets: number;
+  eligibleTweets: number;
+}
+
+interface Project {
+  id: string;
+  name: string;
+  poapEventId: string;
+  twitterHashtag: string;
+  isActive: boolean;
+  botAccount: {
+    username: string;
+    isConnected: boolean;
+  } | null;
+  stats: ProjectStats;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export default function AdminDashboard() {
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchStats();
+    fetchProjects();
   }, []);
 
-  const fetchStats = async () => {
+  const fetchProjects = async () => {
     setLoading(true);
     setError(null);
 
     try {
-      const response = await fetch('/api/admin/stats');
+      const response = await fetch('/api/admin/projects');
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to fetch stats');
+        throw new Error(data.error || 'Failed to fetch projects');
       }
 
-      setStats(data);
+      setProjects(data.projects);
     } catch (error) {
-      console.error('Error fetching stats:', error);
-      setError(error instanceof Error ? error.message : 'Failed to load stats');
+      console.error('Error fetching projects:', error);
+      setError(error instanceof Error ? error.message : 'Failed to load projects');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDeleteProject = async (projectId: string) => {
+    if (!confirm('¿Estás seguro de eliminar este proyecto? Se eliminarán todos los datos relacionados.')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/admin/projects/${projectId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to delete project');
+      }
+
+      // Refresh projects list
+      fetchProjects();
+    } catch (error) {
+      console.error('Error deleting project:', error);
+      alert('Error al eliminar el proyecto: ' + (error instanceof Error ? error.message : 'Unknown error'));
     }
   };
 
@@ -95,12 +123,8 @@ export default function AdminDashboard() {
       <Container maxWidth="lg" sx={{ py: 4 }}>
         <Alert severity="error">
           {error}
-          <Button
-            onClick={fetchStats}
-            size="small"
-            sx={{ mt: 1 }}
-          >
-            Retry
+          <Button onClick={fetchProjects} size="small" sx={{ mt: 1 }}>
+            Reintentar
           </Button>
         </Alert>
       </Container>
@@ -111,92 +135,172 @@ export default function AdminDashboard() {
     <Container maxWidth="lg" sx={{ py: 4 }}>
       <Stack spacing={4}>
         {/* Header */}
-        <Box>
-          <Typography variant="h4" gutterBottom sx={{ fontWeight: 'bold' }}>
-            Dashboard
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Overview of POAP bot activity
-          </Typography>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Box>
+            <Typography variant="h4" gutterBottom sx={{ fontWeight: 'bold' }}>
+              Proyectos
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Gestiona tus drops de POAP
+            </Typography>
+          </Box>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => router.push('/admin/projects/new')}
+            sx={{ height: 'fit-content' }}
+          >
+            Nuevo Proyecto
+          </Button>
         </Box>
 
-        {/* Bot Connection */}
-        <BotConnection />
-
-        {/* Stats Grid */}
-        <Box sx={{
-          display: 'grid',
-          gridTemplateColumns: {
-            xs: '1fr',
-            sm: 'repeat(2, 1fr)',
-            lg: 'repeat(4, 1fr)',
-          },
-          gap: 2,
-        }}>
-          {/* Deliveries */}
-          <Card sx={{ p: 3 }}>
-            <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
-              <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 'medium' }}>
-                Deliveries
-              </Typography>
-              <DeliveryIcon sx={{ fontSize: 32, color: 'primary.main', opacity: 0.3 }} />
-            </Stack>
-            <Typography variant="h3" sx={{ fontWeight: 'bold', mb: 1 }}>
-              {stats?.deliveries.total || 0}
+        {/* Projects Grid */}
+        {projects.length === 0 ? (
+          <Card sx={{ p: 6, textAlign: 'center' }}>
+            <Typography variant="h1" sx={{ fontSize: '4rem', mb: 2 }}>
+              📦
             </Typography>
-            <Typography variant="caption" color="text.secondary">
-              {stats?.deliveries.claimed || 0} claimed ({stats?.deliveries.claimRate.toFixed(1) || 0}%)
+            <Typography variant="h6" gutterBottom>
+              No hay proyectos
             </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+              Crea tu primer proyecto para empezar a distribuir POAPs
+            </Typography>
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={() => router.push('/admin/projects/new')}
+            >
+              Crear Proyecto
+            </Button>
           </Card>
+        ) : (
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: {
+                xs: '1fr',
+                md: 'repeat(2, 1fr)',
+                lg: 'repeat(3, 1fr)',
+              },
+              gap: 3,
+            }}
+          >
+            {projects.map((project) => (
+              <Box key={project.id}>
+                <Card
+                  sx={{
+                    height: '100%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    '&:hover': {
+                      boxShadow: 4,
+                    },
+                  }}
+                >
+                  <CardContent sx={{ flexGrow: 1 }}>
+                    {/* Header */}
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', mb: 2 }}>
+                      <Box>
+                        <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>
+                          {project.name}
+                        </Typography>
+                        <Stack direction="row" spacing={1} sx={{ mb: 1 }}>
+                          <Chip
+                            label={project.isActive ? 'Activo' : 'Inactivo'}
+                            color={project.isActive ? 'success' : 'default'}
+                            size="small"
+                            icon={project.isActive ? <CheckIcon /> : <CloseIcon />}
+                          />
+                          {project.botAccount && (
+                            <Chip
+                              label={`@${project.botAccount.username}`}
+                              size="small"
+                              icon={<TwitterIcon />}
+                              color={project.botAccount.isConnected ? 'primary' : 'default'}
+                            />
+                          )}
+                        </Stack>
+                      </Box>
+                    </Box>
 
-          {/* Mint Links */}
-          <Card sx={{ p: 3 }}>
-            <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
-              <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 'medium' }}>
-                Mint Links
-              </Typography>
-              <LinkIcon sx={{ fontSize: 32, color: 'primary.main', opacity: 0.3 }} />
-            </Stack>
-            <Typography variant="h3" sx={{ fontWeight: 'bold', mb: 1 }}>
-              {stats?.mintLinks.available || 0}
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              {stats?.mintLinks.total || 0} total
-            </Typography>
-          </Card>
+                    {/* Details */}
+                    <Stack spacing={1} sx={{ mb: 2 }}>
+                      <Typography variant="body2" color="text.secondary">
+                        <strong>Event ID:</strong> {project.poapEventId}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        <strong>Hashtag:</strong> {project.twitterHashtag}
+                      </Typography>
+                    </Stack>
 
-          {/* Eligible Tweets */}
-          <Card sx={{ p: 3 }}>
-            <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
-              <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 'medium' }}>
-                Eligible Tweets
-              </Typography>
-              <TwitterIcon sx={{ fontSize: 32, color: 'primary.main', opacity: 0.3 }} />
-            </Stack>
-            <Typography variant="h3" sx={{ fontWeight: 'bold', mb: 1 }}>
-              {stats?.tweets.eligible || 0}
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              {stats?.tweets.pending || 0} pending response
-            </Typography>
-          </Card>
+                    {/* Stats */}
+                    <Box
+                      sx={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(2, 1fr)',
+                        gap: 1,
+                      }}
+                    >
+                      <Box sx={{ textAlign: 'center', p: 1, bgcolor: 'background.default', borderRadius: 1 }}>
+                        <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+                          {project.stats.qrCodes}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          QR Codes
+                        </Typography>
+                      </Box>
+                      <Box sx={{ textAlign: 'center', p: 1, bgcolor: 'background.default', borderRadius: 1 }}>
+                        <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+                          {project.stats.deliveries}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          Entregas
+                        </Typography>
+                      </Box>
+                      <Box sx={{ textAlign: 'center', p: 1, bgcolor: 'background.default', borderRadius: 1 }}>
+                        <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+                          {project.stats.validCodes}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          Códigos
+                        </Typography>
+                      </Box>
+                      <Box sx={{ textAlign: 'center', p: 1, bgcolor: 'background.default', borderRadius: 1 }}>
+                        <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+                          {project.stats.eligibleTweets}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          Tweets
+                        </Typography>
+                      </Box>
+                    </Box>
+                  </CardContent>
 
-          {/* Claim Rate */}
-          <Card sx={{ p: 3 }}>
-            <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
-              <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 'medium' }}>
-                Claim Rate
-              </Typography>
-              <TrendingUpIcon sx={{ fontSize: 32, color: 'success.main', opacity: 0.3 }} />
-            </Stack>
-            <Typography variant="h3" sx={{ fontWeight: 'bold', mb: 1 }}>
-              {stats?.deliveries.claimRate.toFixed(1) || 0}%
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              {stats?.deliveries.claimed || 0} of {stats?.deliveries.total || 0}
-            </Typography>
-          </Card>
-        </Box>
+                  {/* Actions */}
+                  <Box sx={{ p: 2, pt: 0, display: 'flex', gap: 1 }}>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      startIcon={<EditIcon />}
+                      onClick={() => router.push(`/admin/projects/${project.id}`)}
+                      fullWidth
+                    >
+                      Editar
+                    </Button>
+                    <IconButton
+                      color="error"
+                      size="small"
+                      onClick={() => handleDeleteProject(project.id)}
+                    >
+                      <DeleteIcon />
+                    </IconButton>
+                  </Box>
+                </Card>
+              </Box>
+            ))}
+          </Box>
+        )}
       </Stack>
     </Container>
   );

@@ -16,16 +16,6 @@ export const dynamic = 'force-dynamic';
  */
 export async function GET() {
   try {
-    // Get configuration from database
-    const config = await prisma.config.findFirst();
-
-    if (!config) {
-      return NextResponse.json(
-        { error: 'Configuration not found' },
-        { status: 404 }
-      );
-    }
-
     // Get bot status
     const status = await getBotStatus();
 
@@ -49,11 +39,17 @@ export async function GET() {
     const processedToday = todayLogs.reduce((sum, log) => sum + (log.processed || 0), 0);
     const errors = todayLogs.filter(log => log.status === 'error').length;
 
+    // Get first active project for legacy compatibility
+    const project = await prisma.project.findFirst({
+      where: { isActive: true },
+    });
+
     return NextResponse.json({
-      twitterHashtag: config.twitterHashtag,
-      botReplyEligible: config.botReplyEligible,
-      botReplyNotEligible: config.botReplyNotEligible,
-      botReplyAlreadyClaimed: config.botReplyAlreadyClaimed || 'You have already claimed a POAP for this event. Only one claim per user is allowed.',
+      // Legacy fields from first active project (for backward compatibility)
+      twitterHashtag: project?.twitterHashtag || '#POAP',
+      botReplyEligible: project?.botReplyEligible || '',
+      botReplyNotEligible: project?.botReplyNotEligible || '',
+      botReplyAlreadyClaimed: project?.botReplyAlreadyClaimed || 'You have already claimed a POAP for this event. Only one claim per user is allowed.',
       botConnected: !!botAccount,
       botUsername: botAccount?.username,
       lastRun: status.lastRun,
@@ -76,7 +72,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { twitterHashtag, botReplyEligible, botReplyNotEligible, botReplyAlreadyClaimed } = body;
+    const { projectId, twitterHashtag, botReplyEligible, botReplyNotEligible, botReplyAlreadyClaimed } = body;
 
     // Validate input
     if (!twitterHashtag || !twitterHashtag.startsWith('#')) {
@@ -100,17 +96,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get existing config
-    const config = await prisma.config.findFirst();
+    // If projectId is provided, update that project, otherwise update first active project
+    const whereClause = projectId ? { id: projectId } : { isActive: true };
 
-    if (!config) {
+    const project = await prisma.project.findFirst({ where: whereClause });
+
+    if (!project) {
       return NextResponse.json(
-        { error: 'Configuration not found' },
+        { error: 'Project not found' },
         { status: 404 }
       );
     }
 
-    // Update configuration
+    // Update project configuration
     const updateData: any = {
       twitterHashtag,
       botReplyEligible,
@@ -121,8 +119,8 @@ export async function POST(request: NextRequest) {
       updateData.botReplyAlreadyClaimed = botReplyAlreadyClaimed;
     }
 
-    await prisma.config.update({
-      where: { id: config.id },
+    await prisma.project.update({
+      where: { id: project.id },
       data: updateData,
     });
 

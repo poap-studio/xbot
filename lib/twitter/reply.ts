@@ -82,7 +82,7 @@ export async function markTweetAsReplied(
   replyTweetId: string
 ): Promise<void> {
   try {
-    await prisma.tweet.update({
+    await prisma.tweet.updateMany({
       where: { tweetId },
       data: {
         botReplied: true,
@@ -99,20 +99,22 @@ export async function markTweetAsReplied(
 
 /**
  * Generate reply text for a claim URL
- * Uses template from config with {{claimUrl}} placeholder
+ * Uses template from first active project with {{claimUrl}} placeholder
  * @param {string} claimUrl - POAP claim URL
  * @returns {Promise<string>} Reply text
  */
 export async function generateReplyText(claimUrl: string): Promise<string> {
   try {
-    const config = await prisma.config.findFirst();
+    const project = await prisma.project.findFirst({
+      where: { isActive: true },
+    });
 
-    if (!config) {
-      throw new Error('Configuration not found');
+    if (!project) {
+      throw new Error('No active project found');
     }
 
     // Replace placeholder with actual claim URL
-    const text = config.botReplyEligible.replace('{{claimUrl}}', claimUrl);
+    const text = project.botReplyEligible.replace('{{claimUrl}}', claimUrl);
 
     // Validate length
     if (text.length > 280) {
@@ -157,18 +159,20 @@ export async function replyWithClaimUrl(
 
 /**
  * Generate "already claimed" reply text
- * Uses template from config
+ * Uses template from first active project
  * @returns {Promise<string>} Reply text
  */
 export async function generateAlreadyClaimedText(): Promise<string> {
   try {
-    const config = await prisma.config.findFirst();
+    const project = await prisma.project.findFirst({
+      where: { isActive: true },
+    });
 
-    if (!config) {
-      throw new Error('Configuration not found');
+    if (!project) {
+      throw new Error('No active project found');
     }
 
-    const text = config.botReplyAlreadyClaimed || 'You have already claimed a POAP for this event. Only one claim per user is allowed.';
+    const text = project.botReplyAlreadyClaimed || 'You have already claimed a POAP for this event. Only one claim per user is allowed.';
 
     // Validate length
     if (text.length > 280) {
@@ -209,18 +213,20 @@ export async function replyWithAlreadyClaimed(
 
 /**
  * Generate "not eligible" reply text
- * Uses template from config
+ * Uses template from first active project
  * @returns {Promise<string>} Reply text
  */
 export async function generateNotEligibleText(): Promise<string> {
   try {
-    const config = await prisma.config.findFirst();
+    const project = await prisma.project.findFirst({
+      where: { isActive: true },
+    });
 
-    if (!config) {
-      throw new Error('Configuration not found');
+    if (!project) {
+      throw new Error('No active project found');
     }
 
-    const text = config.botReplyNotEligible || 'Thank you for your interest. Make sure to include a valid code and an image in your tweet.';
+    const text = project.botReplyNotEligible || 'Thank you for your interest. Make sure to include a valid code and an image in your tweet.';
 
     // Validate length
     if (text.length > 280) {
@@ -266,7 +272,7 @@ export async function replyWithNotEligible(
  */
 export async function hasBeenRepliedTo(tweetId: string): Promise<boolean> {
   try {
-    const tweet = await prisma.tweet.findUnique({
+    const tweet = await prisma.tweet.findFirst({
       where: { tweetId },
       select: { botReplied: true },
     });

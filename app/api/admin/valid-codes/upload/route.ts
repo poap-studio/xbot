@@ -17,12 +17,31 @@ export const dynamic = 'force-dynamic';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { codes, replaceExisting } = body;
+    const { codes, projectId, replaceExisting } = body;
+
+    if (!projectId) {
+      return NextResponse.json(
+        { error: 'Project ID is required' },
+        { status: 400 }
+      );
+    }
 
     if (!codes || !Array.isArray(codes) || codes.length === 0) {
       return NextResponse.json(
         { error: 'No codes provided. Expected array of strings.' },
         { status: 400 }
+      );
+    }
+
+    // Verify project exists
+    const project = await prisma.project.findUnique({
+      where: { id: projectId },
+    });
+
+    if (!project) {
+      return NextResponse.json(
+        { error: 'Project not found' },
+        { status: 404 }
       );
     }
 
@@ -41,18 +60,20 @@ export async function POST(request: NextRequest) {
     // Remove duplicates
     const uniqueCodes = [...new Set(cleanCodes)];
 
-    // Replace existing codes if requested
+    // Replace existing codes for this project if requested
     if (replaceExisting) {
-      await prisma.validCode.deleteMany({});
+      await prisma.validCode.deleteMany({
+        where: { projectId },
+      });
     }
 
     // Insert codes (ignore duplicates)
     const results = await Promise.allSettled(
       uniqueCodes.map((code) =>
         prisma.validCode.upsert({
-          where: { code },
+          where: { code_projectId: { code, projectId } },
           update: {}, // Don't update if exists
-          create: { code },
+          create: { code, projectId },
         })
       )
     );

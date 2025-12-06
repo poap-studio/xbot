@@ -14,11 +14,13 @@ export const dynamic = 'force-dynamic';
  */
 export async function GET() {
   try {
-    const config = await prisma.config.findFirst({
+    // Get first active project for legacy compatibility
+    const project = await prisma.project.findFirst({
+      where: { isActive: true },
       orderBy: { updatedAt: 'desc' },
     });
 
-    if (!config) {
+    if (!project) {
       return NextResponse.json({
         eventId: '',
         eventName: '',
@@ -28,14 +30,14 @@ export async function GET() {
     }
 
     return NextResponse.json({
-      eventId: config.poapEventId || '',
-      editCode: config.poapEditCode || '',
-      allowMultipleClaims: config.allowMultipleClaims ?? false,
-      eventName: '', // Not stored in database
-      searchQuery: config.twitterHashtag || '',
-      replyTemplate: config.botReplyEligible || '',
-      replyEligible: config.botReplyEligible || '',
-      replyNotEligible: config.botReplyNotEligible || '',
+      eventId: project.poapEventId || '',
+      editCode: project.poapEditCode || '',
+      allowMultipleClaims: project.allowMultipleClaims ?? false,
+      eventName: project.name || '',
+      searchQuery: project.twitterHashtag || '',
+      replyTemplate: project.botReplyEligible || '',
+      replyEligible: project.botReplyEligible || '',
+      replyNotEligible: project.botReplyNotEligible || '',
     });
   } catch (error) {
     console.error('Error fetching POAP config:', error);
@@ -58,7 +60,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
-    const { eventId, editCode, allowMultipleClaims, searchQuery, replyTemplate, replyEligible, replyNotEligible } = body;
+    const { projectId, eventId, editCode, allowMultipleClaims, searchQuery, replyTemplate, replyEligible, replyNotEligible } = body;
 
     // Validate required fields
     if (!eventId) {
@@ -80,12 +82,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if config exists
-    const existingConfig = await prisma.config.findFirst();
+    // Find project to update (use projectId if provided, otherwise first active)
+    const whereClause = projectId ? { id: projectId } : { isActive: true };
+    const existingProject = await prisma.project.findFirst({ where: whereClause });
 
-    let config;
-    if (existingConfig) {
-      // Update existing config
+    let project;
+    if (existingProject) {
+      // Update existing project
       const updateData: any = {
         poapEventId: eventId,
       };
@@ -110,14 +113,14 @@ export async function POST(request: NextRequest) {
         updateData.allowMultipleClaims = allowMultipleClaims;
       }
 
-      config = await prisma.config.update({
-        where: { id: existingConfig.id },
+      project = await prisma.project.update({
+        where: { id: existingProject.id },
         data: updateData,
       });
     } else {
-      // Create new config - requires poapEditCode
+      // No project found
       return NextResponse.json(
-        { error: 'No configuration found. Please initialize the database first.' },
+        { error: 'No project found. Please create a project first.' },
         { status: 400 }
       );
     }
@@ -125,13 +128,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       config: {
-        eventId: config.poapEventId,
-        editCode: config.poapEditCode,
-        allowMultipleClaims: config.allowMultipleClaims,
-        searchQuery: config.twitterHashtag,
-        replyTemplate: config.botReplyEligible,
-        replyEligible: config.botReplyEligible,
-        replyNotEligible: config.botReplyNotEligible,
+        eventId: project.poapEventId,
+        editCode: project.poapEditCode,
+        allowMultipleClaims: project.allowMultipleClaims,
+        searchQuery: project.twitterHashtag,
+        replyTemplate: project.botReplyEligible,
+        replyEligible: project.botReplyEligible,
+        replyNotEligible: project.botReplyNotEligible,
       },
     });
   } catch (error) {

@@ -15,12 +15,31 @@ export const dynamic = 'force-dynamic';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { links } = body;
+    const { links, projectId } = body;
+
+    if (!projectId) {
+      return NextResponse.json(
+        { error: 'Project ID is required' },
+        { status: 400 }
+      );
+    }
 
     if (!Array.isArray(links) || links.length === 0) {
       return NextResponse.json(
         { error: 'Links array is required and must not be empty' },
         { status: 400 }
+      );
+    }
+
+    // Verify project exists
+    const project = await prisma.project.findUnique({
+      where: { id: projectId },
+    });
+
+    if (!project) {
+      return NextResponse.json(
+        { error: 'Project not found' },
+        { status: 404 }
       );
     }
 
@@ -66,6 +85,7 @@ export async function POST(request: NextRequest) {
             mintLink: link,
             qrHash,
             claimed: false,
+            projectId,
           },
         });
 

@@ -210,15 +210,17 @@ export async function claimPOAP(
  * Fetches mint links from POAP API and stores them in the database
  * @param {string} eventId - POAP event ID
  * @param {string} secretCode - Secret code for the event
+ * @param {string} projectId - Project ID to associate mint links with
  * @returns {Promise<number>} Number of mint links imported
  * @throws {Error} If import fails
  */
 export async function importMintLinks(
   eventId: string,
-  secretCode: string
+  secretCode: string,
+  projectId: string
 ): Promise<number> {
   try {
-    console.log(`Importing mint links for event ${eventId}...`);
+    console.log(`Importing mint links for event ${eventId} (project ${projectId})...`);
 
     const mintLinks = await getMintLinks(eventId, secretCode);
 
@@ -231,12 +233,13 @@ export async function importMintLinks(
     for (const link of mintLinks) {
       try {
         await prisma.qRCode.upsert({
-          where: { qrHash: link.qr_hash },
+          where: { qrHash_projectId: { qrHash: link.qr_hash, projectId } },
           create: {
             qrHash: link.qr_hash,
             mintLink: link.url,
             claimed: link.claimed,
             secret: link.secret,
+            projectId,
           },
           update: {
             claimed: link.claimed,
@@ -282,10 +285,11 @@ export async function getAvailableMintLink(): Promise<string | null> {
  * @param {string} twitterId - Twitter user ID
  * @returns {Promise<string | null>} Reserved mint link or null if none available
  */
-export async function reserveMintLink(twitterId: string): Promise<string | null> {
+export async function reserveMintLink(twitterId: string, projectId: string): Promise<string | null> {
   try {
     const qrCode = await prisma.qRCode.findFirst({
       where: {
+        projectId,
         claimed: false,
         reservedFor: null,
       },
@@ -295,7 +299,7 @@ export async function reserveMintLink(twitterId: string): Promise<string | null>
     });
 
     if (!qrCode) {
-      console.warn('No available mint links to reserve');
+      console.warn(`No available mint links to reserve for project ${projectId}`);
       return null;
     }
 
@@ -308,7 +312,7 @@ export async function reserveMintLink(twitterId: string): Promise<string | null>
       },
     });
 
-    console.log(`Mint link reserved for user ${twitterId}: ${qrCode.mintLink}`);
+    console.log(`Mint link reserved for user ${twitterId} (project ${projectId}): ${qrCode.mintLink}`);
     return qrCode.mintLink;
   } catch (error) {
     console.error('Failed to reserve mint link:', error);
@@ -326,7 +330,7 @@ export async function markMintLinkClaimed(
   claimedBy: string
 ): Promise<void> {
   try {
-    await prisma.qRCode.update({
+    await prisma.qRCode.updateMany({
       where: { qrHash },
       data: {
         claimed: true,
@@ -557,13 +561,15 @@ export async function getClaimSecret(
  * Load QR codes from POAP API and store them in database
  * @param {string} eventId - POAP event ID
  * @param {string} editCode - Edit code for the event
+ * @param {string} projectId - Project ID to associate QR codes with
  * @returns {Promise<{loaded: number, newCodes: number, existing: number}>} Result
  */
 export async function loadQRCodesFromPOAP(
   eventId: string,
-  editCode: string
+  editCode: string,
+  projectId: string
 ): Promise<{ loaded: number; newCodes: number; existing: number }> {
-  console.log(`Loading QR codes for event ${eventId}...`);
+  console.log(`Loading QR codes for event ${eventId} (project ${projectId})...`);
 
   // Get all QR hashes for the event
   const qrHashes = await getEventQRCodes(eventId, editCode);
@@ -580,9 +586,9 @@ export async function loadQRCodesFromPOAP(
   // Process each QR hash
   for (const qrHash of qrHashes) {
     try {
-      // Check if already exists
-      const existingQR = await prisma.qRCode.findUnique({
-        where: { qrHash },
+      // Check if already exists for this project
+      const existingQR = await prisma.qRCode.findFirst({
+        where: { qrHash, projectId },
       });
 
       if (existingQR) {
@@ -603,6 +609,7 @@ export async function loadQRCodesFromPOAP(
           qrHash,
           mintLink,
           secret,
+          projectId,
         },
       });
 

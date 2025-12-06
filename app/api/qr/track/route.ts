@@ -16,6 +16,7 @@ export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
     const code = searchParams.get('code');
+    const projectId = searchParams.get('projectId');
 
     if (!code) {
       return NextResponse.json(
@@ -24,23 +25,32 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Get configuration
-    const config = await prisma.config.findFirst();
-
-    if (!config) {
+    if (!projectId) {
       return NextResponse.json(
-        { error: 'Configuration not found' },
-        { status: 500 }
+        { error: 'Project ID parameter is required' },
+        { status: 400 }
+      );
+    }
+
+    // Get project configuration
+    const project = await prisma.project.findUnique({
+      where: { id: projectId },
+    });
+
+    if (!project) {
+      return NextResponse.json(
+        { error: 'Project not found' },
+        { status: 404 }
       );
     }
 
     // Find the hidden code
     const validCode = await prisma.validCode.findUnique({
-      where: { code },
+      where: { code_projectId: { code, projectId } },
     });
 
     if (!validCode) {
-      console.error(`Code not found: ${code}`);
+      console.error(`Code not found: ${code} for project ${projectId}`);
       return NextResponse.json(
         { error: 'Invalid code' },
         { status: 404 }
@@ -52,7 +62,7 @@ export async function GET(request: NextRequest) {
     // Mark code as used (only if not already used)
     if (!validCode.isUsed) {
       await prisma.validCode.update({
-        where: { code },
+        where: { code_projectId: { code, projectId } },
         data: {
           isUsed: true,
           usedAt: new Date(),
@@ -70,11 +80,11 @@ export async function GET(request: NextRequest) {
 
     // Generate tweet text from template
     // Replace {{code}} with the actual code and {{hashtag}} with the configured hashtag
-    let tweetText = config.qrPageTweetTemplate.replaceAll('{{code}}', code);
-    tweetText = tweetText.replaceAll('{{hashtag}}', config.twitterHashtag);
+    let tweetText = project.qrPageTweetTemplate.replaceAll('{{code}}', code);
+    tweetText = tweetText.replaceAll('{{hashtag}}', project.twitterHashtag);
 
-    console.log(`Tweet template: ${config.qrPageTweetTemplate}`);
-    console.log(`Hashtag: ${config.twitterHashtag}`);
+    console.log(`Tweet template: ${project.qrPageTweetTemplate}`);
+    console.log(`Hashtag: ${project.twitterHashtag}`);
     console.log(`Generated tweet text: ${tweetText}`);
 
     // Create Twitter app deep link with fallback to web

@@ -34,31 +34,8 @@ export async function GET(request: NextRequest) {
 
     const twitterId = session.user.id;
 
-    // Get user's deliveries
+    // Get user's deliveries with project info
     const deliveries = await getUserDeliveries(twitterId);
-
-    // Get POAP event name from config
-    const config = await prisma.config.findFirst();
-    let poapEventName = 'POAP Achievement';
-
-    if (config?.poapEventId) {
-      try {
-        // Fetch event details from POAP API
-        const response = await fetch(`https://api.poap.tech/events/id/${config.poapEventId}`, {
-          headers: {
-            'X-API-Key': process.env.POAP_API_KEY || '',
-          },
-        });
-
-        if (response.ok) {
-          const eventData = await response.json();
-          poapEventName = eventData.name || 'POAP Achievement';
-        }
-      } catch (error) {
-        console.error('Error fetching POAP event name:', error);
-        // Continue with default name
-      }
-    }
 
     // Check claim status from POAP API for each delivery
     const deliveriesWithRealStatus = await Promise.all(
@@ -123,6 +100,18 @@ export async function GET(request: NextRequest) {
       })
     );
 
+    // Get unique project IDs from deliveries
+    const projectIds = [...new Set(deliveriesWithRealStatus.map(d => d.projectId))];
+
+    // Fetch all projects at once
+    const projects = await prisma.project.findMany({
+      where: { id: { in: projectIds } },
+      select: { id: true, name: true, poapEventId: true },
+    });
+
+    // Create a map of projectId to project name
+    const projectMap = new Map(projects.map(p => [p.id, p.name || 'POAP Achievement']));
+
     // Transform deliveries for frontend
     const formattedDeliveries = deliveriesWithRealStatus.map((delivery) => ({
       id: delivery.id,
@@ -132,7 +121,7 @@ export async function GET(request: NextRequest) {
       deliveredAt: delivery.deliveredAt.toISOString(),
       claimed: delivery.claimed,
       claimedAt: delivery.claimedAt?.toISOString() || null,
-      poapName: poapEventName,
+      poapName: projectMap.get(delivery.projectId) || 'POAP Achievement',
     }));
 
     return NextResponse.json({
