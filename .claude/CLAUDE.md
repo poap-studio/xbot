@@ -77,9 +77,36 @@ vercel env pull .env.local
 - [ ] Test built application locally if needed
 - [ ] Resolve any build issues before deploying
 
-### Pre-Deployment Checklist
+### Deployment Workflow
 
-Before deploying to production:
+**IMPORTANT:** This project has **auto-deployment** configured on Vercel.
+
+**Workflow:**
+1. Make changes locally
+2. Run tests and build (`npm test` && `npm run build`)
+3. Commit changes (`git commit`)
+4. Push to main (`git push origin main`)
+5. **Auto-deployment triggers on Vercel** - NO manual deployment needed
+6. **ALWAYS check Vercel deployment logs** after push
+
+**Checking Deployment Status:**
+
+```bash
+# Check latest deployment logs via Vercel CLI
+vercel logs xbot.poap.studio --production
+
+# Or check via Vercel dashboard
+# https://vercel.com/alberto-g-toribios-projects/xbot
+```
+
+**Key Rule:**
+- ❌ **NO** need to run `vercel deploy` manually
+- ✅ Just `git push` → Auto-deployment happens
+- ⚠️ **ALWAYS** review logs after push to confirm successful deployment
+
+### Pre-Push Checklist
+
+Before pushing to trigger deployment:
 
 1. **Code Quality**
    - [ ] All tests passing (`npm test`)
@@ -101,6 +128,12 @@ Before deploying to production:
    - [ ] Pre-commit hooks passing
    - [ ] No sensitive files committed
    - [ ] Dependencies updated and secure
+
+5. **Post-Push**
+   - [ ] **Monitor Vercel deployment logs**
+   - [ ] Verify deployment succeeded
+   - [ ] Check production site: https://xbot.poap.studio
+   - [ ] Test critical functionality
 
 ---
 
@@ -124,6 +157,15 @@ This section auto-documents recurring user instructions and preferences.
    - **Original Request:** "Se debe usar el vercel CLI para configurar variables de entorno, siempre usando printf para evitar saltos de línea"
    - **Interpretation:** Use Vercel CLI with printf for setting environment variables
    - **Implementation:** `printf "value" | vercel env add VAR_NAME production`
+
+4. **Auto-Deployment & Log Verification**
+   - **Original Request:** "No es necesario desplegar y hacer commit porque al hacer commit se despliega, sin embargo, después de cada push se debe revisar siempre el log para comprobar que se ha desplegado correctamente"
+   - **Interpretation:** Git push triggers auto-deployment on Vercel; always verify deployment logs after push
+   - **Implementation:**
+     - ❌ Don't run `vercel deploy` manually
+     - ✅ Just `git push origin main`
+     - ⚠️ Always run `vercel logs xbot.poap.studio --production` after push
+     - Check Vercel dashboard: https://vercel.com/alberto-g-toribios-projects/xbot
 
 ### Adding New Instructions
 
