@@ -6,6 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { getUserDeliveries } from '@/lib/bot/delivery';
+import { getQRCodeInfo } from '@/lib/poap/api';
 import prisma from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
@@ -59,8 +60,56 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Check claim status from POAP API for each delivery
+    const deliveriesWithRealStatus = await Promise.all(
+      deliveries.map(async (delivery) => {
+        let realClaimStatus = delivery.claimed;
+        let realClaimedAt = delivery.claimedAt;
+
+        try {
+          // Check real claim status from POAP API
+          const qrInfo = await getQRCodeInfo(delivery.qrHash);
+          realClaimStatus = qrInfo.claimed;
+
+          // If it's claimed in POAP but not in our DB, update our DB
+          if (qrInfo.claimed && !delivery.claimed) {
+            console.log(`Updating claim status for ${delivery.qrHash} - claimed in POAP but not in DB`);
+
+            await prisma.delivery.update({
+              where: { id: delivery.id },
+              data: {
+                claimed: true,
+                claimedAt: new Date(),
+              },
+            });
+
+            // Also update the QRCode table
+            await prisma.qRCode.updateMany({
+              where: { qrHash: delivery.qrHash },
+              data: {
+                claimed: true,
+                claimedAt: new Date(),
+                claimedBy: qrInfo.beneficiary || 'unknown',
+              },
+            });
+
+            realClaimedAt = new Date();
+          }
+        } catch (error) {
+          console.error(`Error checking claim status for ${delivery.qrHash}:`, error);
+          // If API call fails, use database value
+        }
+
+        return {
+          ...delivery,
+          claimed: realClaimStatus,
+          claimedAt: realClaimedAt,
+        };
+      })
+    );
+
     // Transform deliveries for frontend
-    const formattedDeliveries = deliveries.map((delivery) => ({
+    const formattedDeliveries = deliveriesWithRealStatus.map((delivery) => ({
       id: delivery.id,
       tweetId: delivery.tweetId,
       mintLink: delivery.mintLink,
