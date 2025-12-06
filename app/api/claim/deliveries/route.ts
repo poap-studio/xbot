@@ -67,13 +67,22 @@ export async function GET(request: NextRequest) {
         let realClaimedAt = delivery.claimedAt;
 
         try {
+          console.log(`[CLAIM CHECK] Checking claim status for qrHash: ${delivery.qrHash}`);
+
           // Check real claim status from POAP API
           const qrInfo = await getQRCodeInfo(delivery.qrHash);
+
+          console.log(`[CLAIM CHECK] POAP API response for ${delivery.qrHash}:`, {
+            claimed: qrInfo.claimed,
+            beneficiary: qrInfo.beneficiary,
+            dbClaimed: delivery.claimed,
+          });
+
           realClaimStatus = qrInfo.claimed;
 
           // If it's claimed in POAP but not in our DB, update our DB
           if (qrInfo.claimed && !delivery.claimed) {
-            console.log(`Updating claim status for ${delivery.qrHash} - claimed in POAP but not in DB`);
+            console.log(`[CLAIM CHECK] ✅ Updating claim status for ${delivery.qrHash} - claimed in POAP but not in DB`);
 
             await prisma.delivery.update({
               where: { id: delivery.id },
@@ -94,9 +103,15 @@ export async function GET(request: NextRequest) {
             });
 
             realClaimedAt = new Date();
+            console.log(`[CLAIM CHECK] ✅ Database updated for ${delivery.qrHash}`);
+          } else if (qrInfo.claimed && delivery.claimed) {
+            console.log(`[CLAIM CHECK] ℹ️ Already marked as claimed in DB: ${delivery.qrHash}`);
+          } else if (!qrInfo.claimed) {
+            console.log(`[CLAIM CHECK] ⏳ Still pending in POAP API: ${delivery.qrHash}`);
           }
         } catch (error) {
-          console.error(`Error checking claim status for ${delivery.qrHash}:`, error);
+          console.error(`[CLAIM CHECK] ❌ Error checking claim status for ${delivery.qrHash}:`, error);
+          console.error(`[CLAIM CHECK] ❌ Error details:`, error instanceof Error ? error.message : String(error));
           // If API call fails, use database value
         }
 
