@@ -48,3 +48,6 @@ next-env.d.ts
 .env.production
 test-*.js
 show-*.js
+
+# claude configuration (contains secrets)
+.claude/CLAUDE.md
