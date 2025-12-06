@@ -4,7 +4,7 @@
 
 This document lists all required environment variables for deploying XBOT to production on Vercel.
 
-**Production Domain:** `xbot.poap.studio`
+**Production Domain:** `twitterbot.poap.studio`
 **Vercel Project:** `https://vercel.com/alberto-g-toribios-projects/xbot`
 
 ---
@@ -71,7 +71,7 @@ printf "your-twitter-client-secret" | vercel env add TWITTER_CLIENT_SECRET produ
 
 ```bash
 # NextAuth URL (production domain)
-printf "https://xbot.poap.studio" | vercel env add NEXTAUTH_URL production
+printf "https://twitterbot.poap.studio" | vercel env add NEXTAUTH_URL production
 
 # NextAuth Secret (generate a random secure string)
 # Generate with: openssl rand -base64 32
@@ -84,7 +84,7 @@ printf "$(openssl rand -base64 32)" | vercel env add NEXTAUTH_SECRET production
 
 ```bash
 # Public application URL (must match NEXTAUTH_URL)
-printf "https://xbot.poap.studio" | vercel env add NEXT_PUBLIC_APP_URL production
+printf "https://twitterbot.poap.studio" | vercel env add NEXT_PUBLIC_APP_URL production
 ```
 
 ---
@@ -131,11 +131,11 @@ printf "YOUR_TWITTER_CLIENT_ID" | vercel env add TWITTER_CLIENT_ID production
 printf "YOUR_TWITTER_CLIENT_SECRET" | vercel env add TWITTER_CLIENT_SECRET production
 
 # NextAuth
-printf "https://xbot.poap.studio" | vercel env add NEXTAUTH_URL production
+printf "https://twitterbot.poap.studio" | vercel env add NEXTAUTH_URL production
 printf "$(openssl rand -base64 32)" | vercel env add NEXTAUTH_SECRET production
 
 # Application URL
-printf "https://xbot.poap.studio" | vercel env add NEXT_PUBLIC_APP_URL production
+printf "https://twitterbot.poap.studio" | vercel env add NEXT_PUBLIC_APP_URL production
 
 # Security
 printf "YOUR_ADMIN_PASSWORD" | vercel env add ADMIN_PASSWORD production
@@ -160,9 +160,9 @@ echo "✅ All environment variables configured!"
 | `TWITTER_API_SECRET` | Secret | ✅ | Twitter API secret |
 | `TWITTER_CLIENT_ID` | Secret | ✅ | Twitter OAuth 2.0 client ID |
 | `TWITTER_CLIENT_SECRET` | Secret | ✅ | Twitter OAuth 2.0 client secret |
-| `NEXTAUTH_URL` | Public | ✅ | Application URL (https://xbot.poap.studio) |
+| `NEXTAUTH_URL` | Public | ✅ | Application URL (https://twitterbot.poap.studio) |
 | `NEXTAUTH_SECRET` | Secret | ✅ | NextAuth encryption secret |
-| `NEXT_PUBLIC_APP_URL` | Public | ✅ | Public app URL (https://xbot.poap.studio) |
+| `NEXT_PUBLIC_APP_URL` | Public | ✅ | Public app URL (https://twitterbot.poap.studio) |
 | `ADMIN_PASSWORD` | Secret | ✅ | Admin dashboard password |
 | `CRON_SECRET` | Secret | ✅ | Cron job authentication token |
 | `ENCRYPTION_SECRET` | Secret | ✅ | Database credential encryption key |
@@ -234,7 +234,7 @@ git push origin main
 **Twitter API errors:**
 - Verify Twitter app has correct permissions
 - Check API keys are for the correct app
-- Ensure OAuth callback URLs include `https://xbot.poap.studio/api/auth/callback/twitter`
+- Ensure OAuth callback URLs include `https://twitterbot.poap.studio/api/auth/callback/twitter`
 
 **POAP API errors:**
 - Verify POAP credentials are active
@@ -249,7 +249,7 @@ git push origin main
 
 Ensure these settings are configured in Vercel dashboard:
 
-1. **Custom Domain:** `xbot.poap.studio`
+1. **Custom Domain:** `twitterbot.poap.studio`
 2. **Build Command:** `npm run build`
 3. **Output Directory:** `.next`
 4. **Install Command:** `npm install`
@@ -331,10 +331,10 @@ vercel env rm VARIABLE_NAME production
 vercel --prod
 
 # View deployment logs
-vercel logs xbot.poap.studio
+vercel logs twitterbot.poap.studio
 
 # Check deployment status
-vercel inspect xbot.poap.studio
+vercel inspect twitterbot.poap.studio
 ```
 
 ---
