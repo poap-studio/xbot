@@ -121,18 +121,40 @@ export async function getMintLinks(
 
 /**
  * Get information about a specific QR code / mint link
+ * Checks if a POAP mint link has been claimed
  * @param {string} qrHash - QR hash from the mint link
- * @returns {Promise<QRCodeResponse>} QR code information
+ * @returns {Promise<QRCodeResponse>} QR code information including claim status
  * @throws {Error} If request fails
  */
 export async function getQRCodeInfo(qrHash: string): Promise<QRCodeResponse> {
   try {
-    const response = await poapRequest<QRCodeResponse>(
-      `/actions/claim-qr?qr_hash=${qrHash}`,
-      { method: 'GET' }
-    );
+    const token = await getValidToken();
 
-    return response;
+    const url = `${POAP_API_BASE}/actions/claim-qr?qr_hash=${qrHash}`;
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'X-API-Key': process.env.POAP_API_KEY || '',
+        'Accept': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`POAP API error (${response.status}): ${errorText}`);
+    }
+
+    const data = await response.json();
+
+    return {
+      qr_hash: data.qr_hash || qrHash,
+      claimed: data.claimed || false,
+      beneficiary: data.beneficiary,
+      event: data.event,
+      secret: data.secret,
+    };
   } catch (error) {
     if (error instanceof Error) {
       throw new Error(`Failed to get QR code info: ${error.message}`);
