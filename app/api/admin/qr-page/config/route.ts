@@ -25,6 +25,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       tweetTemplate: config.qrPageTweetTemplate,
       hashtag: config.twitterHashtag,
+      logoUrl: config.qrPageLogoUrl,
+      backgroundUrl: config.qrPageBackgroundUrl,
+      customText: config.qrPageCustomText,
+      poapEventId: config.qrPagePoapEventId,
     });
   } catch (error) {
     console.error('Error fetching QR page config:', error);
@@ -42,22 +46,30 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { tweetTemplate } = body;
+    const {
+      tweetTemplate,
+      logoUrl,
+      backgroundUrl,
+      customText,
+      poapEventId
+    } = body;
 
-    // Validate tweet template
-    if (!tweetTemplate || typeof tweetTemplate !== 'string') {
-      return NextResponse.json(
-        { error: 'Tweet template is required' },
-        { status: 400 }
-      );
-    }
+    // Validate tweet template if provided
+    if (tweetTemplate !== undefined) {
+      if (typeof tweetTemplate !== 'string' || !tweetTemplate) {
+        return NextResponse.json(
+          { error: 'Tweet template must be a non-empty string' },
+          { status: 400 }
+        );
+      }
 
-    // Ensure template contains {{code}} placeholder
-    if (!tweetTemplate.includes('{{code}}')) {
-      return NextResponse.json(
-        { error: 'Tweet template must contain {{code}} placeholder' },
-        { status: 400 }
-      );
+      // Ensure template contains {{code}} placeholder
+      if (!tweetTemplate.includes('{{code}}')) {
+        return NextResponse.json(
+          { error: 'Tweet template must contain {{code}} placeholder' },
+          { status: 400 }
+        );
+      }
     }
 
     // Update configuration
@@ -67,11 +79,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Configuration not found' }, { status: 404 });
     }
 
+    // Build update data object with only provided fields
+    const updateData: any = {};
+    if (tweetTemplate !== undefined) updateData.qrPageTweetTemplate = tweetTemplate;
+    if (logoUrl !== undefined) updateData.qrPageLogoUrl = logoUrl;
+    if (backgroundUrl !== undefined) updateData.qrPageBackgroundUrl = backgroundUrl;
+    if (customText !== undefined) updateData.qrPageCustomText = customText;
+    if (poapEventId !== undefined) updateData.qrPagePoapEventId = poapEventId;
+
     await prisma.config.update({
       where: { id: config.id },
-      data: {
-        qrPageTweetTemplate: tweetTemplate,
-      },
+      data: updateData,
     });
 
     return NextResponse.json({

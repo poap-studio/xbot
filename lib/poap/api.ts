@@ -47,6 +47,23 @@ interface ClaimResponse {
   created_date: string;
 }
 
+interface PoapEvent {
+  id: number;
+  fancy_id: string;
+  name: string;
+  description: string;
+  city: string;
+  country: string;
+  event_url: string;
+  image_url: string;
+  animation_url?: string;
+  year: number;
+  start_date: string;
+  end_date: string;
+  expiry_date: string;
+  supply: number;
+}
+
 /**
  * Make authenticated request to POAP API
  * @template T
@@ -138,6 +155,28 @@ export async function getQRCodeInfo(qrHash: string): Promise<QRCodeResponse> {
       throw new Error(`Failed to get QR code info: ${error.message}`);
     }
     throw new Error('Failed to get QR code info: Unknown error');
+  }
+}
+
+/**
+ * Get POAP event details by event ID
+ * @param {string} eventId - POAP event ID
+ * @returns {Promise<PoapEvent>} Event information including image_url
+ * @throws {Error} If request fails
+ */
+export async function getPoapEventById(eventId: string): Promise<PoapEvent> {
+  try {
+    const response = await poapRequest<PoapEvent>(
+      `/events/id/${eventId}`,
+      { method: 'GET' }
+    );
+
+    return response;
+  } catch (error) {
+    if (error instanceof Error) {
+      throw new Error(`Failed to get POAP event: ${error.message}`);
+    }
+    throw new Error('Failed to get POAP event: Unknown error');
   }
 }
 
