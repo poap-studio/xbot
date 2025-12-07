@@ -4,10 +4,11 @@
 
 - **Project Name:** XBOT (POAP Twitter Bot)
 - **Description:** Automated POAP distribution bot for Twitter using Next.js and Vercel
-- **Repository:** https://github.com/gotoalberto/xbot (assumed)
-- **Production URL:** https://xbot.poap.studio
-- **Production Domain:** xbot.poap.studio
+- **Repository:** https://github.com/poap-studio/xbot
+- **Production URL:** https://twitterbot.poap.studio
+- **Production Domain:** twitterbot.poap.studio
 - **Deployment Platform:** Vercel
+- **Vercel Project:** https://vercel.com/alberto-g-toribios-projects/xbot
 
 ---
 
@@ -111,7 +112,7 @@ vercel env pull .env.local
 
 ```bash
 # Check latest deployment logs via Vercel CLI
-vercel logs xbot.poap.studio --production
+vercel logs twitterbot.poap.studio --production
 
 # Or check via Vercel dashboard
 # https://vercel.com/alberto-g-toribios-projects/xbot
@@ -150,7 +151,7 @@ Before pushing to trigger deployment:
 5. **Post-Push**
    - [ ] **Monitor Vercel deployment logs**
    - [ ] Verify deployment succeeded
-   - [ ] Check production site: https://xbot.poap.studio
+   - [ ] Check production site: https://twitterbot.poap.studio
    - [ ] Test critical functionality
 
 ---
@@ -220,11 +221,12 @@ When the user provides a new recurring instruction:
 - `TWITTER_BEARER_TOKEN` - Twitter API bearer token
 - `TWITTER_CLIENT_ID` - Twitter OAuth client ID
 - `TWITTER_CLIENT_SECRET` - Twitter OAuth client secret
-- `NEXTAUTH_URL` - Application URL (https://xbot.poap.studio)
+- `NEXTAUTH_URL` - Application URL (https://twitterbot.poap.studio)
 - `NEXTAUTH_SECRET` - NextAuth secret
 - `ADMIN_PASSWORD` - Admin dashboard password
 - `CRON_SECRET` - Cron job authentication secret
-- `NEXT_PUBLIC_APP_URL` - Public app URL (https://xbot.poap.studio)
+- `NEXT_PUBLIC_APP_URL` - Public app URL (https://twitterbot.poap.studio)
+- `ENCRYPTION_SECRET` - Database credential encryption key
 
 ### Database Operations
 

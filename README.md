@@ -2,6 +2,10 @@
 
 Automated bot that delivers POAP mint links to Twitter users who post eligible tweets.
 
+**Production:** [https://twitterbot.poap.studio](https://twitterbot.poap.studio)
+**Repository:** [https://github.com/poap-studio/xbot](https://github.com/poap-studio/xbot)
+**Deployment:** Vercel ([Dashboard](https://vercel.com/alberto-g-toribios-projects/xbot))
+
 ## 🚀 Features
 
 - **Automated Tweet Monitoring**: Monitors hashtags for eligible tweets with images and special codes
