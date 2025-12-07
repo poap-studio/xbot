@@ -4,8 +4,7 @@
  */
 
 import crypto from 'crypto';
-
-const WEBHOOK_URL = process.env.NEXT_PUBLIC_APP_URL + '/api/webhooks/twitter';
+import { getWebhookUrl } from '@/lib/config/app-url';
 
 /**
  * OAuth 1.0a signature generation for Twitter API
@@ -82,6 +81,9 @@ export async function registerWebhook(): Promise<string | null> {
       return null;
     }
 
+    const webhookUrl = getWebhookUrl();
+    console.log(`Registering webhook with URL: ${webhookUrl}`);
+
     const response = await fetch('https://api.twitter.com/2/webhooks', {
       method: 'POST',
       headers: {
@@ -89,7 +91,7 @@ export async function registerWebhook(): Promise<string | null> {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        url: WEBHOOK_URL,
+        url: webhookUrl,
       }),
     });
 

@@ -13,6 +13,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { TwitterApi } from 'twitter-api-v2';
+import { getAppUrl, getBotOAuthCallbackUrl } from '@/lib/config/app-url';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -23,25 +24,20 @@ export async function GET(request: NextRequest) {
     if (!process.env.TWITTER_API_KEY || !process.env.TWITTER_API_SECRET) {
       console.error('Twitter API credentials not configured');
       return NextResponse.redirect(
-        `${process.env.NEXT_PUBLIC_APP_URL}/admin?error=twitter_not_configured`
+        `${getAppUrl()}/admin?error=twitter_not_configured`
       );
     }
 
-    if (!process.env.NEXT_PUBLIC_APP_URL) {
-      console.error('NEXT_PUBLIC_APP_URL not configured');
-      return NextResponse.redirect('/admin?error=app_url_not_configured');
-    }
-
     console.log('Initializing Twitter OAuth flow...');
-    console.log('Callback URL:', `${process.env.NEXT_PUBLIC_APP_URL}/api/auth/bot-twitter/callback`);
+
+    const callbackUrl = getBotOAuthCallbackUrl();
+    console.log('Callback URL:', callbackUrl);
 
     // Initialize Twitter client
     const client = new TwitterApi({
       appKey: process.env.TWITTER_API_KEY,
       appSecret: process.env.TWITTER_API_SECRET,
     });
-
-    const callbackUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/auth/bot-twitter/callback`;
 
     console.log('Generating auth link...');
 
@@ -90,7 +86,7 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.redirect(
-      `${process.env.NEXT_PUBLIC_APP_URL}/admin?error=${encodeURIComponent(errorMessage)}`
+      `${getAppUrl()}/admin?error=${encodeURIComponent(errorMessage)}`
     );
   }
 }

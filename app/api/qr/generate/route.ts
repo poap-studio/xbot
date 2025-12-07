@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import QRCode from 'qrcode';
 import { getOrCreateValidCode } from '@/lib/codes/generator';
+import { getAppUrl } from '@/lib/config/app-url';
 
 export const dynamic = 'force-dynamic';
 
@@ -43,8 +44,8 @@ export async function GET(request: NextRequest) {
 
     console.log(`Generating QR for code: ${code} (project: ${project.name})`);
 
-    // Get base URL
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    // Get base URL (dynamic based on deployment)
+    const baseUrl = getAppUrl();
 
     // Create tracking URL that will redirect to Twitter
     const trackingUrl = `${baseUrl}/api/qr/track?code=${encodeURIComponent(code)}&projectId=${encodeURIComponent(projectId)}`;

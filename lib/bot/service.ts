@@ -221,7 +221,8 @@ export async function processSingleTweet(
     }
 
     // 5. Reply to tweet with claim URL (using website URL instead of direct mint link)
-    const websiteUrl = process.env.NEXT_PUBLIC_APP_URL?.trim() || 'https://xbot.poap.studio';
+    const { getAppUrl } = await import('@/lib/config/app-url');
+    const websiteUrl = getAppUrl();
     const replyId = await replyWithClaimUrl(tweetId, websiteUrl, project.botAccountId || undefined, projectId);
 
     // 6. Extract qrHash from mint link
