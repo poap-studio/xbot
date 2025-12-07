@@ -13,7 +13,8 @@ Automated bot that delivers POAP mint links to Twitter users who post eligible t
 - **Dynamic QR Code Generation**: Generate QR codes with secret codes that redirect to Twitter with pre-filled tweets
 - **Web Claim Interface**: Twitter OAuth login to view and claim POAPs
 - **Admin Dashboard**: Configure bot settings, view statistics, and export delivery data with organized tabs
-- **Multi-Bot Support**: Manage multiple Twitter bots with different configurations
+- **Multi-Bot Support**: Connect and manage multiple Twitter bot accounts with OAuth 1.0a authentication
+- **Per-Project Bot Configuration**: Assign specific bot accounts to different projects for organized reply management
 
 ## 🏗️ Architecture
 
@@ -158,10 +159,30 @@ The cron job is automatically configured via `vercel.json`.
 
 1. Navigate to `/admin`
 2. Configure project settings in organized tabs:
-   - **General**: Project name, Twitter hashtag, POAP event settings
-   - **Bot Config**: Select and configure Twitter bots, reply templates
-   - **Dynamic QR**: Generate QR codes with secret codes and tweet templates
-   - **Data**: View statistics, export delivery data as CSV
+   - **General**: Project name, Twitter hashtag, POAP event settings, dynamic QR code
+   - **Bot Config**: Select bot account, configure hashtags and reply templates
+   - **Mint Links**: Configure POAP event, load mint links, set claim settings
+
+#### Bot Account Management
+
+The system supports multiple Twitter bot accounts with per-project configuration:
+
+1. **Connect a New Bot**:
+   - Go to any project's "Bot Config" tab
+   - Click "Connect New Bot"
+   - Authorize the Twitter account via OAuth 1.0a
+   - The bot will be available for all projects
+
+2. **Assign Bot to Project**:
+   - In the "Bot Config" tab, select a bot from the dropdown
+   - The selected bot will be used exclusively for that project's replies
+   - If no bot is selected, the system uses any available bot
+
+3. **Bot Account Features**:
+   - OAuth 1.0a authentication with encrypted credential storage
+   - View connected bots with profile images and usernames
+   - See how many projects each bot is assigned to
+   - Reconnect bots if credentials expire
 
 ### User Flows
 
@@ -229,6 +250,23 @@ npm run prisma:generate
 
 ### Recent Changes
 
+#### Multi-Bot Account Management (2025-12-07)
+Implemented comprehensive bot account management system for per-project bot configuration:
+- **Feature**: Connect multiple Twitter bot accounts via OAuth 1.0a
+- **Feature**: Assign specific bot accounts to individual projects
+- **API**: New endpoint `GET /api/admin/bot-accounts` to list all connected bots
+- **UI**: Bot selection dropdown in Bot Config tab with "Connect New Bot" button
+- **Security**: OAuth credentials encrypted in database using `ENCRYPTION_SECRET`
+- **Logic**: Updated `getBotClient()` to use project-specific bot when available
+- **Logic**: Reply functions now use the bot assigned to each project
+- **Database**: Existing `BotAccount` model with encrypted `accessToken` and `accessSecret`
+- **Files**:
+  - `app/api/admin/bot-accounts/route.ts` (new)
+  - `app/admin/projects/[id]/page.tsx` (Bot Config tab updated)
+  - `lib/twitter/client.ts` (getBotClient with botAccountId param)
+  - `lib/twitter/reply.ts` (reply functions with botAccountId param)
+  - `lib/bot/service.ts` (uses project's botAccountId)
+
 #### Admin UI Reorganization (2025-12-07)
 Improved project detail page organization for better UX:
 - **Change**: Moved "Dynamic QR Code" section from standalone card to General tab
@@ -274,6 +312,10 @@ Fixed project creation to properly use Prisma schema default values:
 - `GET /api/admin/stats` - Get statistics
 - `GET /api/admin/deliveries` - Get all deliveries
 - `GET /api/admin/deliveries/csv` - Download CSV
+- `GET /api/admin/bot-accounts` - List all connected bot accounts
+- `GET /api/admin/projects` - List all projects
+- `GET /api/admin/projects/[id]` - Get project details
+- `PATCH /api/admin/projects/[id]` - Update project (including botAccountId)
 
 ### System Routes
 - `GET /api/cron/process-tweets` - Cron job endpoint (requires CRON_SECRET)

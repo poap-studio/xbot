@@ -34,21 +34,43 @@ export function getBearerClient(): TwitterApi {
 /**
  * Get bot client for posting tweets
  * Uses OAuth 1.0a credentials from connected bot account
+ * @param {string} botAccountId - Optional bot account ID. If not provided, uses any connected bot.
  * @returns {Promise<TwitterApi>} Bot Twitter client
  * @throws {Error} If bot account is not connected or credentials are invalid
  */
-export async function getBotClient(): Promise<TwitterApi> {
+export async function getBotClient(botAccountId?: string): Promise<TwitterApi> {
   try {
-    // Get any connected bot account
-    const botAccount = await prisma.botAccount.findFirst({
-      where: { isConnected: true },
-      orderBy: { lastUsedAt: 'desc' },
-    });
+    let botAccount;
 
-    if (!botAccount) {
-      throw new Error(
-        'No bot account connected. Please connect a bot account in the admin panel.'
-      );
+    if (botAccountId) {
+      // Get specific bot account
+      botAccount = await prisma.botAccount.findUnique({
+        where: { id: botAccountId },
+      });
+
+      if (!botAccount) {
+        throw new Error(
+          `Bot account with ID ${botAccountId} not found`
+        );
+      }
+
+      if (!botAccount.isConnected) {
+        throw new Error(
+          `Bot account @${botAccount.username} is not connected. Please reconnect in the admin panel.`
+        );
+      }
+    } else {
+      // Get any connected bot account (fallback to old behavior)
+      botAccount = await prisma.botAccount.findFirst({
+        where: { isConnected: true },
+        orderBy: { lastUsedAt: 'desc' },
+      });
+
+      if (!botAccount) {
+        throw new Error(
+          'No bot account connected. Please connect a bot account in the admin panel.'
+        );
+      }
     }
 
     // Decrypt credentials

@@ -29,6 +29,7 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  MenuItem,
 } from '@mui/material';
 import {
   ArrowBack as ArrowBackIcon,
@@ -303,6 +304,16 @@ function BotConfigTab({ project, onUpdate }: { project: Project; onUpdate: () =>
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [loadingBots, setLoadingBots] = useState(true);
+  const [botAccounts, setBotAccounts] = useState<Array<{
+    id: string;
+    username: string;
+    displayName: string | null;
+    profileImageUrl: string | null;
+    isConnected: boolean;
+    _count: { projects: number };
+  }>>([]);
+  const [selectedBotId, setSelectedBotId] = useState<string>(project.botAccountId || '');
   const [formData, setFormData] = useState({
     twitterHashtag: project.twitterHashtag,
     botReplyEligible: project.botReplyEligible,
@@ -310,6 +321,71 @@ function BotConfigTab({ project, onUpdate }: { project: Project; onUpdate: () =>
     botReplyAlreadyClaimed: project.botReplyAlreadyClaimed,
     qrPageTweetTemplate: project.qrPageTweetTemplate,
   });
+
+  // Load bot accounts on mount
+  useEffect(() => {
+    fetchBotAccounts();
+  }, []);
+
+  const fetchBotAccounts = async () => {
+    setLoadingBots(true);
+    try {
+      const response = await fetch('/api/admin/bot-accounts');
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to fetch bot accounts');
+      }
+
+      setBotAccounts(data.botAccounts || []);
+    } catch (error) {
+      console.error('Error fetching bot accounts:', error);
+      setError(error instanceof Error ? error.message : 'Failed to load bot accounts');
+    } finally {
+      setLoadingBots(false);
+    }
+  };
+
+  const handleBotChange = async (newBotId: string) => {
+    setSelectedBotId(newBotId);
+
+    // Auto-save bot selection
+    setSaving(true);
+    setError(null);
+    setSuccess(false);
+
+    try {
+      const response = await fetch(`/api/admin/projects/${project.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ botAccountId: newBotId || null }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to update bot account');
+      }
+
+      setSuccess(true);
+      onUpdate();
+      setTimeout(() => setSuccess(false), 3000);
+    } catch (error) {
+      console.error('Error updating bot account:', error);
+      setError(error instanceof Error ? error.message : 'Failed to update bot account');
+      // Revert the change on error
+      setSelectedBotId(project.botAccountId || '');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleConnectNewBot = () => {
+    // Open OAuth flow in new window
+    window.open('/api/auth/bot-twitter', '_blank');
+  };
 
   const handleChange = (field: string) => (event: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
@@ -372,6 +448,97 @@ function BotConfigTab({ project, onUpdate }: { project: Project; onUpdate: () =>
       )}
 
       <Stack spacing={3}>
+        {/* Bot Account Selection Section */}
+        <Card sx={{ p: 3 }}>
+          <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'bold', mb: 2 }}>
+            Bot Account
+          </Typography>
+
+          {loadingBots ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
+              <CircularProgress size={24} />
+            </Box>
+          ) : (
+            <Stack spacing={2}>
+              <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-start' }}>
+                <TextField
+                  select
+                  label="Select Bot Account"
+                  value={selectedBotId}
+                  onChange={(e) => handleBotChange(e.target.value)}
+                  disabled={saving}
+                  fullWidth
+                  helperText="Choose which Twitter account will reply to tweets for this project"
+                  SelectProps={{
+                    displayEmpty: true,
+                  }}
+                >
+                  <MenuItem value="">
+                    <em>No bot selected (use any available)</em>
+                  </MenuItem>
+                  {botAccounts.map((bot) => (
+                    <MenuItem key={bot.id} value={bot.id}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        {bot.profileImageUrl && (
+                          <Image
+                            src={bot.profileImageUrl}
+                            alt={bot.username}
+                            width={24}
+                            height={24}
+                            style={{ borderRadius: '50%' }}
+                          />
+                        )}
+                        <Box>
+                          <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
+                            @{bot.username}
+                          </Typography>
+                          {bot.displayName && (
+                            <Typography variant="caption" color="text.secondary">
+                              {bot.displayName}
+                            </Typography>
+                          )}
+                        </Box>
+                        {!bot.isConnected && (
+                          <Chip label="Disconnected" size="small" color="error" sx={{ ml: 1 }} />
+                        )}
+                        {bot._count.projects > 0 && (
+                          <Chip
+                            label={`${bot._count.projects} project${bot._count.projects > 1 ? 's' : ''}`}
+                            size="small"
+                            variant="outlined"
+                            sx={{ ml: 1 }}
+                          />
+                        )}
+                      </Box>
+                    </MenuItem>
+                  ))}
+                </TextField>
+
+                <Button
+                  variant="outlined"
+                  startIcon={<LinkIcon />}
+                  onClick={handleConnectNewBot}
+                  sx={{ minWidth: 180, height: 56 }}
+                >
+                  Connect New Bot
+                </Button>
+              </Box>
+
+              {selectedBotId && (
+                <Alert severity="info" icon={<InfoIcon />}>
+                  Bot @{botAccounts.find(b => b.id === selectedBotId)?.username} will be used to reply to tweets for this project.
+                </Alert>
+              )}
+
+              {!selectedBotId && (
+                <Alert severity="warning" icon={<InfoIcon />}>
+                  No specific bot selected. The system will use any available connected bot account to reply.
+                </Alert>
+              )}
+            </Stack>
+          )}
+        </Card>
+
         {/* Twitter Settings Section */}
         <Box>
           <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'bold', mb: 2 }}>
@@ -430,10 +597,10 @@ function BotConfigTab({ project, onUpdate }: { project: Project; onUpdate: () =>
           </Stack>
         </Box>
 
-        {/* QR Page Template */}
+        {/* Tweet Template */}
         <Box>
           <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'bold', mb: 2 }}>
-            QR Page Settings
+            Tweet Template
           </Typography>
 
           <TextField

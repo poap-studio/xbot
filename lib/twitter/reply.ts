@@ -15,12 +15,14 @@ export interface ReplyOptions {
  * Reply to a tweet with the bot account
  * @param {string} tweetId - ID of tweet to reply to
  * @param {string} text - Reply text
+ * @param {string} botAccountId - Optional bot account ID to use for replying
  * @returns {Promise<string>} ID of the reply tweet
  * @throws {Error} If reply fails
  */
 export async function replyToTweet(
   tweetId: string,
-  text: string
+  text: string,
+  botAccountId?: string
 ): Promise<string> {
   try {
     if (!tweetId) {
@@ -35,9 +37,9 @@ export async function replyToTweet(
       throw new Error(`Reply text too long: ${text.length} characters (max: 280)`);
     }
 
-    const client = await getBotClient();
+    const client = await getBotClient(botAccountId);
 
-    console.log(`Replying to tweet ${tweetId} with text: "${text}"`);
+    console.log(`Replying to tweet ${tweetId} with text: "${text}"${botAccountId ? ` using bot ${botAccountId}` : ''}`);
 
     // Post reply
     const response = await client.v2.reply(text, tweetId);
@@ -137,15 +139,17 @@ export async function generateReplyText(claimUrl: string): Promise<string> {
  * Reply to a tweet with a POAP claim URL
  * @param {string} tweetId - Tweet ID to reply to
  * @param {string} claimUrl - POAP claim URL
+ * @param {string} botAccountId - Optional bot account ID to use for replying
  * @returns {Promise<string>} Reply tweet ID
  */
 export async function replyWithClaimUrl(
   tweetId: string,
-  claimUrl: string
+  claimUrl: string,
+  botAccountId?: string
 ): Promise<string> {
   try {
     const text = await generateReplyText(claimUrl);
-    const replyId = await replyToTweet(tweetId, text);
+    const replyId = await replyToTweet(tweetId, text, botAccountId);
     await markTweetAsReplied(tweetId, replyId);
 
     return replyId;
@@ -192,14 +196,16 @@ export async function generateAlreadyClaimedText(): Promise<string> {
 /**
  * Reply to a tweet with "already claimed" message
  * @param {string} tweetId - Tweet ID to reply to
+ * @param {string} botAccountId - Optional bot account ID to use for replying
  * @returns {Promise<string>} Reply tweet ID
  */
 export async function replyWithAlreadyClaimed(
-  tweetId: string
+  tweetId: string,
+  botAccountId?: string
 ): Promise<string> {
   try {
     const text = await generateAlreadyClaimedText();
-    const replyId = await replyToTweet(tweetId, text);
+    const replyId = await replyToTweet(tweetId, text, botAccountId);
     await markTweetAsReplied(tweetId, replyId);
 
     return replyId;
@@ -246,14 +252,16 @@ export async function generateNotEligibleText(): Promise<string> {
 /**
  * Reply to a tweet with "not eligible" message
  * @param {string} tweetId - Tweet ID to reply to
+ * @param {string} botAccountId - Optional bot account ID to use for replying
  * @returns {Promise<string>} Reply tweet ID
  */
 export async function replyWithNotEligible(
-  tweetId: string
+  tweetId: string,
+  botAccountId?: string
 ): Promise<string> {
   try {
     const text = await generateNotEligibleText();
-    const replyId = await replyToTweet(tweetId, text);
+    const replyId = await replyToTweet(tweetId, text, botAccountId);
     await markTweetAsReplied(tweetId, replyId);
 
     return replyId;
