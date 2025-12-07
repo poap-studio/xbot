@@ -352,39 +352,6 @@ describe('Bot Orchestration Service', () => {
       expect(result.tweetsEligible).toBe(1);
       expect(result.deliveriesSuccessful).toBe(1); // Only 1 eligible
     });
-
-    it.skip(
-      'should wait between processing tweets (rate limiting)',
-      async () => {
-        jest.useFakeTimers();
-
-        const tweets: ProcessedTweet[] = [
-          mockTweet,
-          {
-            ...mockTweet,
-            id: 'tweet_456',
-            authorId: 'user_456',
-            authorUsername: 'user2',
-            hiddenCode: 'TESTCODE123',
-          },
-        ];
-
-        (searchNewEligibleTweets as jest.Mock).mockResolvedValue(tweets);
-        (saveTweets as jest.Mock).mockResolvedValue(2);
-
-        const processPromise = runBotProcess(10);
-
-        // Fast-forward timers
-        await jest.runAllTimersAsync();
-
-        const result = await processPromise;
-
-        expect(result.deliveriesSuccessful).toBe(2);
-
-        jest.useRealTimers();
-      },
-      120000
-    ); // 120 second timeout
   });
 
   describe('validateBotConfiguration', () => {
