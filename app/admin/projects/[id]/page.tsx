@@ -773,6 +773,7 @@ function MintLinksTab({ project, onUpdate }: { project: Project; onUpdate: () =>
     setSuccess(null);
 
     try {
+      // First, update the POAP settings
       const response = await fetch(`/api/admin/projects/${project.id}`, {
         method: 'PATCH',
         headers: {
@@ -787,9 +788,33 @@ function MintLinksTab({ project, onUpdate }: { project: Project; onUpdate: () =>
         throw new Error(data.error || 'Failed to update POAP settings');
       }
 
-      setSuccess('POAP settings updated successfully!');
+      // Then, fetch the POAP event name and update project name
+      try {
+        const nameResponse = await fetch(`/api/admin/projects/${project.id}/fetch-poap-name`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            poapEventId: formData.poapEventId,
+            poapEditCode: formData.poapEditCode,
+          }),
+        });
+
+        const nameData = await nameResponse.json();
+
+        if (nameResponse.ok && nameData.name) {
+          setSuccess(`POAP settings updated successfully! Project renamed to: "${nameData.name}"`);
+        } else {
+          setSuccess('POAP settings updated successfully!');
+        }
+      } catch (nameError) {
+        console.warn('Failed to fetch POAP event name:', nameError);
+        setSuccess('POAP settings updated successfully!');
+      }
+
       onUpdate();
-      setTimeout(() => setSuccess(null), 3000);
+      setTimeout(() => setSuccess(null), 5000);
     } catch (error) {
       console.error('Error updating POAP settings:', error);
       setError(error instanceof Error ? error.message : 'Failed to update POAP settings');
