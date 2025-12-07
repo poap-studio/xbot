@@ -105,11 +105,21 @@ export async function markTweetAsReplied(
  * @param {string} claimUrl - POAP claim URL
  * @returns {Promise<string>} Reply text
  */
-export async function generateReplyText(claimUrl: string): Promise<string> {
+export async function generateReplyText(claimUrl: string, projectId?: string): Promise<string> {
   try {
-    const project = await prisma.project.findFirst({
-      where: { isActive: true },
-    });
+    let project;
+
+    if (projectId) {
+      project = await prisma.project.findUnique({
+        where: { id: projectId },
+      });
+    }
+
+    if (!project) {
+      project = await prisma.project.findFirst({
+        where: { isActive: true },
+      });
+    }
 
     if (!project) {
       throw new Error('No active project found');
@@ -140,15 +150,17 @@ export async function generateReplyText(claimUrl: string): Promise<string> {
  * @param {string} tweetId - Tweet ID to reply to
  * @param {string} claimUrl - POAP claim URL
  * @param {string} botAccountId - Optional bot account ID to use for replying
+ * @param {string} projectId - Optional project ID to use for template
  * @returns {Promise<string>} Reply tweet ID
  */
 export async function replyWithClaimUrl(
   tweetId: string,
   claimUrl: string,
-  botAccountId?: string
+  botAccountId?: string,
+  projectId?: string
 ): Promise<string> {
   try {
-    const text = await generateReplyText(claimUrl);
+    const text = await generateReplyText(claimUrl, projectId);
     const replyId = await replyToTweet(tweetId, text, botAccountId);
     await markTweetAsReplied(tweetId, replyId);
 
@@ -163,14 +175,25 @@ export async function replyWithClaimUrl(
 
 /**
  * Generate "already claimed" reply text
- * Uses template from first active project
+ * Uses template from project or first active project if not specified
+ * @param {string} projectId - Optional project ID to use for template
  * @returns {Promise<string>} Reply text
  */
-export async function generateAlreadyClaimedText(): Promise<string> {
+export async function generateAlreadyClaimedText(projectId?: string): Promise<string> {
   try {
-    const project = await prisma.project.findFirst({
-      where: { isActive: true },
-    });
+    let project;
+
+    if (projectId) {
+      project = await prisma.project.findUnique({
+        where: { id: projectId },
+      });
+    }
+
+    if (!project) {
+      project = await prisma.project.findFirst({
+        where: { isActive: true },
+      });
+    }
 
     if (!project) {
       throw new Error('No active project found');
@@ -197,14 +220,16 @@ export async function generateAlreadyClaimedText(): Promise<string> {
  * Reply to a tweet with "already claimed" message
  * @param {string} tweetId - Tweet ID to reply to
  * @param {string} botAccountId - Optional bot account ID to use for replying
+ * @param {string} projectId - Optional project ID to use for template
  * @returns {Promise<string>} Reply tweet ID
  */
 export async function replyWithAlreadyClaimed(
   tweetId: string,
-  botAccountId?: string
+  botAccountId?: string,
+  projectId?: string
 ): Promise<string> {
   try {
-    const text = await generateAlreadyClaimedText();
+    const text = await generateAlreadyClaimedText(projectId);
     const replyId = await replyToTweet(tweetId, text, botAccountId);
     await markTweetAsReplied(tweetId, replyId);
 
