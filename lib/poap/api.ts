@@ -568,8 +568,20 @@ export async function loadQRCodesFromPOAP(
   eventId: string,
   editCode: string,
   projectId: string
-): Promise<{ loaded: number; newCodes: number; existing: number; skippedClaimed: number }> {
+): Promise<{ loaded: number; newCodes: number; deleted: number; skippedClaimed: number }> {
   console.log(`Loading QR codes for event ${eventId} (project ${projectId})...`);
+
+  // Delete all existing QR codes for this project that are not reserved or claimed
+  // This ensures we always have fresh data from POAP
+  console.log('Deleting unreserved QR codes from database...');
+  const deleteResult = await prisma.qRCode.deleteMany({
+    where: {
+      projectId,
+      reservedFor: null,
+      claimed: false,
+    },
+  });
+  console.log(`Deleted ${deleteResult.count} unreserved QR codes`);
 
   // Get all QR hashes for the event
   const qrHashes = await getEventQRCodes(eventId, editCode);
@@ -578,32 +590,60 @@ export async function loadQRCodesFromPOAP(
     throw new Error('No QR codes found for this event');
   }
 
-  console.log(`Found ${qrHashes.length} QR codes`);
+  console.log(`Found ${qrHashes.length} QR codes from POAP API`);
 
   let newCodes = 0;
-  let existing = 0;
   let skippedClaimed = 0;
+  let updated = 0;
 
   // Process each QR hash
   for (const qrHash of qrHashes) {
     try {
-      // Check if already exists for this project
+      // Get QR code info from POAP API to check current status
+      console.log(`Checking claim status for ${qrHash}...`);
+      const qrInfo = await getQRCodeInfo(qrHash);
+
+      // Check if already exists in our database (would only exist if it's reserved or claimed)
       const existingQR = await prisma.qRCode.findFirst({
         where: { qrHash, projectId },
       });
 
       if (existingQR) {
-        existing++;
+        // QR exists - it's reserved or claimed
+        // Update if the claimed status changed in POAP
+        if (qrInfo.claimed && !existingQR.claimed) {
+          console.log(`Updating ${qrHash} - now claimed in POAP by ${qrInfo.beneficiary}`);
+          await prisma.qRCode.update({
+            where: { id: existingQR.id },
+            data: {
+              claimed: true,
+              claimedBy: qrInfo.beneficiary,
+              claimedAt: new Date(),
+            },
+          });
+
+          // Also update the delivery if it exists
+          await prisma.delivery.updateMany({
+            where: {
+              qrHash: existingQR.qrHash,
+              projectId: existingQR.projectId,
+            },
+            data: {
+              claimed: true,
+              claimedAt: new Date(),
+            },
+          });
+
+          updated++;
+        } else {
+          console.log(`Skipping ${qrHash} - already in database, status unchanged`);
+        }
         continue;
       }
 
-      // Get QR code info to check if it's already claimed
-      console.log(`Checking claim status for ${qrHash}...`);
-      const qrInfo = await getQRCodeInfo(qrHash);
-
-      // Skip if already claimed
+      // Skip if already claimed in POAP
       if (qrInfo.claimed) {
-        console.log(`Skipping ${qrHash} - already claimed by ${qrInfo.beneficiary}`);
+        console.log(`Skipping ${qrHash} - already claimed in POAP by ${qrInfo.beneficiary}`);
         skippedClaimed++;
         continue;
       }
@@ -631,12 +671,11 @@ export async function loadQRCodesFromPOAP(
     }
   }
 
-  const loaded = newCodes + existing;
   console.log(
-    `QR codes loaded: ${loaded} total (${newCodes} new, ${existing} existing, ${skippedClaimed} skipped - already claimed)`
+    `QR codes sync complete: ${newCodes} new, ${updated} updated, ${deleteResult.count} deleted, ${skippedClaimed} skipped (claimed in POAP)`
   );
 
-  return { loaded, newCodes, existing, skippedClaimed };
+  return { loaded: newCodes, newCodes, deleted: deleteResult.count, skippedClaimed };
 }
 
 /**
