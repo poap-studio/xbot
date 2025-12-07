@@ -94,7 +94,7 @@ export default function DeliveriesPage() {
         new Map(
           data.deliveries.map((d: Delivery) => [d.project.id, d.project])
         ).values()
-      );
+      ) as Project[];
       setProjects(uniqueProjects);
     } catch (error) {
       console.error('Error fetching deliveries:', error);
