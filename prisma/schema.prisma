@@ -209,3 +209,22 @@ model CronLog {
   @@index([startedAt])
   @@map("cron_logs")
 }
+
+// Twitter Webhook Events - Temporary storage for analysis
+model TwitterWebhookEvent {
+  id              String   @id @default(cuid())
+  method          String   // GET or POST
+  path            String   // Request path
+  headers         Json     // All request headers
+  queryParams     Json?    // Query parameters (for CRC)
+  body            Json?    // Request body (for events)
+  ipAddress       String?  // Source IP
+  userAgent       String?  // User agent
+  eventType       String?  // Parsed event type if available
+  receivedAt      DateTime @default(now())
+
+  @@index([method])
+  @@index([eventType])
+  @@index([receivedAt])
+  @@map("twitter_webhook_events")
+}
