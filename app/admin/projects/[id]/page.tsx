@@ -42,8 +42,13 @@ import {
   Download as DownloadIcon,
   Delete as DeleteIcon,
   Add as AddIcon,
+  ContentCopy as ContentCopyIcon,
+  OpenInNew as OpenInNewIcon,
+  CheckCircle as CheckCircleIcon,
+  Link as LinkIcon,
 } from '@mui/icons-material';
 import Link from 'next/link';
+import Image from 'next/image';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -95,8 +100,6 @@ function GeneralTab({ project, onUpdate }: { project: Project; onUpdate: () => v
   const [success, setSuccess] = useState(false);
   const [formData, setFormData] = useState({
     name: project.name,
-    poapEventId: project.poapEventId,
-    poapEditCode: project.poapEditCode,
     twitterHashtag: project.twitterHashtag,
     isActive: project.isActive,
   });
@@ -165,25 +168,6 @@ function GeneralTab({ project, onUpdate }: { project: Project; onUpdate: () => v
           onChange={handleChange('name')}
           required
           fullWidth
-        />
-
-        <TextField
-          label="POAP Event ID"
-          value={formData.poapEventId}
-          onChange={handleChange('poapEventId')}
-          required
-          fullWidth
-          helperText="The POAP event ID from poap.xyz"
-        />
-
-        <TextField
-          label="POAP Edit Code"
-          value={formData.poapEditCode}
-          onChange={handleChange('poapEditCode')}
-          required
-          fullWidth
-          type="password"
-          helperText="The edit code to load QR codes from POAP API"
         />
 
         <TextField
@@ -759,17 +743,60 @@ function ValidCodesTab({ project }: { project: Project }) {
   );
 }
 
-// QR Codes Tab Component
-function QRCodesTab({ project }: { project: Project }) {
+// Mint Links Tab Component
+function MintLinksTab({ project, onUpdate }: { project: Project; onUpdate: () => void }) {
   const [loading, setLoading] = useState(true);
   const [loadingQRs, setLoadingQRs] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [stats, setStats] = useState({ total: 0, available: 0, reserved: 0, claimed: 0 });
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [formData, setFormData] = useState({
+    poapEventId: project.poapEventId,
+    poapEditCode: project.poapEditCode,
+  });
 
   useEffect(() => {
     fetchStats();
   }, []);
+
+  const handleChange = (field: string) => (event: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({
+      ...formData,
+      [field]: event.target.value,
+    });
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      const response = await fetch(`/api/admin/projects/${project.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to update POAP settings');
+      }
+
+      setSuccess('POAP settings updated successfully!');
+      onUpdate();
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (error) {
+      console.error('Error updating POAP settings:', error);
+      setError(error instanceof Error ? error.message : 'Failed to update POAP settings');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const fetchStats = async () => {
     setLoading(true);
@@ -839,10 +866,10 @@ function QRCodesTab({ project }: { project: Project }) {
   return (
     <Box>
       <Typography variant="h6" gutterBottom>
-        QR Codes
+        Mint Links
       </Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-        Load and manage POAP QR codes for this project
+        Load and manage POAP mint links for this project
       </Typography>
 
       {error && (
@@ -857,6 +884,44 @@ function QRCodesTab({ project }: { project: Project }) {
         </Alert>
       )}
 
+      {/* POAP Settings */}
+      <Card sx={{ p: 3, mb: 3 }}>
+        <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'bold', mb: 2 }}>
+          POAP Event Settings
+        </Typography>
+        <Stack spacing={3}>
+          <TextField
+            label="POAP Event ID"
+            value={formData.poapEventId}
+            onChange={handleChange('poapEventId')}
+            required
+            fullWidth
+            helperText="The POAP event ID from poap.xyz"
+          />
+
+          <TextField
+            label="POAP Edit Code"
+            value={formData.poapEditCode}
+            onChange={handleChange('poapEditCode')}
+            required
+            fullWidth
+            type="password"
+            helperText="The edit code to load mint links from POAP API"
+          />
+
+          <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
+            <Button
+              variant="contained"
+              startIcon={<SaveIcon />}
+              onClick={handleSave}
+              disabled={saving}
+            >
+              {saving ? 'Saving...' : 'Save POAP Settings'}
+            </Button>
+          </Box>
+        </Stack>
+      </Card>
+
       {/* Stats */}
       <Box sx={{
         display: 'grid',
@@ -866,7 +931,7 @@ function QRCodesTab({ project }: { project: Project }) {
       }}>
         <Card sx={{ p: 3 }}>
           <Typography variant="body2" color="text.secondary" gutterBottom sx={{ fontWeight: 'medium' }}>
-            Total QR Codes
+            Total Mint Links
           </Typography>
           <Typography variant="h3" sx={{ fontWeight: 'bold' }}>
             {stats.total}
@@ -926,7 +991,7 @@ function QRCodesTab({ project }: { project: Project }) {
             disabled={loadingQRs}
             fullWidth
           >
-            {loadingQRs ? 'Loading QR Codes from POAP...' : 'Load QR Codes from POAP API'}
+            {loadingQRs ? 'Loading Mint Links from POAP...' : 'Load Mint Links from POAP API'}
           </Button>
 
           <Alert severity="info" icon={<InfoIcon />}>
@@ -937,16 +1002,16 @@ function QRCodesTab({ project }: { project: Project }) {
 
       {/* Info */}
       <Alert severity="info">
-        <AlertTitle>About QR Codes</AlertTitle>
-        QR codes are loaded from the POAP API and assigned to eligible users when they tweet with a valid code.
+        <AlertTitle>About Mint Links</AlertTitle>
+        Mint links are loaded from the POAP API and assigned to eligible users when they tweet with a valid code.
         <br /><br />
-        <strong>QR Code States:</strong>
+        <strong>Mint Link States:</strong>
         <ul style={{ marginTop: '8px', marginBottom: '8px', paddingLeft: '20px' }}>
           <li><strong>Available:</strong> Ready to be assigned to users</li>
           <li><strong>Reserved:</strong> Assigned to a user but not yet claimed</li>
           <li><strong>Claimed:</strong> User has claimed the POAP</li>
         </ul>
-        <strong>Note:</strong> Make sure you have configured the correct POAP Event ID and Edit Code in the General settings tab before loading QR codes.
+        <strong>Note:</strong> Make sure you have configured the correct POAP Event ID and Edit Code in the General settings tab before loading mint links.
       </Alert>
     </Box>
   );
@@ -963,10 +1028,50 @@ export default function ProjectDetailPage({
   const [project, setProject] = useState<Project | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [tabValue, setTabValue] = useState(0);
+  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
+  const [loadingQR, setLoadingQR] = useState(false);
+  const [copySuccess, setCopySuccess] = useState(false);
 
   useEffect(() => {
     fetchProject();
   }, [resolvedParams.id]);
+
+  useEffect(() => {
+    if (project) {
+      loadQRCode();
+    }
+  }, [project]);
+
+  const loadQRCode = async () => {
+    if (!project) return;
+
+    setLoadingQR(true);
+    try {
+      const response = await fetch(`/api/qr/generate?projectId=${project.id}`);
+      const data = await response.json();
+
+      if (response.ok && data.qrDataUrl) {
+        setQrDataUrl(data.qrDataUrl);
+      }
+    } catch (error) {
+      console.error('Error loading QR code:', error);
+    } finally {
+      setLoadingQR(false);
+    }
+  };
+
+  const handleCopyUrl = async () => {
+    const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+    const qrUrl = `${baseUrl}/qr/${project?.id}`;
+
+    try {
+      await navigator.clipboard.writeText(qrUrl);
+      setCopySuccess(true);
+      setTimeout(() => setCopySuccess(false), 2000);
+    } catch (error) {
+      console.error('Error copying to clipboard:', error);
+    }
+  };
 
   const fetchProject = async () => {
     setLoading(true);
@@ -1068,6 +1173,118 @@ export default function ProjectDetailPage({
         </Button>
       </Box>
 
+      {/* QR Code Section */}
+      <Card sx={{ mb: 3, p: 3 }}>
+        <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', mb: 2 }}>
+          Dynamic QR Code
+        </Typography>
+
+        <Box sx={{ display: 'flex', gap: 3, alignItems: 'flex-start', flexDirection: { xs: 'column', md: 'row' } }}>
+          {/* QR Code Display */}
+          <Box sx={{
+            minWidth: 200,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: 2
+          }}>
+            {loadingQR ? (
+              <Box sx={{
+                width: 200,
+                height: 200,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                bgcolor: 'background.paper',
+                borderRadius: 1,
+                border: 1,
+                borderColor: 'divider'
+              }}>
+                <CircularProgress />
+              </Box>
+            ) : qrDataUrl ? (
+              <Box sx={{
+                width: 200,
+                height: 200,
+                bgcolor: 'white',
+                p: 1,
+                borderRadius: 1,
+                boxShadow: 2
+              }}>
+                <Image
+                  src={qrDataUrl}
+                  alt="Project QR Code"
+                  width={184}
+                  height={184}
+                  style={{ width: '100%', height: '100%' }}
+                />
+              </Box>
+            ) : (
+              <Box sx={{
+                width: 200,
+                height: 200,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                bgcolor: 'background.paper',
+                borderRadius: 1,
+                border: 1,
+                borderColor: 'divider'
+              }}>
+                <Typography variant="body2" color="text.secondary">
+                  No QR available
+                </Typography>
+              </Box>
+            )}
+          </Box>
+
+          {/* QR Info and Actions */}
+          <Box sx={{ flex: 1 }}>
+            <Alert severity="info" sx={{ mb: 2 }}>
+              <Typography variant="body2" gutterBottom>
+                This QR code links to a dynamic page that shows a unique Twitter share link with a valid code from this project.
+                Each scan uses a different code.
+              </Typography>
+            </Alert>
+
+            <Stack spacing={2}>
+              <Box>
+                <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 'bold' }}>
+                  QR Page URL
+                </Typography>
+                <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                  <TextField
+                    fullWidth
+                    size="small"
+                    value={`${typeof window !== 'undefined' ? window.location.origin : ''}/qr/${project.id}`}
+                    InputProps={{
+                      readOnly: true,
+                      sx: { fontFamily: 'monospace', fontSize: '0.875rem' }
+                    }}
+                  />
+                  <Button
+                    variant="outlined"
+                    startIcon={copySuccess ? <CheckCircleIcon /> : <ContentCopyIcon />}
+                    onClick={handleCopyUrl}
+                    color={copySuccess ? 'success' : 'primary'}
+                    sx={{ minWidth: 100 }}
+                  >
+                    {copySuccess ? 'Copied!' : 'Copy'}
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    startIcon={<OpenInNewIcon />}
+                    onClick={() => window.open(`/qr/${project.id}`, '_blank')}
+                  >
+                    Open
+                  </Button>
+                </Box>
+              </Box>
+            </Stack>
+          </Box>
+        </Box>
+      </Card>
+
       {/* Tabs */}
       <Card>
         <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
@@ -1075,7 +1292,7 @@ export default function ProjectDetailPage({
             <Tab icon={<SettingsIcon />} iconPosition="start" label="General" />
             <Tab icon={<MessageIcon />} iconPosition="start" label="POAP Config" />
             <Tab icon={<CodeIcon />} iconPosition="start" label="Valid Codes" />
-            <Tab icon={<QrCodeIcon />} iconPosition="start" label="QR Codes" />
+            <Tab icon={<LinkIcon />} iconPosition="start" label="Mint Links" />
           </Tabs>
         </Box>
 
@@ -1095,9 +1312,9 @@ export default function ProjectDetailPage({
             <ValidCodesTab project={project} />
           </TabPanel>
 
-          {/* QR Codes Tab */}
+          {/* Mint Links Tab */}
           <TabPanel value={tabValue} index={3}>
-            <QRCodesTab project={project} />
+            <MintLinksTab project={project} onUpdate={fetchProject} />
           </TabPanel>
         </Box>
       </Card>
