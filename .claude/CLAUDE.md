@@ -77,6 +77,23 @@ vercel env pull .env.local
 - [ ] Test built application locally if needed
 - [ ] Resolve any build issues before deploying
 
+### Documentation Requirements
+
+**User Instruction:** "cada cambio que hagas en el proyecto debe ser documentado en el readme md, que ademas debe describir fielmente el proyecto"
+
+- **Meaning:** Every change must be documented in README.md with accurate project description
+- **Action:** Update README.md after each feature, fix, or significant change
+- **Scope:** Keep README coherent and review entire file for consistency
+
+**Documentation Checklist:**
+- [ ] After implementing a feature/fix, update README.md
+- [ ] Review entire README.md for coherence
+- [ ] Ensure README accurately describes current project state
+- [ ] Include new configuration options, endpoints, or features
+- [ ] Update setup instructions if needed
+
+**CRITICAL:** This is a mandatory step in the workflow - never skip documentation.
+
 ### Deployment Workflow
 
 **IMPORTANT:** This project has **auto-deployment** configured on Vercel.
@@ -84,10 +101,11 @@ vercel env pull .env.local
 **Workflow:**
 1. Make changes locally
 2. Run tests and build (`npm test` && `npm run build`)
-3. Commit changes (`git commit`)
-4. Push to main (`git push origin main`)
-5. **Auto-deployment triggers on Vercel** - NO manual deployment needed
-6. **ALWAYS check Vercel deployment logs** after push
+3. **Document changes in README.md** (review entire file for coherence)
+4. Commit changes (`git commit`)
+5. Push to main (`git push origin main`)
+6. **Auto-deployment triggers on Vercel** - NO manual deployment needed
+7. **ALWAYS check Vercel deployment logs** after push
 
 **Checking Deployment Status:**
 
