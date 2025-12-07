@@ -8,12 +8,14 @@ Automated bot that delivers POAP mint links to Twitter users who post eligible t
 
 ## 🚀 Features
 
-- **Automated Tweet Monitoring**: Monitors hashtags for eligible tweets with images and special codes
+- **Real-time Webhook Processing**: Instant POAP delivery via Twitter Account Activity webhooks (no polling!)
+- **Mention-based Detection**: Users mention bot accounts with unique codes instead of hashtags
+- **Multi-Project Bot Support**: One bot can serve multiple projects, identified by globally unique codes
+- **Automatic Webhook Management**: Webhooks created/deleted automatically when assigning/removing bots
 - **POAP Delivery**: Reserves and delivers unique mint links to eligible users
 - **Dynamic QR Code Generation**: Generate QR codes with secret codes that redirect to Twitter with pre-filled tweets
 - **Web Claim Interface**: Twitter OAuth login to view and claim POAPs
 - **Admin Dashboard**: Configure bot settings, view statistics, and export delivery data with organized tabs
-- **Multi-Bot Support**: Connect and manage multiple Twitter bot accounts with OAuth 1.0a authentication
 - **Per-Project Bot Configuration**: Assign specific bot accounts to different projects for organized reply management
 
 ## 🏗️ Architecture
@@ -21,8 +23,9 @@ Automated bot that delivers POAP mint links to Twitter users who post eligible t
 - **Frontend**: Next.js 16 + React 19 + TypeScript + Tailwind CSS
 - **Database**: PostgreSQL (AWS RDS)
 - **Authentication**: NextAuth.js with Twitter OAuth 2.0
-- **APIs**: Twitter API v2 + POAP API
-- **Hosting**: Vercel with automated cron jobs
+- **APIs**: Twitter API v2 (Account Activity & OAuth 1.0a) + POAP API
+- **Real-time Processing**: Twitter Account Activity webhooks
+- **Hosting**: Vercel
 
 ## 📋 Prerequisites
 
@@ -84,8 +87,11 @@ NEXTAUTH_SECRET="generate_with_openssl_rand_base64_32"
 # App
 NEXT_PUBLIC_APP_URL="http://localhost:3000"
 
-# Vercel Cron Protection
-CRON_SECRET="generate_with_openssl_rand_base64_32"
+# Admin
+ADMIN_PASSWORD="your_admin_password"
+
+# Encryption (for storing bot credentials)
+ENCRYPTION_SECRET="generate_with_openssl_rand_hex_64"
 ```
 
 ### 4. Setup Database
@@ -151,7 +157,7 @@ vercel env add POAP_CLIENT_ID
 vercel --prod
 ```
 
-The cron job is automatically configured via `vercel.json`.
+**Note**: Webhooks are automatically managed when you assign/remove bot accounts to projects. No manual webhook configuration needed!
 
 ## 📖 Usage
 
@@ -186,23 +192,32 @@ The system supports multiple Twitter bot accounts with per-project configuration
 
 ### User Flows
 
-#### Flow 1: Tweet-based POAP Claim
+#### Flow 1: Tweet-based POAP Claim (Real-time via Webhooks)
 1. User posts a tweet with:
-   - Configured hashtag (e.g., #POAP)
-   - Required code text (e.g., "ELIGIBLE")
-   - Image attachment
-2. Bot detects eligible tweet and reserves a mint link
-3. Bot replies to tweet with claim URL
-4. User visits claim URL and logs in with Twitter
-5. User sees their mint link and claims POAP
+   - **Mention to bot account** (e.g., @poapstudio)
+   - **Unique code** (e.g., "A3B7K")
+   - **Image attachment**
+2. Twitter webhook instantly notifies our system about the mention
+3. System validates:
+   - Code belongs to an active project
+   - Bot account matches the project
+   - Tweet has required image
+4. Bot reserves a mint link and replies to tweet with claim URL
+5. User visits claim URL and logs in with Twitter
+6. User sees their mint link and claims POAP
 
 #### Flow 2: QR Code POAP Claim
 1. Admin generates QR code with secret code in admin dashboard
 2. User scans QR code (typically at event booth)
-3. QR redirects to Twitter app with pre-filled tweet containing secret code
-4. User posts the tweet with hashtag
-5. Bot detects tweet and delivers POAP mint link via reply
+3. QR redirects to Twitter app with pre-filled tweet containing:
+   - Mention to bot account
+   - Secret code
+   - Hashtag (for tracking)
+4. User posts the tweet
+5. Webhook instantly triggers POAP delivery via bot reply
 6. User claims POAP from mint link
+
+**Key Difference from v1**: No more polling! Webhooks provide instant delivery (< 1 second) vs up to 60 seconds with cron-based polling.
 
 ## 📁 Project Structure
 
@@ -213,9 +228,9 @@ xbot/
 │   ├── api/               # API routes
 │   │   ├── admin/        # Admin endpoints
 │   │   ├── auth/         # NextAuth
-│   │   ├── cron/         # Cron jobs
-│   │   ├── deliveries/   # User deliveries
-│   │   └── qr/           # QR code generation & tracking
+│   │   ├── claim/        # User claim endpoints
+│   │   ├── qr/           # QR code generation & tracking
+│   │   └── webhooks/     # Twitter webhook handler
 │   ├── claim/            # Claim page
 │   ├── globals.css
 │   ├── layout.tsx
@@ -225,10 +240,14 @@ xbot/
 ├── lib/                   # Core logic
 │   ├── bot/              # Bot processor
 │   ├── poap/             # POAP API client
-│   ├── twitter/          # Twitter API client
+│   ├── twitter/          # Twitter API client & webhook processor
 │   └── prisma.ts         # Prisma client
 ├── prisma/
 │   └── schema.prisma     # Database schema
+├── scripts/               # Utility scripts
+│   ├── register-webhook.ts
+│   ├── subscribe-webhook.ts
+│   └── view-webhook-events.ts
 ├── e2e/                   # E2E tests
 └── vercel.json           # Vercel configuration
 ```
@@ -318,7 +337,44 @@ Fixed project creation to properly use Prisma schema default values:
 - `PATCH /api/admin/projects/[id]` - Update project (including botAccountId)
 
 ### System Routes
-- `GET /api/cron/process-tweets` - Cron job endpoint (requires CRON_SECRET)
+## 🔗 Twitter Webhooks
+
+### How it Works
+
+The system uses Twitter's Account Activity API to receive real-time webhook events:
+
+1. **Automatic Webhook Management**:
+   - When you assign a bot to a project (first time), a webhook is automatically registered with Twitter
+   - When a bot is removed from all projects, its webhook is automatically deleted
+   - No manual configuration needed!
+
+2. **Event Processing**:
+   - Twitter sends POST requests to `/api/webhooks/twitter` when users mention the bot
+   - System validates the mention contains a valid code and image
+   - Identifies the project by the globally unique code
+   - Processes the POAP delivery instantly
+
+3. **Webhook Security**:
+   - CRC (Challenge-Response Check) validation ensures webhook authenticity
+   - Events are logged in `TwitterWebhookEvent` table for debugging
+   - OAuth 1.0a signatures verify bot subscription requests
+
+### Webhook Scripts
+
+Utility scripts are available in `/scripts/` for manual webhook management:
+
+```bash
+# View captured webhook events
+npx tsx scripts/view-webhook-events.ts
+
+# Manually register a webhook (usually not needed)
+npx tsx scripts/register-webhook.ts
+
+# Manually subscribe a bot to webhook (usually not needed)
+npx tsx scripts/subscribe-webhook.ts
+```
+
+**Note**: These scripts are primarily for debugging. The system manages webhooks automatically.
 
 ## 📄 License
 
