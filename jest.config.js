@@ -9,6 +9,8 @@ const customJestConfig = {
   testEnvironment: 'jest-environment-jsdom',
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/$1',
+    '^next-auth$': '<rootDir>/__mocks__/next-auth.ts',
+    '^next-auth/providers/twitter$': '<rootDir>/__mocks__/next-auth/providers/twitter.ts',
   },
   collectCoverageFrom: [
     'app/**/*.{js,jsx,ts,tsx}',
@@ -19,6 +21,8 @@ const customJestConfig = {
     '!**/.next/**',
   ],
   testPathIgnorePatterns: ['<rootDir>/.next/', '<rootDir>/node_modules/'],
+  // Run tests sequentially to avoid database conflicts
+  maxWorkers: 1,
 }
 
 module.exports = createJestConfig(customJestConfig)

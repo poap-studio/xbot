@@ -28,13 +28,29 @@ jest.mock('../client', () => ({
   }),
 }));
 
+const testProjectId = 'test-project-123';
+
 describe('Twitter Reply Service', () => {
   // Clean up before each test
   beforeEach(async () => {
     jest.clearAllMocks();
     // Delete in correct order due to foreign keys
     await prisma.tweet.deleteMany({});
-    await prisma.config.deleteMany({});
+    await prisma.project.deleteMany({});
+
+    // Create a test project for tests that need it
+    await prisma.project.create({
+      data: {
+        id: testProjectId,
+        name: 'Test Project',
+        poapEventId: '123',
+        poapEditCode: 'test-edit-code',
+        botReplyEligible: 'Claim your POAP here: {{claimUrl}}',
+        botReplyNotEligible: 'Thanks for your interest. Make sure to include a valid code and an image.',
+        botReplyAlreadyClaimed: 'You have already claimed a POAP for this event.',
+        isActive: true,
+      },
+    });
   });
 
   afterAll(async () => {
@@ -82,6 +98,7 @@ describe('Twitter Reply Service', () => {
       await prisma.tweet.create({
         data: {
           tweetId: 'tweet_123',
+          projectId: testProjectId,
           twitterUserId: 'user_123',
           username: 'testuser',
           text: 'Test tweet',
@@ -96,8 +113,8 @@ describe('Twitter Reply Service', () => {
     it('should mark tweet as replied', async () => {
       await markTweetAsReplied('tweet_123', 'reply_123');
 
-      const tweet = await prisma.tweet.findUnique({
-        where: { tweetId: 'tweet_123' },
+      const tweet = await prisma.tweet.findFirst({
+        where: { tweetId: 'tweet_123', projectId: testProjectId },
       });
 
       expect(tweet!.botReplied).toBe(true);
@@ -107,29 +124,18 @@ describe('Twitter Reply Service', () => {
 
   describe('generateReplyText', () => {
     it('should generate reply text with claim URL', async () => {
-      await prisma.config.create({
-        data: {
-          id: 'test-config-1',
-          poapEventId: '123',
-          poapSecretCode: 'secret',
-          botReplyText: 'Claim your POAP here: {{claimUrl}}',
-        },
-      });
-
       const text = await generateReplyText('https://poap.xyz/claim/abc123');
 
       expect(text).toBe('Claim your POAP here: https://poap.xyz/claim/abc123');
     });
 
     it('should truncate text if too long', async () => {
-      // Create a template that will be > 280 chars after replacement
+      // Update project with long template
       // 260 'a' + ' ' + 'https://poap.xyz/claim/abc123' (32 chars) = 293 chars
-      await prisma.config.create({
+      await prisma.project.update({
+        where: { id: testProjectId },
         data: {
-          id: 'test-config-2',
-          poapEventId: '123',
-          poapSecretCode: 'secret',
-          botReplyText: 'a'.repeat(260) + ' {{claimUrl}}',
+          botReplyEligible: 'a'.repeat(260) + ' {{claimUrl}}',
         },
       });
 
@@ -139,29 +145,22 @@ describe('Twitter Reply Service', () => {
       expect(text).toContain('...');
     });
 
-    it('should throw error if config not found', async () => {
-      // No config created, should throw
+    it('should throw error if project not found', async () => {
+      // Delete all projects
+      await prisma.project.deleteMany({});
+
       await expect(
         generateReplyText('https://poap.xyz/claim/abc123')
-      ).rejects.toThrow('Configuration not found');
+      ).rejects.toThrow('No active project found');
     });
   });
 
   describe('replyWithClaimUrl', () => {
     it('should reply with claim URL and mark as replied', async () => {
-      // Create config first
-      const config = await prisma.config.create({
-        data: {
-          id: 'test-config-reply',
-          poapEventId: '123',
-          poapSecretCode: 'secret',
-          botReplyText: 'Claim: {{claimUrl}}',
-        },
-      });
-
       await prisma.tweet.create({
         data: {
           tweetId: 'tweet_123',
+          projectId: testProjectId,
           twitterUserId: 'user_123',
           username: 'testuser',
           text: 'Test tweet',
@@ -178,8 +177,8 @@ describe('Twitter Reply Service', () => {
 
       expect(replyId).toBe('reply_tweet_123');
 
-      const tweet = await prisma.tweet.findUnique({
-        where: { tweetId: 'tweet_123' },
+      const tweet = await prisma.tweet.findFirst({
+        where: { tweetId: 'tweet_123', projectId: testProjectId },
       });
 
       expect(tweet!.botReplied).toBe(true);
@@ -198,6 +197,7 @@ describe('Twitter Reply Service', () => {
       await prisma.tweet.create({
         data: {
           tweetId: 'tweet_123',
+          projectId: testProjectId,
           twitterUserId: 'user_123',
           username: 'testuser',
           text: 'Test tweet',
@@ -217,6 +217,7 @@ describe('Twitter Reply Service', () => {
       await prisma.tweet.create({
         data: {
           tweetId: 'tweet_123',
+          projectId: testProjectId,
           twitterUserId: 'user_123',
           username: 'testuser',
           text: 'Test tweet',
@@ -240,6 +241,7 @@ describe('Twitter Reply Service', () => {
         data: [
           {
             tweetId: 'tweet_1',
+            projectId: testProjectId,
             twitterUserId: 'user_1',
             username: 'user1',
             text: 'Test tweet 1',
@@ -251,6 +253,7 @@ describe('Twitter Reply Service', () => {
           },
           {
             tweetId: 'tweet_2',
+            projectId: testProjectId,
             twitterUserId: 'user_2',
             username: 'user2',
             text: 'Test tweet 2',
@@ -262,6 +265,7 @@ describe('Twitter Reply Service', () => {
           },
           {
             tweetId: 'tweet_3',
+            projectId: testProjectId,
             twitterUserId: 'user_3',
             username: 'user3',
             text: 'Test tweet 3',
@@ -273,6 +277,7 @@ describe('Twitter Reply Service', () => {
           },
           {
             tweetId: 'tweet_4',
+            projectId: testProjectId,
             twitterUserId: 'user_4',
             username: 'user4',
             text: 'Test tweet 4',
@@ -315,6 +320,7 @@ describe('Twitter Reply Service', () => {
         data: [
           {
             tweetId: 'tweet_1',
+            projectId: testProjectId,
             twitterUserId: 'user_1',
             username: 'user1',
             text: 'Test 1',
@@ -325,6 +331,7 @@ describe('Twitter Reply Service', () => {
           },
           {
             tweetId: 'tweet_2',
+            projectId: testProjectId,
             twitterUserId: 'user_2',
             username: 'user2',
             text: 'Test 2',
@@ -335,6 +342,7 @@ describe('Twitter Reply Service', () => {
           },
           {
             tweetId: 'tweet_3',
+            projectId: testProjectId,
             twitterUserId: 'user_3',
             username: 'user3',
             text: 'Test 3',
@@ -345,6 +353,7 @@ describe('Twitter Reply Service', () => {
           },
           {
             tweetId: 'tweet_4',
+            projectId: testProjectId,
             twitterUserId: 'user_4',
             username: 'user4',
             text: 'Test 4',

@@ -62,9 +62,14 @@ function buildSearchQuery(criteria: SearchCriteria): string {
  * @returns {Promise<string | null>} The found hidden code or null
  */
 async function findHiddenCode(text: string): Promise<string | null> {
-  // Get all available (unused) hidden codes
+  // Get all available (unused) hidden codes from ACTIVE projects only
   const availableCodes = await prisma.validCode.findMany({
-    where: { isUsed: false },
+    where: {
+      isUsed: false,
+      project: {
+        isActive: true, // Only search codes from active projects
+      },
+    },
     select: { code: true },
   });
 

@@ -5,28 +5,19 @@
 
 import { getValidToken, renewToken, validateCredentials } from '../auth';
 import prisma from '@/lib/prisma';
-import { encrypt } from '@/lib/crypto';
 
 // Mock fetch globally
 global.fetch = jest.fn();
-
-// Mock encryption module
-jest.mock('@/lib/crypto', () => ({
-  decrypt: jest.fn((value: string) => {
-    // Return the "decrypted" value (in tests, we'll store plain text)
-    if (value === 'encrypted_client_id') return 'test_client_id';
-    if (value === 'encrypted_client_secret') return 'test_client_secret';
-    return value;
-  }),
-  encrypt: jest.fn((value: string) => `encrypted_${value}`),
-}));
 
 describe('POAP OAuth2 Authentication', () => {
   beforeEach(async () => {
     jest.clearAllMocks();
     // Clean up database
     await prisma.poapAuth.deleteMany({});
-    await prisma.config.deleteMany({});
+
+    // Set up environment variables for POAP credentials
+    process.env.POAP_CLIENT_ID = 'test_client_id';
+    process.env.POAP_CLIENT_SECRET = 'test_client_secret';
   });
 
   afterAll(async () => {
@@ -35,40 +26,21 @@ describe('POAP OAuth2 Authentication', () => {
 
   describe('validateCredentials', () => {
     it('should throw error if credentials not configured', async () => {
+      // Remove environment variables
+      delete process.env.POAP_CLIENT_ID;
+      delete process.env.POAP_CLIENT_SECRET;
+
       await expect(validateCredentials()).rejects.toThrow(
         'POAP API credentials not configured'
       );
     });
 
     it('should validate successfully if credentials exist', async () => {
-      await prisma.config.create({
-        data: {
-          id: 'default',
-          poapEventId: '123',
-          poapSecretCode: 'secret',
-          poapClientId: 'encrypted_client_id',
-          poapClientSecret: 'encrypted_client_secret',
-        },
-      });
-
       await expect(validateCredentials()).resolves.toBe(true);
     });
   });
 
   describe('renewToken', () => {
-    beforeEach(async () => {
-      // Set up config with credentials
-      await prisma.config.create({
-        data: {
-          id: 'default',
-          poapEventId: '123',
-          poapSecretCode: 'secret',
-          poapClientId: 'encrypted_client_id',
-          poapClientSecret: 'encrypted_client_secret',
-        },
-      });
-    });
-
     it('should request and store new token', async () => {
       const mockToken = 'new_access_token_12345';
       (global.fetch as jest.Mock).mockResolvedValueOnce({
@@ -155,18 +127,6 @@ describe('POAP OAuth2 Authentication', () => {
   });
 
   describe('getValidToken', () => {
-    beforeEach(async () => {
-      await prisma.config.create({
-        data: {
-          id: 'default',
-          poapEventId: '123',
-          poapSecretCode: 'secret',
-          poapClientId: 'encrypted_client_id',
-          poapClientSecret: 'encrypted_client_secret',
-        },
-      });
-    });
-
     it('should return cached token if still valid', async () => {
       const validToken = 'valid_cached_token';
       // Create a token that expires in 10 hours (well within buffer)
@@ -253,18 +213,6 @@ describe('POAP OAuth2 Authentication', () => {
   });
 
   describe('Token expiry calculation', () => {
-    beforeEach(async () => {
-      await prisma.config.create({
-        data: {
-          id: 'default',
-          poapEventId: '123',
-          poapSecretCode: 'secret',
-          poapClientId: 'encrypted_client_id',
-          poapClientSecret: 'encrypted_client_secret',
-        },
-      });
-    });
-
     it('should store token with correct expiry time', async () => {
       const expiresIn = 86400; // 24 hours in seconds
       const beforeRequest = Date.now();

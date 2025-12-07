@@ -15,6 +15,8 @@ import {
 import prisma from '@/lib/prisma';
 
 describe('POAP Delivery Service', () => {
+  let testProjectId: string;
+
   beforeEach(async () => {
     jest.clearAllMocks();
     // Clean up in correct order - deliveries first since they reference twitterUser
@@ -33,6 +35,23 @@ describe('POAP Delivery Service', () => {
     } catch (error) {
       console.error('Error deleting qr codes:', error);
     }
+    try {
+      await prisma.project.deleteMany({});
+    } catch (error) {
+      console.error('Error deleting projects:', error);
+    }
+
+    // Create a test project for all tests
+    const project = await prisma.project.create({
+      data: {
+        name: 'Test Project',
+        poapEventId: '123456',
+        poapEditCode: 'TEST_CODE',
+        twitterHashtag: '#TEST',
+        isActive: true,
+      },
+    });
+    testProjectId = project.id;
   }, 15000); // 15 second timeout for cleanup
 
   afterAll(async () => {
@@ -46,7 +65,8 @@ describe('POAP Delivery Service', () => {
         'testuser',
         'tweet_123',
         'https://poap.xyz/claim/abc123',
-        'abc123'
+        'abc123',
+        testProjectId
       );
 
       expect(delivery).toBeDefined();
@@ -79,7 +99,8 @@ describe('POAP Delivery Service', () => {
         'newusername',
         'tweet_123',
         'https://poap.xyz/claim/abc123',
-        'abc123'
+        'abc123',
+        testProjectId
       );
 
       // Check username was updated
@@ -97,7 +118,8 @@ describe('POAP Delivery Service', () => {
         'testuser',
         'tweet_123',
         'https://poap.xyz/claim/abc123',
-        'abc123'
+        'abc123',
+        testProjectId
       );
 
       // Attempt duplicate delivery
@@ -107,7 +129,8 @@ describe('POAP Delivery Service', () => {
           'testuser',
           'tweet_123',
           'https://poap.xyz/claim/def456',
-          'def456'
+          'def456',
+          testProjectId
         )
       ).rejects.toThrow();
     });
@@ -126,7 +149,8 @@ describe('POAP Delivery Service', () => {
         'testuser',
         'tweet_123',
         'https://poap.xyz/claim/abc123',
-        'abc123'
+        'abc123',
+        testProjectId
       );
 
       const result = await hasDelivery('tweet_123');
@@ -148,7 +172,8 @@ describe('POAP Delivery Service', () => {
         'testuser',
         'tweet_123',
         'https://poap.xyz/claim/abc123',
-        'abc123'
+        'abc123',
+        testProjectId
       );
 
       const result = await getDeliveryByTweet('tweet_123');
@@ -190,6 +215,7 @@ describe('POAP Delivery Service', () => {
             mintLink: 'https://poap.xyz/claim/abc1',
             qrHash: 'abc1',
             deliveredAt: new Date('2024-01-01'),
+            projectId: testProjectId,
           },
           {
             twitterUserId: user123Id,
@@ -197,6 +223,7 @@ describe('POAP Delivery Service', () => {
             mintLink: 'https://poap.xyz/claim/abc2',
             qrHash: 'abc2',
             deliveredAt: new Date('2024-01-02'),
+            projectId: testProjectId,
           },
           {
             twitterUserId: user456Id,
@@ -204,6 +231,7 @@ describe('POAP Delivery Service', () => {
             mintLink: 'https://poap.xyz/claim/abc3',
             qrHash: 'abc3',
             deliveredAt: new Date('2024-01-03'),
+            projectId: testProjectId,
           },
         ],
       });
@@ -240,6 +268,7 @@ describe('POAP Delivery Service', () => {
           qrHash: 'abc123',
           mintLink: 'https://poap.xyz/claim/abc123',
           claimed: false,
+          projectId: testProjectId,
         },
       });
 
@@ -249,15 +278,21 @@ describe('POAP Delivery Service', () => {
         'testuser',
         'tweet_123',
         'https://poap.xyz/claim/abc123',
-        'abc123'
+        'abc123',
+        testProjectId
       );
     });
 
     it('should mark delivery as claimed', async () => {
-      await markDeliveryClaimed('tweet_123', '0x1234567890abcdef');
+      await markDeliveryClaimed('tweet_123', testProjectId, '0x1234567890abcdef');
 
       const delivery = await prisma.delivery.findUnique({
-        where: { tweetId: 'tweet_123' },
+        where: {
+          tweetId_projectId: {
+            tweetId: 'tweet_123',
+            projectId: testProjectId,
+          },
+        },
       });
 
       expect(delivery!.claimed).toBe(true);
@@ -265,10 +300,15 @@ describe('POAP Delivery Service', () => {
     });
 
     it('should also update QRCode as claimed', async () => {
-      await markDeliveryClaimed('tweet_123', '0x1234567890abcdef');
+      await markDeliveryClaimed('tweet_123', testProjectId, '0x1234567890abcdef');
 
       const qrCode = await prisma.qRCode.findUnique({
-        where: { qrHash: 'abc123' },
+        where: {
+          qrHash_projectId: {
+            qrHash: 'abc123',
+            projectId: testProjectId,
+          },
+        },
       });
 
       expect(qrCode!.claimed).toBe(true);
@@ -277,10 +317,15 @@ describe('POAP Delivery Service', () => {
     });
 
     it('should work without claimedBy parameter', async () => {
-      await markDeliveryClaimed('tweet_123');
+      await markDeliveryClaimed('tweet_123', testProjectId);
 
       const delivery = await prisma.delivery.findUnique({
-        where: { tweetId: 'tweet_123' },
+        where: {
+          tweetId_projectId: {
+            tweetId: 'tweet_123',
+            projectId: testProjectId,
+          },
+        },
       });
 
       expect(delivery!.claimed).toBe(true);
@@ -309,6 +354,7 @@ describe('POAP Delivery Service', () => {
             qrHash: 'stats_abc1',
             claimed: true,
             claimedAt: new Date(),
+            projectId: testProjectId,
           },
           {
             twitterUserId: userId,
@@ -317,6 +363,7 @@ describe('POAP Delivery Service', () => {
             qrHash: 'stats_abc2',
             claimed: true,
             claimedAt: new Date(),
+            projectId: testProjectId,
           },
           {
             twitterUserId: userId,
@@ -324,6 +371,7 @@ describe('POAP Delivery Service', () => {
             mintLink: 'https://poap.xyz/claim/abc3',
             qrHash: 'stats_abc3',
             claimed: false,
+            projectId: testProjectId,
           },
         ],
       });
@@ -370,6 +418,7 @@ describe('POAP Delivery Service', () => {
             qrHash: 'abc100_1',
             claimed: true,
             claimedAt: new Date(),
+            projectId: testProjectId,
           },
           {
             twitterUserId: user.id,
@@ -378,6 +427,7 @@ describe('POAP Delivery Service', () => {
             qrHash: 'abc100_2',
             claimed: true,
             claimedAt: new Date(),
+            projectId: testProjectId,
           },
         ],
       });
@@ -409,6 +459,7 @@ describe('POAP Delivery Service', () => {
             mintLink: `https://poap.xyz/claim/recent${i}`,
             qrHash: `recent${i}`,
             deliveredAt: new Date(Date.now() - i * 1000 * 60), // i minutes ago
+            projectId: testProjectId,
           },
         });
       }

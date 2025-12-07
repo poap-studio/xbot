@@ -24,10 +24,25 @@ jest.mock('../auth', () => ({
 global.fetch = jest.fn();
 
 describe('POAP API Service', () => {
+  let testProjectId: string;
+
   beforeEach(async () => {
     jest.clearAllMocks();
     // Clean up database
     await prisma.qRCode.deleteMany({});
+    await prisma.project.deleteMany({});
+
+    // Create a test project
+    const project = await prisma.project.create({
+      data: {
+        name: 'Test Project',
+        poapEventId: '12345',
+        poapEditCode: 'secret_code',
+        twitterHashtag: '#TEST',
+        isActive: true,
+      },
+    });
+    testProjectId = project.id;
   });
 
   afterAll(async () => {
@@ -234,7 +249,7 @@ describe('POAP API Service', () => {
         json: async () => mockMintLinks,
       });
 
-      const imported = await importMintLinks('12345', 'secret_code');
+      const imported = await importMintLinks('12345', 'secret_code', testProjectId);
 
       expect(imported).toBe(3);
 
@@ -254,6 +269,7 @@ describe('POAP API Service', () => {
           qrHash: 'abc123',
           mintLink: 'https://poap.xyz/claim/abc123',
           claimed: false,
+          projectId: testProjectId,
         },
       });
 
@@ -271,11 +287,11 @@ describe('POAP API Service', () => {
         json: async () => mockMintLinks,
       });
 
-      await importMintLinks('12345', 'secret_code');
+      await importMintLinks('12345', 'secret_code', testProjectId);
 
       // Check it was updated
       const updated = await prisma.qRCode.findUnique({
-        where: { qrHash: 'abc123' },
+        where: { qrHash_projectId: { qrHash: 'abc123', projectId: testProjectId } },
       });
       expect(updated!.claimed).toBe(true);
       expect(updated!.secret).toBe('secret_abc123');
@@ -302,16 +318,19 @@ describe('POAP API Service', () => {
             qrHash: 'abc123',
             mintLink: 'https://poap.xyz/claim/abc123',
             claimed: false,
+            projectId: testProjectId,
           },
           {
             qrHash: 'def456',
             mintLink: 'https://poap.xyz/claim/def456',
             claimed: false,
+            projectId: testProjectId,
           },
           {
             qrHash: 'ghi789',
             mintLink: 'https://poap.xyz/claim/ghi789',
             claimed: true, // Already claimed
+            projectId: testProjectId,
           },
         ],
       });
@@ -342,6 +361,7 @@ describe('POAP API Service', () => {
           mintLink: 'https://poap.xyz/claim/old123',
           claimed: false,
           createdAt: new Date('2024-01-01'),
+          projectId: testProjectId,
         },
       });
 
@@ -351,6 +371,7 @@ describe('POAP API Service', () => {
           mintLink: 'https://poap.xyz/claim/new456',
           claimed: false,
           createdAt: new Date('2024-01-02'),
+          projectId: testProjectId,
         },
       });
 
@@ -398,6 +419,7 @@ describe('POAP API Service', () => {
           mintLink: 'https://poap.xyz/claim/abc123',
           claimed: false,
           reservedFor: 'user123',
+          projectId: testProjectId,
         },
       });
     });
@@ -406,7 +428,7 @@ describe('POAP API Service', () => {
       await markMintLinkClaimed('abc123', '0xAddress');
 
       const claimed = await prisma.qRCode.findUnique({
-        where: { qrHash: 'abc123' },
+        where: { qrHash_projectId: { qrHash: 'abc123', projectId: testProjectId } },
       });
 
       expect(claimed!.claimed).toBe(true);
@@ -423,29 +445,34 @@ describe('POAP API Service', () => {
             qrHash: 'available1',
             mintLink: 'https://poap.xyz/claim/available1',
             claimed: false,
+            projectId: testProjectId,
           },
           {
             qrHash: 'available2',
             mintLink: 'https://poap.xyz/claim/available2',
             claimed: false,
+            projectId: testProjectId,
           },
           {
             qrHash: 'reserved1',
             mintLink: 'https://poap.xyz/claim/reserved1',
             claimed: false,
             reservedFor: 'user1',
+            projectId: testProjectId,
           },
           {
             qrHash: 'claimed1',
             mintLink: 'https://poap.xyz/claim/claimed1',
             claimed: true,
             claimedBy: '0xAddress',
+            projectId: testProjectId,
           },
           {
             qrHash: 'claimed2',
             mintLink: 'https://poap.xyz/claim/claimed2',
             claimed: true,
             claimedBy: 'user@example.com',
+            projectId: testProjectId,
           },
         ],
       });
@@ -480,14 +507,15 @@ describe('POAP API Service', () => {
     it('should return count of available mint links', async () => {
       await prisma.qRCode.createMany({
         data: [
-          { qrHash: 'a1', mintLink: 'https://poap.xyz/claim/a1', claimed: false },
-          { qrHash: 'a2', mintLink: 'https://poap.xyz/claim/a2', claimed: false },
-          { qrHash: 'a3', mintLink: 'https://poap.xyz/claim/a3', claimed: true },
+          { qrHash: 'a1', mintLink: 'https://poap.xyz/claim/a1', claimed: false, projectId: testProjectId },
+          { qrHash: 'a2', mintLink: 'https://poap.xyz/claim/a2', claimed: false, projectId: testProjectId },
+          { qrHash: 'a3', mintLink: 'https://poap.xyz/claim/a3', claimed: true, projectId: testProjectId },
           {
             qrHash: 'a4',
             mintLink: 'https://poap.xyz/claim/a4',
             claimed: false,
             reservedFor: 'user1',
+            projectId: testProjectId,
           },
         ],
       });

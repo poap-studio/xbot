@@ -30,7 +30,8 @@ describe('BotConnection Component', () => {
 
       render(<BotConnection />);
 
-      expect(screen.getByText('Cargando...')).toBeInTheDocument();
+      expect(screen.getByText('Cuenta del Bot de Twitter')).toBeInTheDocument();
+      expect(screen.getByRole('progressbar')).toBeInTheDocument();
     });
   });
 
@@ -44,11 +45,11 @@ describe('BotConnection Component', () => {
       render(<BotConnection />);
 
       await waitFor(() => {
-        expect(screen.getByText('Conectar Cuenta de Twitter')).toBeInTheDocument();
+        expect(screen.getByText('Connect Twitter Account')).toBeInTheDocument();
       });
 
       expect(
-        screen.getByText(/No hay ninguna cuenta conectada/)
+        screen.getByText(/No account connected/)
       ).toBeInTheDocument();
     });
 
@@ -61,10 +62,10 @@ describe('BotConnection Component', () => {
       render(<BotConnection />);
 
       await waitFor(() => {
-        expect(screen.getByText('Conectar Cuenta de Twitter')).toBeInTheDocument();
+        expect(screen.getByText('Connect Twitter Account')).toBeInTheDocument();
       });
 
-      const connectButton = screen.getByText('Conectar Cuenta de Twitter');
+      const connectButton = screen.getByText('Connect Twitter Account');
       expect(connectButton).toBeEnabled();
 
       // Note: We don't test the actual redirect as jsdom doesn't support it well
@@ -96,7 +97,7 @@ describe('BotConnection Component', () => {
       });
 
       expect(screen.getByText('@testbot')).toBeInTheDocument();
-      expect(screen.getByText('Conectada')).toBeInTheDocument();
+      expect(screen.getByText('Connected')).toBeInTheDocument();
     });
 
     it('should show profile image', async () => {
@@ -115,19 +116,6 @@ describe('BotConnection Component', () => {
       expect(img).toHaveAttribute('src', 'https://example.com/avatar.jpg');
     });
 
-    it('should show reconnect button', async () => {
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ botAccount: mockBotAccount }),
-      });
-
-      render(<BotConnection />);
-
-      await waitFor(() => {
-        expect(screen.getByText('Reconectar')).toBeInTheDocument();
-      });
-    });
-
     it('should show disconnect button', async () => {
       (global.fetch as jest.Mock).mockResolvedValueOnce({
         ok: true,
@@ -137,7 +125,7 @@ describe('BotConnection Component', () => {
       render(<BotConnection />);
 
       await waitFor(() => {
-        expect(screen.getByText('Desconectar')).toBeInTheDocument();
+        expect(screen.getByText('Disconnect')).toBeInTheDocument();
       });
     });
   });
@@ -162,14 +150,14 @@ describe('BotConnection Component', () => {
       render(<BotConnection />);
 
       await waitFor(() => {
-        expect(screen.getByText('Desconectar')).toBeInTheDocument();
+        expect(screen.getByText('Disconnect')).toBeInTheDocument();
       });
 
-      const disconnectButton = screen.getByText('Desconectar');
+      const disconnectButton = screen.getByText('Disconnect');
       fireEvent.click(disconnectButton);
 
       expect(global.confirm).toHaveBeenCalledWith(
-        expect.stringContaining('¿Desconectar cuenta del bot?')
+        expect.stringContaining('Disconnect bot account?')
       );
 
       // Should not call DELETE API if not confirmed
@@ -192,10 +180,10 @@ describe('BotConnection Component', () => {
       render(<BotConnection />);
 
       await waitFor(() => {
-        expect(screen.getByText('Desconectar')).toBeInTheDocument();
+        expect(screen.getByText('Disconnect')).toBeInTheDocument();
       });
 
-      const disconnectButton = screen.getByText('Desconectar');
+      const disconnectButton = screen.getByText('Disconnect');
       fireEvent.click(disconnectButton);
 
       await waitFor(() => {
@@ -206,7 +194,7 @@ describe('BotConnection Component', () => {
 
       // Should show connect button after disconnect
       await waitFor(() => {
-        expect(screen.getByText('Conectar Cuenta de Twitter')).toBeInTheDocument();
+        expect(screen.getByText('Connect Twitter Account')).toBeInTheDocument();
       });
     });
 
@@ -226,10 +214,10 @@ describe('BotConnection Component', () => {
       render(<BotConnection />);
 
       await waitFor(() => {
-        expect(screen.getByText('Desconectar')).toBeInTheDocument();
+        expect(screen.getByText('Disconnect')).toBeInTheDocument();
       });
 
-      const disconnectButton = screen.getByText('Desconectar');
+      const disconnectButton = screen.getByText('Disconnect');
       fireEvent.click(disconnectButton);
 
       await waitFor(() => {

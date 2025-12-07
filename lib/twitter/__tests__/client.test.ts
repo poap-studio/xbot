@@ -84,21 +84,8 @@ describe('Twitter API Client', () => {
       await expect(getBotClient()).rejects.toThrow('No bot account connected');
     });
 
-    it('should throw error if bot account not found', async () => {
-      await prisma.config.create({
-        data: {
-          id: 'test-config-notfound',
-          poapEventId: '123',
-          poapSecretCode: 'secret',
-          botAccountId: 'non_existent_id',
-        },
-      });
-
-      await expect(getBotClient()).rejects.toThrow('Bot account not found');
-    });
-
     it('should throw error if bot account is disconnected', async () => {
-      const botAccount = await prisma.botAccount.create({
+      await prisma.botAccount.create({
         data: {
           twitterId: '12345',
           username: 'testbot',
@@ -108,35 +95,17 @@ describe('Twitter API Client', () => {
         },
       });
 
-      await prisma.config.create({
-        data: {
-          id: 'test-config-disconnected',
-          poapEventId: '123',
-          poapSecretCode: 'secret',
-          botAccountId: botAccount.id,
-        },
-      });
-
-      await expect(getBotClient()).rejects.toThrow('Bot account is disconnected');
+      await expect(getBotClient()).rejects.toThrow('No bot account connected');
     });
 
     it('should return authenticated client for connected bot', async () => {
-      const botAccount = await prisma.botAccount.create({
+      await prisma.botAccount.create({
         data: {
           twitterId: '12345-connected',
           username: 'testbot',
           accessToken: 'encrypted_access_token',
           accessSecret: 'encrypted_access_secret',
           isConnected: true,
-        },
-      });
-
-      await prisma.config.create({
-        data: {
-          id: 'test-config-connected',
-          poapEventId: '123',
-          poapSecretCode: 'secret',
-          botAccountId: botAccount.id,
         },
       });
 
@@ -163,15 +132,6 @@ describe('Twitter API Client', () => {
         },
       });
 
-      await prisma.config.create({
-        data: {
-          id: 'test-config-lastused',
-          poapEventId: '123',
-          poapSecretCode: 'secret',
-          botAccountId: botAccount.id,
-        },
-      });
-
       await getBotClient();
 
       const updated = await prisma.botAccount.findUnique({
@@ -187,22 +147,13 @@ describe('Twitter API Client', () => {
       delete process.env.TWITTER_API_KEY;
       delete process.env.TWITTER_API_SECRET;
 
-      const botAccount = await prisma.botAccount.create({
+      await prisma.botAccount.create({
         data: {
           twitterId: '12345-nokeys',
           username: 'testbot',
           accessToken: 'encrypted_access_token',
           accessSecret: 'encrypted_access_secret',
           isConnected: true,
-        },
-      });
-
-      await prisma.config.create({
-        data: {
-          id: 'test-config-nokeys',
-          poapEventId: '123',
-          poapSecretCode: 'secret',
-          botAccountId: botAccount.id,
         },
       });
 
@@ -217,22 +168,13 @@ describe('Twitter API Client', () => {
     });
 
     it('should verify bot credentials successfully', async () => {
-      const botAccount = await prisma.botAccount.create({
+      await prisma.botAccount.create({
         data: {
           twitterId: '12345-verify',
           username: 'testbot',
           accessToken: 'encrypted_access_token',
           accessSecret: 'encrypted_access_secret',
           isConnected: true,
-        },
-      });
-
-      await prisma.config.create({
-        data: {
-          id: 'test-config-verify',
-          poapEventId: '123',
-          poapSecretCode: 'secret',
-          botAccountId: botAccount.id,
         },
       });
 
@@ -243,28 +185,14 @@ describe('Twitter API Client', () => {
   });
 
   describe('isBotConnected', () => {
-    it('should return false if no config exists', async () => {
-      const result = await isBotConnected();
-
-      expect(result).toBe(false);
-    });
-
-    it('should return false if no bot account connected', async () => {
-      await prisma.config.create({
-        data: {
-          id: 'test-config-nobot',
-          poapEventId: '123',
-          poapSecretCode: 'secret',
-        },
-      });
-
+    it('should return false if no bot account exists', async () => {
       const result = await isBotConnected();
 
       expect(result).toBe(false);
     });
 
     it('should return true if bot is connected', async () => {
-      const botAccount = await prisma.botAccount.create({
+      await prisma.botAccount.create({
         data: {
           twitterId: '12345-isconnected',
           username: 'testbot',
@@ -274,37 +202,19 @@ describe('Twitter API Client', () => {
         },
       });
 
-      await prisma.config.create({
-        data: {
-          id: 'test-config-isconnected',
-          poapEventId: '123',
-          poapSecretCode: 'secret',
-          botAccountId: botAccount.id,
-        },
-      });
-
       const result = await isBotConnected();
 
       expect(result).toBe(true);
     });
 
     it('should return false if bot is disconnected', async () => {
-      const botAccount = await prisma.botAccount.create({
+      await prisma.botAccount.create({
         data: {
           twitterId: '12345-isdisconnected',
           username: 'testbot',
           accessToken: 'encrypted_access_token',
           accessSecret: 'encrypted_access_secret',
           isConnected: false,
-        },
-      });
-
-      await prisma.config.create({
-        data: {
-          id: 'test-config-isdisconnected',
-          poapEventId: '123',
-          poapSecretCode: 'secret',
-          botAccountId: botAccount.id,
         },
       });
 
