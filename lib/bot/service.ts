@@ -383,10 +383,30 @@ export async function validateBotConfiguration(): Promise<void> {
     errors.push('Bot account is not connected');
   }
 
-  // Check configuration exists
-  const config = await prisma.config.findFirst();
-  if (!config) {
-    errors.push('Bot configuration not found');
+  // Check if there are any active projects configured
+  const activeProjects = await prisma.project.findMany({
+    where: { isActive: true },
+    include: {
+      botAccount: true,
+    },
+  });
+
+  if (activeProjects.length === 0) {
+    errors.push('No active projects configured');
+  } else {
+    // Check that active projects have a bot assigned
+    const projectsWithoutBot = activeProjects.filter(p => !p.botAccountId);
+    if (projectsWithoutBot.length > 0) {
+      errors.push(`${projectsWithoutBot.length} active project(s) do not have a bot assigned`);
+    }
+
+    // Check that assigned bots are connected
+    const projectsWithDisconnectedBot = activeProjects.filter(
+      p => p.botAccount && !p.botAccount.isConnected
+    );
+    if (projectsWithDisconnectedBot.length > 0) {
+      errors.push(`${projectsWithDisconnectedBot.length} active project(s) have a disconnected bot`);
+    }
   }
 
   // Check POAP credentials (now from environment variables)
