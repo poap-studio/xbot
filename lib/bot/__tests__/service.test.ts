@@ -11,6 +11,7 @@ import {
 import type { ProcessedTweet } from '@/lib/twitter/search';
 import prisma from '@/lib/prisma';
 import { encrypt } from '@/lib/crypto';
+import { customAlphabet } from 'nanoid';
 
 // Mock twitter module
 jest.mock('@/lib/twitter/search', () => ({
@@ -33,10 +34,14 @@ import { searchNewEligibleTweets, saveTweets } from '@/lib/twitter/search';
 import { replyWithClaimUrl, hasBeenRepliedTo } from '@/lib/twitter/reply';
 import { reserveMintLink, getMintLinkStats } from '@/lib/poap/api';
 
+// Custom alphabet for test code generation (same as production)
+const nanoid = customAlphabet('23456789ABCDEFGHJKLMNPQRSTUVWXYZ', 5);
+
 describe('Bot Orchestration Service', () => {
   // Global counter for unique mint link generation
   let globalMintLinkCounter = 0;
   let testProjectId: string;
+  let testCode: string;
 
   const mockTweet: ProcessedTweet = {
     id: 'tweet_123',
@@ -47,7 +52,7 @@ describe('Bot Orchestration Service', () => {
     hasCode: true,
     isEligible: true,
     createdAt: new Date(),
-    hiddenCode: 'TESTCODE123',
+    hiddenCode: '', // Will be set in beforeEach
   };
 
   beforeEach(async () => {
@@ -78,11 +83,15 @@ describe('Bot Orchestration Service', () => {
     });
     testProjectId = project.id;
 
+    // Generate a unique test code for this test run
+    testCode = `TEST${nanoid()}`;
+    mockTweet.hiddenCode = testCode;
+
     // Note: Valid codes are now auto-generated when needed
     // Create a code for testing purposes only (simulates auto-generation)
     await prisma.validCode.create({
       data: {
-        code: 'TESTCODE123',
+        code: testCode,
         projectId: testProjectId,
         isUsed: false,
       },
@@ -230,7 +239,7 @@ describe('Bot Orchestration Service', () => {
             id: 'tweet_456',
             authorId: 'user_456',
             authorUsername: 'user2',
-            hiddenCode: 'TESTCODE123',
+            hiddenCode: testCode,
           },
         ];
 
@@ -296,7 +305,7 @@ describe('Bot Orchestration Service', () => {
             id: 'tweet_2',
             authorId: 'user_2',
             authorUsername: 'user2',
-            hiddenCode: 'TESTCODE123',
+            hiddenCode: testCode,
           },
         ];
 

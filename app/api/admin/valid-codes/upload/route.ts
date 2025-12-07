@@ -67,13 +67,12 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Insert codes (ignore duplicates)
+    // Insert codes (skip duplicates globally)
+    // Note: Codes are now globally unique across all projects
     const results = await Promise.allSettled(
       uniqueCodes.map((code) =>
-        prisma.validCode.upsert({
-          where: { code_projectId: { code, projectId } },
-          update: {}, // Don't update if exists
-          create: { code, projectId },
+        prisma.validCode.create({
+          data: { code, projectId },
         })
       )
     );

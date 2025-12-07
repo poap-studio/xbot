@@ -4,6 +4,7 @@
  */
 
 import { customAlphabet } from 'nanoid';
+import { Prisma } from '@prisma/client';
 import prisma from '@/lib/prisma';
 
 // Custom alphabet excluding similar-looking characters (0, O, I, 1, L)
@@ -48,7 +49,7 @@ export async function getOrCreateValidCode(projectId: string): Promise<string> {
     const newCode = generateCodeString();
 
     try {
-      // Try to create the code (will fail if duplicate)
+      // Try to create the code (will fail if duplicate exists globally)
       const created = await prisma.validCode.create({
         data: {
           code: newCode,
@@ -60,11 +61,20 @@ export async function getOrCreateValidCode(projectId: string): Promise<string> {
       console.log(`[Code Generator] Generated new code: ${created.code} for project ${projectId}`);
       return created.code;
     } catch (error) {
-      // Duplicate code, try again
-      attempts++;
-      if (attempts >= maxAttempts) {
-        throw new Error(`Failed to generate unique code after ${maxAttempts} attempts`);
+      // Check if error is a unique constraint violation (P2002)
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        // Duplicate code exists globally, try again with new code
+        attempts++;
+        console.log(`[Code Generator] Code collision detected (attempt ${attempts}/${maxAttempts}), retrying...`);
+
+        if (attempts >= maxAttempts) {
+          throw new Error(`Failed to generate unique code after ${maxAttempts} attempts`);
+        }
+        continue;
       }
+
+      // Unknown error, rethrow
+      throw error;
     }
   }
 

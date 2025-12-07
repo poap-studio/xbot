@@ -17,8 +17,9 @@ import prisma from '@/lib/prisma';
  */
 async function markHiddenCodeAsUsed(code: string, twitterId: string, projectId: string): Promise<void> {
   try {
-    await prisma.validCode.update({
-      where: { code_projectId: { code, projectId } },
+    // Update using code (globally unique) and verify it belongs to the correct project
+    await prisma.validCode.updateMany({
+      where: { code, projectId },
       data: {
         isUsed: true,
         usedBy: twitterId,

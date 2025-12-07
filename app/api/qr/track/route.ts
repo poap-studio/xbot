@@ -45,9 +45,9 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Find the hidden code
-    const validCode = await prisma.validCode.findUnique({
-      where: { code_projectId: { code, projectId } },
+    // Find the hidden code (code is globally unique)
+    const validCode = await prisma.validCode.findFirst({
+      where: { code, projectId },
     });
 
     if (!validCode) {

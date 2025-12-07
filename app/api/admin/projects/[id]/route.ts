@@ -7,6 +7,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { registerWebhook, deleteWebhook, subscribeWebhook } from '@/lib/twitter/webhooks';
+import { decrypt } from '@/lib/crypto';
 
 export const dynamic = 'force-dynamic';
 
@@ -95,6 +97,23 @@ export async function PUT(
       botAccountId,
     } = body;
 
+    // Get current state before update (to detect bot changes)
+    const currentProject = await prisma.project.findUnique({
+      where: { id },
+      select: { botAccountId: true },
+    });
+
+    if (!currentProject) {
+      return NextResponse.json(
+        { error: 'Project not found' },
+        { status: 404 }
+      );
+    }
+
+    const oldBotId = currentProject.botAccountId;
+    const newBotId = botAccountId;
+    const botChanged = botAccountId !== undefined && oldBotId !== newBotId;
+
     // Update project
     const project = await prisma.project.update({
       where: { id },
@@ -120,6 +139,75 @@ export async function PUT(
         },
       },
     });
+
+    // Manage webhooks if bot assignment changed
+    if (botChanged) {
+      // Handle old bot (if it had one)
+      if (oldBotId) {
+        const oldBot = await prisma.botAccount.findUnique({
+          where: { id: oldBotId },
+          include: {
+            _count: { select: { projects: true } },
+          },
+        });
+
+        // If old bot now has no projects, delete its webhook
+        if (oldBot && oldBot._count.projects === 0 && oldBot.webhookId) {
+          console.log(`Bot ${oldBot.username} has no projects, deleting webhook ${oldBot.webhookId}`);
+          const deleted = await deleteWebhook(oldBot.webhookId);
+          if (deleted) {
+            await prisma.botAccount.update({
+              where: { id: oldBotId },
+              data: { webhookId: null },
+            });
+          }
+        }
+      }
+
+      // Handle new bot (if one was assigned)
+      if (newBotId) {
+        const newBot = await prisma.botAccount.findUnique({
+          where: { id: newBotId },
+          include: {
+            _count: { select: { projects: true } },
+          },
+        });
+
+        // If new bot has exactly 1 project (this one) and no webhook, create one
+        if (newBot && newBot._count.projects === 1 && !newBot.webhookId) {
+          console.log(`Bot ${newBot.username} is being used for first time, creating webhook`);
+
+          // Register webhook with Twitter
+          const webhookId = await registerWebhook();
+
+          if (webhookId) {
+            // Decrypt bot credentials
+            const accessToken = decrypt(newBot.accessToken);
+            const accessSecret = decrypt(newBot.accessSecret);
+
+            // Subscribe the bot to the webhook
+            const subscribed = await subscribeWebhook(webhookId, accessToken, accessSecret);
+
+            if (subscribed) {
+              // Save webhook ID to bot
+              await prisma.botAccount.update({
+                where: { id: newBotId },
+                data: { webhookId },
+              });
+              console.log(`✅ Webhook ${webhookId} created and subscribed for bot ${newBot.username}`);
+            } else {
+              // Subscription failed, clean up the webhook
+              await deleteWebhook(webhookId);
+              console.error(`Failed to subscribe webhook for bot ${newBot.username}`);
+            }
+          } else {
+            console.error(`Failed to register webhook for bot ${newBot.username}`);
+          }
+        } else if (newBot && newBot.webhookId) {
+          console.log(`Bot ${newBot.username} already has webhook ${newBot.webhookId}`);
+        }
+      }
+    }
 
     return NextResponse.json({
       success: true,
