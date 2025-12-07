@@ -597,7 +597,7 @@ function BotConfigTab({ project, onUpdate }: { project: Project; onUpdate: (upda
             fullWidth
             multiline
             rows={3}
-            helperText="Template for the tweet shown on the QR claim page. Use {hashtag} as placeholder."
+            helperText="Template for the tweet shown on the QR claim page. Use {{code}}, {{bot}}, and {{hashtag}} as placeholders."
           />
         </Box>
 
@@ -605,6 +605,17 @@ function BotConfigTab({ project, onUpdate }: { project: Project; onUpdate: (upda
         <Alert severity="info" icon={<InfoIcon />}>
           <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1 }}>
             Template Placeholders:
+          </Typography>
+          <Typography variant="caption" sx={{ display: 'block', mb: 1 }}>
+            <strong>For QR Page Tweet Template:</strong>
+          </Typography>
+          <ul style={{ margin: '4px 0 12px 0', paddingLeft: '20px' }}>
+            <li><code>{'{{'}</code><code>code</code><code>{'}}'}</code> - Hidden code from the pool (e.g., "ABC123")</li>
+            <li><code>{'{{'}</code><code>bot</code><code>{'}}'}</code> - Bot account mention (e.g., "@poapstudio")</li>
+            <li><code>{'{{'}</code><code>hashtag</code><code>{'}}'}</code> - Project hashtag (e.g., "#POAP")</li>
+          </ul>
+          <Typography variant="caption" sx={{ display: 'block', mb: 1 }}>
+            <strong>For Bot Reply Templates:</strong>
           </Typography>
           <ul style={{ margin: '4px 0', paddingLeft: '20px' }}>
             <li><code>{'{username}'}</code> - Twitter username (e.g., @john)</li>

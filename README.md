@@ -269,6 +269,14 @@ npm run prisma:generate
 
 ### Recent Changes
 
+#### Tweet Template Variables Documentation (2025-12-07)
+Enhanced documentation for tweet template variables in admin interface:
+- **Documentation**: Added `{{code}}` and `{{bot}}` variables to Project Detail page template help text
+- **Enhancement**: Updated helperText for "Tweet Template for QR Page" field to show all available placeholders
+- **Clarity**: Separated documentation for QR Page Tweet Template (`{{code}}`, `{{bot}}`, `{{hashtag}}`) from Bot Reply Templates (`{username}`, `{link}`, `{hashtag}`)
+- **Context**: Variables were already working in backend but not documented in Project Config UI
+- **Files**: `app/admin/projects/[id]/page.tsx` lines 600, 605-625
+
 #### Multi-Bot Account Management (2025-12-07)
 Implemented comprehensive bot account management system for per-project bot configuration:
 - **Feature**: Connect multiple Twitter bot accounts via OAuth 1.0a

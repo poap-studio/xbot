@@ -143,15 +143,15 @@ export default function QrPageConfigPage() {
               fullWidth
               multiline
               rows={4}
-              placeholder="I visited the POAP Studio booth at ETH Global, and here's the proof! The secret word is {{code}} {{hashtag}}"
-              helperText={`Use {{code}} for the hidden code and {{hashtag}} for the configured hashtag (${config.hashtag || '#POAP'}). Both will be replaced automatically.`}
+              placeholder="I visited the POAP Studio booth at ETH Global, and here's the proof! The secret word is {{code}} {{bot}} {{hashtag}}"
+              helperText={`Use {{code}} for the hidden code, {{bot}} for the bot mention, and {{hashtag}} for the configured hashtag (${config.hashtag || '#POAP'}). All will be replaced automatically.`}
               error={!!(config.tweetTemplate && !config.tweetTemplate.includes('{{code}}'))}
             />
 
             {config.tweetTemplate && (
               <Alert severity="info">
                 <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 'bold' }}>
-                  Preview with example code "ABC123" and configured hashtag "{config.hashtag || '#POAP'}":
+                  Preview with example code "ABC123", bot "@poapstudio", and configured hashtag "{config.hashtag || '#POAP'}":
                 </Typography>
                 <Typography
                   variant="body2"
@@ -169,6 +169,7 @@ export default function QrPageConfigPage() {
                     console.log('Preview hashtag:', hashtagValue);
                     return config.tweetTemplate
                       .replaceAll('{{code}}', 'ABC123')
+                      .replaceAll('{{bot}}', '@poapstudio')
                       .replaceAll('{{hashtag}}', hashtagValue);
                   })()}
                 </Typography>
@@ -209,7 +210,8 @@ export default function QrPageConfigPage() {
           </Box>
           <strong>Available Variables:</strong>
           <Box component="ul" sx={{ m: 0, pl: 2, mt: 1 }}>
-            <li><code>{'{{code}}'}</code> - Replaced with a unique hidden code</li>
+            <li><code>{'{{code}}'}</code> - Replaced with a unique hidden code (e.g., "ABC123")</li>
+            <li><code>{'{{bot}}'}</code> - Replaced with the bot account mention (e.g., "@poapstudio")</li>
             <li><code>{'{{hashtag}}'}</code> - Replaced with the configured Twitter hashtag (currently: {config.hashtag || '#POAP'})</li>
           </Box>
         </Alert>

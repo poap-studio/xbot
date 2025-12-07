@@ -33,9 +33,14 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Get project configuration
+    // Get project configuration with bot account
     const project = await prisma.project.findUnique({
       where: { id: projectId },
+      include: {
+        botAccount: {
+          select: { username: true },
+        },
+      },
     });
 
     if (!project) {
@@ -76,12 +81,21 @@ export async function GET(request: NextRequest) {
     }
 
     // Generate tweet text from template
-    // Replace {{code}} with the actual code and {{hashtag}} with the configured hashtag
+    // Replace {{code}}, {{bot}}, and {{hashtag}} with actual values
     let tweetText = project.qrPageTweetTemplate.replaceAll('{{code}}', code);
     tweetText = tweetText.replaceAll('{{hashtag}}', project.twitterHashtag);
 
+    // Replace {{bot}} with bot mention if bot account is assigned
+    if (project.botAccount) {
+      tweetText = tweetText.replaceAll('{{bot}}', `@${project.botAccount.username}`);
+    } else {
+      // If no bot assigned, remove the {{bot}} variable or keep it as placeholder
+      tweetText = tweetText.replaceAll('{{bot}}', '');
+    }
+
     console.log(`Tweet template: ${project.qrPageTweetTemplate}`);
     console.log(`Hashtag: ${project.twitterHashtag}`);
+    console.log(`Bot: ${project.botAccount ? `@${project.botAccount.username}` : 'none'}`);
     console.log(`Generated tweet text: ${tweetText}`);
 
     // Create Twitter deep link for mobile app
