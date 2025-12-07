@@ -136,10 +136,17 @@ If context is lost, continue from here:
 - ✅ QR page displays project name and auto-updates with new codes
 - ✅ Each project now has its own isolated QR code rotation
 
+**2025-12-07 - Automatic Project Naming from POAP API**
+- ✅ Created `/api/admin/projects/[id]/fetch-poap-name` endpoint
+- ✅ Automatically fetches POAP event name when saving POAP settings
+- ✅ Updates project name with POAP event name from API
+- ✅ Falls back to "New project [DATE]" if POAP name unavailable
+- ✅ Shows success message with new project name
+
 **Deployment:**
-- Latest Commit: c28070d
+- Latest Commit: 89a3572
 - Deployed to Vercel: https://xbot.vercel.app
 - Status: Production ready
 
 Last Updated: 2025-12-07
-Status: ✅ Multi-project implementation complete with project-specific QR pages
+Status: ✅ Multi-project implementation complete with automatic project naming
