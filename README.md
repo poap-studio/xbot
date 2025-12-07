@@ -238,6 +238,13 @@ Added mandatory documentation requirement to development workflow:
 - **Process**: After each feature/fix, review entire README for coherence
 - **Files**: `.claude/CLAUDE.md` lines 80-95, 104
 
+#### Project Default Values Fix (2025-12-07)
+Fixed project creation to properly use Prisma schema default values:
+- **Issue**: Default values for bot replies and QR tweet template were not being applied
+- **Fix**: Modified project creation to use Prisma schema @default values instead of hardcoded fallbacks
+- **Impact**: New projects now automatically get proper Spanish default messages and QR tweet template
+- **Files**: `app/api/admin/projects/route.ts` lines 125-141
+
 ## 📝 API Routes
 
 ### Public Routes
