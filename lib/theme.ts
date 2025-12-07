@@ -9,9 +9,9 @@ export const theme = createTheme({
   palette: {
     mode: 'dark',
     primary: {
-      main: '#6534FF', // POAP purple
-      light: '#8B5DFF',
-      dark: '#4A26B8',
+      main: '#eac9f8', // Soft purple/pink
+      light: '#f2dffb',
+      dark: '#d7b0f3',
     },
     secondary: {
       main: '#FFFFFF',
@@ -83,7 +83,7 @@ export const theme = createTheme({
         contained: {
           boxShadow: 'none',
           '&:hover': {
-            boxShadow: '0 4px 12px rgba(101, 52, 255, 0.4)',
+            boxShadow: '0 4px 12px rgba(234, 201, 248, 0.4)',
           },
         },
       },
