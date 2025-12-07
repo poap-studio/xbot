@@ -1,16 +1,28 @@
 /**
  * Hidden Codes Delete All API
- * Delete all hidden codes from the database
+ * Delete all hidden codes from a project
  */
 
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
 
-export async function DELETE() {
+export async function DELETE(request: NextRequest) {
   try {
-    const result = await prisma.validCode.deleteMany({});
+    const { searchParams } = new URL(request.url);
+    const projectId = searchParams.get('projectId');
+
+    if (!projectId) {
+      return NextResponse.json(
+        { error: 'Project ID is required' },
+        { status: 400 }
+      );
+    }
+
+    const result = await prisma.validCode.deleteMany({
+      where: { projectId },
+    });
 
     return NextResponse.json({
       deleted: result.count,

@@ -1,20 +1,31 @@
 /**
  * API Route: Admin Hidden Codes CSV Export
- * Exports all hidden codes to CSV format
+ * Exports hidden codes for a project to CSV format
  */
 
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
 
 /**
- * GET /api/admin/hidden-codes/csv
- * Returns all hidden codes as CSV file
+ * GET /api/admin/hidden-codes/csv?projectId=xxx
+ * Returns hidden codes for a project as CSV file
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    const { searchParams } = new URL(request.url);
+    const projectId = searchParams.get('projectId');
+
+    if (!projectId) {
+      return NextResponse.json(
+        { error: 'Project ID is required' },
+        { status: 400 }
+      );
+    }
+
     const codes = await prisma.validCode.findMany({
+      where: { projectId },
       orderBy: {
         createdAt: 'desc',
       },

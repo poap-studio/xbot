@@ -20,6 +20,15 @@ import {
   Breadcrumbs,
   Link as MuiLink,
   Chip,
+  TextField,
+  Stack,
+  FormControlLabel,
+  Switch,
+  AlertTitle,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from '@mui/material';
 import {
   ArrowBack as ArrowBackIcon,
@@ -27,6 +36,12 @@ import {
   Code as CodeIcon,
   QrCode as QrCodeIcon,
   Message as MessageIcon,
+  Save as SaveIcon,
+  Info as InfoIcon,
+  Upload as UploadIcon,
+  Download as DownloadIcon,
+  Delete as DeleteIcon,
+  Add as AddIcon,
 } from '@mui/icons-material';
 import Link from 'next/link';
 
@@ -71,6 +86,860 @@ interface Project {
   } | null;
   createdAt: string;
   updatedAt: string;
+}
+
+// General Tab Component
+function GeneralTab({ project, onUpdate }: { project: Project; onUpdate: () => void }) {
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+  const [formData, setFormData] = useState({
+    name: project.name,
+    poapEventId: project.poapEventId,
+    poapEditCode: project.poapEditCode,
+    twitterHashtag: project.twitterHashtag,
+    isActive: project.isActive,
+  });
+
+  const handleChange = (field: string) => (event: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({
+      ...formData,
+      [field]: event.target.type === 'checkbox' ? event.target.checked : event.target.value,
+    });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    setError(null);
+    setSuccess(false);
+
+    try {
+      const response = await fetch(`/api/admin/projects/${project.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to update project');
+      }
+
+      setSuccess(true);
+      onUpdate();
+      setTimeout(() => setSuccess(false), 3000);
+    } catch (error) {
+      console.error('Error updating project:', error);
+      setError(error instanceof Error ? error.message : 'Failed to update project');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Box component="form" onSubmit={handleSubmit}>
+      <Typography variant="h6" gutterBottom>
+        General Settings
+      </Typography>
+
+      {error && (
+        <Alert severity="error" onClose={() => setError(null)} sx={{ mb: 3 }}>
+          {error}
+        </Alert>
+      )}
+
+      {success && (
+        <Alert severity="success" sx={{ mb: 3 }}>
+          Project updated successfully!
+        </Alert>
+      )}
+
+      <Stack spacing={3}>
+        <TextField
+          label="Project Name"
+          value={formData.name}
+          onChange={handleChange('name')}
+          required
+          fullWidth
+        />
+
+        <TextField
+          label="POAP Event ID"
+          value={formData.poapEventId}
+          onChange={handleChange('poapEventId')}
+          required
+          fullWidth
+          helperText="The POAP event ID from poap.xyz"
+        />
+
+        <TextField
+          label="POAP Edit Code"
+          value={formData.poapEditCode}
+          onChange={handleChange('poapEditCode')}
+          required
+          fullWidth
+          type="password"
+          helperText="The edit code to load QR codes from POAP API"
+        />
+
+        <TextField
+          label="Twitter Hashtag"
+          value={formData.twitterHashtag}
+          onChange={handleChange('twitterHashtag')}
+          required
+          fullWidth
+          helperText="The hashtag to monitor on Twitter (include #)"
+        />
+
+        <FormControlLabel
+          control={
+            <Switch
+              checked={formData.isActive}
+              onChange={handleChange('isActive')}
+            />
+          }
+          label="Active"
+        />
+
+        <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end', pt: 2 }}>
+          <Button
+            type="submit"
+            variant="contained"
+            startIcon={<SaveIcon />}
+            disabled={saving}
+          >
+            {saving ? 'Saving...' : 'Save Changes'}
+          </Button>
+        </Box>
+      </Stack>
+    </Box>
+  );
+}
+
+// POAP Config Tab Component
+function POAPConfigTab({ project, onUpdate }: { project: Project; onUpdate: () => void }) {
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+  const [formData, setFormData] = useState({
+    botReplyEligible: project.botReplyEligible,
+    botReplyNotEligible: project.botReplyNotEligible,
+    botReplyAlreadyClaimed: project.botReplyAlreadyClaimed,
+    qrPageTweetTemplate: project.qrPageTweetTemplate,
+    allowMultipleClaims: project.allowMultipleClaims,
+  });
+
+  const handleChange = (field: string) => (event: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({
+      ...formData,
+      [field]: event.target.type === 'checkbox' ? event.target.checked : event.target.value,
+    });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    setError(null);
+    setSuccess(false);
+
+    try {
+      const response = await fetch(`/api/admin/projects/${project.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to update POAP config');
+      }
+
+      setSuccess(true);
+      onUpdate();
+      setTimeout(() => setSuccess(false), 3000);
+    } catch (error) {
+      console.error('Error updating POAP config:', error);
+      setError(error instanceof Error ? error.message : 'Failed to update POAP config');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Box component="form" onSubmit={handleSubmit}>
+      <Typography variant="h6" gutterBottom>
+        POAP Configuration
+      </Typography>
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+        Configure reply messages and claim settings for this POAP drop
+      </Typography>
+
+      {error && (
+        <Alert severity="error" onClose={() => setError(null)} sx={{ mb: 3 }}>
+          {error}
+        </Alert>
+      )}
+
+      {success && (
+        <Alert severity="success" sx={{ mb: 3 }}>
+          POAP configuration updated successfully!
+        </Alert>
+      )}
+
+      <Stack spacing={3}>
+        {/* Reply Templates Section */}
+        <Box>
+          <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'bold', mb: 2 }}>
+            Reply Templates
+          </Typography>
+
+          <Stack spacing={3}>
+            <TextField
+              label="Eligible Reply Message"
+              value={formData.botReplyEligible}
+              onChange={handleChange('botReplyEligible')}
+              required
+              fullWidth
+              multiline
+              rows={3}
+              helperText="Reply sent when user is eligible and receives a POAP. Use {username} and {link} as placeholders."
+            />
+
+            <TextField
+              label="Not Eligible Reply Message"
+              value={formData.botReplyNotEligible}
+              onChange={handleChange('botReplyNotEligible')}
+              required
+              fullWidth
+              multiline
+              rows={3}
+              helperText="Reply sent when user is not eligible (invalid code). Use {username} as placeholder."
+            />
+
+            <TextField
+              label="Already Claimed Reply Message"
+              value={formData.botReplyAlreadyClaimed}
+              onChange={handleChange('botReplyAlreadyClaimed')}
+              required
+              fullWidth
+              multiline
+              rows={3}
+              helperText="Reply sent when user already claimed this POAP. Use {username} as placeholder."
+            />
+          </Stack>
+        </Box>
+
+        {/* QR Page Template */}
+        <Box>
+          <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'bold', mb: 2 }}>
+            QR Page Settings
+          </Typography>
+
+          <TextField
+            label="Tweet Template for QR Page"
+            value={formData.qrPageTweetTemplate}
+            onChange={handleChange('qrPageTweetTemplate')}
+            required
+            fullWidth
+            multiline
+            rows={3}
+            helperText="Template for the tweet shown on the QR claim page. Use {hashtag} as placeholder."
+          />
+        </Box>
+
+        {/* Claim Settings */}
+        <Box>
+          <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'bold', mb: 2 }}>
+            Claim Settings
+          </Typography>
+
+          <FormControlLabel
+            control={
+              <Switch
+                checked={formData.allowMultipleClaims}
+                onChange={handleChange('allowMultipleClaims')}
+              />
+            }
+            label="Allow Multiple Claims"
+          />
+          <Typography variant="body2" color="text.secondary" sx={{ ml: 4, mt: 1 }}>
+            If enabled, users can claim multiple POAPs from this drop. If disabled, users can only claim once.
+          </Typography>
+        </Box>
+
+        {/* Template Preview */}
+        <Alert severity="info" icon={<InfoIcon />}>
+          <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1 }}>
+            Template Placeholders:
+          </Typography>
+          <ul style={{ margin: '4px 0', paddingLeft: '20px' }}>
+            <li><code>{'{username}'}</code> - Twitter username (e.g., @john)</li>
+            <li><code>{'{link}'}</code> - POAP claim link</li>
+            <li><code>{'{hashtag}'}</code> - Project hashtag</li>
+          </ul>
+        </Alert>
+
+        <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end', pt: 2 }}>
+          <Button
+            type="submit"
+            variant="contained"
+            startIcon={<SaveIcon />}
+            disabled={saving}
+          >
+            {saving ? 'Saving...' : 'Save Changes'}
+          </Button>
+        </Box>
+      </Stack>
+    </Box>
+  );
+}
+
+// Valid Codes Tab Component
+function ValidCodesTab({ project }: { project: Project }) {
+  const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [stats, setStats] = useState({ total: 0, used: 0, available: 0 });
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  const [codes, setCodes] = useState<string>('');
+  const [showUploadDialog, setShowUploadDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+
+  useEffect(() => {
+    fetchStats();
+  }, []);
+
+  const fetchStats = async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch(`/api/admin/hidden-codes/stats?projectId=${project.id}`);
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to fetch stats');
+      }
+
+      setStats(data);
+    } catch (error) {
+      console.error('Error fetching stats:', error);
+      setError(error instanceof Error ? error.message : 'Failed to load stats');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setSelectedFile(file);
+
+    const text = await file.text();
+    const lines = text.split(/\r?\n/);
+
+    const extractedCodes = lines
+      .slice(1)
+      .map(line => line.trim())
+      .filter(code => code.length > 0);
+
+    setCodes(extractedCodes.join('\n'));
+  };
+
+  const handleUpload = async () => {
+    if (!codes.trim()) {
+      setError('Please upload a CSV file with codes');
+      return;
+    }
+
+    setUploading(true);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      const codeList = codes
+        .split('\n')
+        .map(c => c.trim())
+        .filter(c => c.length > 0);
+
+      const response = await fetch('/api/admin/hidden-codes/upload', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ codes: codeList, projectId: project.id }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to upload codes');
+      }
+
+      setSuccess(
+        `${data.added} codes added successfully (${data.duplicates} duplicates skipped)`
+      );
+      setCodes('');
+      setSelectedFile(null);
+      setShowUploadDialog(false);
+      await fetchStats();
+    } catch (error) {
+      console.error('Error uploading codes:', error);
+      setError(error instanceof Error ? error.message : 'Failed to upload codes');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleDeleteAll = async () => {
+    setDeleting(true);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      const response = await fetch(`/api/admin/hidden-codes/delete-all?projectId=${project.id}`, {
+        method: 'DELETE',
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to delete codes');
+      }
+
+      setSuccess(`${data.deleted} codes deleted successfully`);
+      setShowDeleteDialog(false);
+      await fetchStats();
+    } catch (error) {
+      console.error('Error deleting codes:', error);
+      setError(error instanceof Error ? error.message : 'Failed to delete codes');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const handleDownloadCSV = () => {
+    window.location.href = `/api/admin/hidden-codes/csv?projectId=${project.id}`;
+  };
+
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '300px' }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  return (
+    <Box>
+      <Typography variant="h6" gutterBottom>
+        Valid Codes
+      </Typography>
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+        Manage the hidden codes that users must include in their tweets to be eligible
+      </Typography>
+
+      {error && (
+        <Alert severity="error" onClose={() => setError(null)} sx={{ mb: 3 }}>
+          {error}
+        </Alert>
+      )}
+
+      {success && (
+        <Alert severity="success" onClose={() => setSuccess(null)} sx={{ mb: 3 }}>
+          {success}
+        </Alert>
+      )}
+
+      {/* Stats */}
+      <Box sx={{
+        display: 'grid',
+        gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, 1fr)' },
+        gap: 2,
+        mb: 3,
+      }}>
+        <Card sx={{ p: 3 }}>
+          <Typography variant="body2" color="text.secondary" gutterBottom sx={{ fontWeight: 'medium' }}>
+            Total Codes
+          </Typography>
+          <Typography variant="h3" sx={{ fontWeight: 'bold' }}>
+            {stats.total}
+          </Typography>
+        </Card>
+
+        <Card sx={{ p: 3 }}>
+          <Typography variant="body2" color="text.secondary" gutterBottom sx={{ fontWeight: 'medium' }}>
+            Available
+          </Typography>
+          <Typography variant="h3" sx={{ fontWeight: 'bold', color: 'success.main' }}>
+            {stats.available}
+          </Typography>
+        </Card>
+
+        <Card sx={{ p: 3 }}>
+          <Typography variant="body2" color="text.secondary" gutterBottom sx={{ fontWeight: 'medium' }}>
+            Used
+          </Typography>
+          <Typography variant="h3" sx={{ fontWeight: 'bold', color: 'warning.main' }}>
+            {stats.used}
+          </Typography>
+        </Card>
+      </Box>
+
+      {/* Actions */}
+      <Card sx={{ p: 3, mb: 3 }}>
+        <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'bold', mb: 2 }}>
+          Actions
+        </Typography>
+
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+          <Button
+            variant="contained"
+            color="primary"
+            startIcon={<AddIcon />}
+            onClick={() => setShowUploadDialog(true)}
+            fullWidth
+          >
+            Upload Codes
+          </Button>
+
+          <Button
+            variant="contained"
+            color="success"
+            startIcon={<DownloadIcon />}
+            onClick={handleDownloadCSV}
+            disabled={stats.total === 0}
+            fullWidth
+          >
+            Download CSV
+          </Button>
+
+          <Button
+            variant="outlined"
+            color="error"
+            startIcon={<DeleteIcon />}
+            onClick={() => setShowDeleteDialog(true)}
+            disabled={stats.total === 0}
+            fullWidth
+          >
+            Delete All
+          </Button>
+        </Stack>
+      </Card>
+
+      {/* Info */}
+      <Alert severity="info">
+        <AlertTitle>What are Valid Codes?</AlertTitle>
+        Valid Codes are unique codes that users must include in their tweet text
+        (along with the configured hashtag) to be eligible to receive a POAP.
+        <br /><br />
+        <strong>Flow:</strong>
+        <ul style={{ marginTop: '8px', marginBottom: '8px', paddingLeft: '20px' }}>
+          <li>User tweets: hashtag + hidden code</li>
+          <li>Bot verifies that the code exists and hasn't been used</li>
+          <li>If valid, assigns a QR code and responds with the mint link</li>
+          <li>The code is marked as used and cannot be reused</li>
+        </ul>
+        <strong>CSV File Format:</strong>
+        <br />
+        Upload a CSV file with one code per line. The first row will be automatically skipped (header):
+        <br />
+        <code style={{ display: 'block', marginTop: '4px', padding: '8px', background: 'rgba(0,0,0,0.1)', borderRadius: '4px' }}>
+          code<br />
+          CODE001<br />
+          CODE002<br />
+          CODE003
+        </code>
+      </Alert>
+
+      {/* Upload Dialog */}
+      <Dialog
+        open={showUploadDialog}
+        onClose={() => {
+          if (!uploading) {
+            setShowUploadDialog(false);
+            setCodes('');
+            setSelectedFile(null);
+          }
+        }}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Upload Valid Codes</DialogTitle>
+        <DialogContent>
+          <Stack spacing={3} sx={{ mt: 1 }}>
+            <Typography variant="body2" color="text.secondary">
+              Upload a CSV file with one code per line. The first row (header) will be skipped automatically. Duplicate codes will be automatically skipped.
+            </Typography>
+
+            <Box>
+              <Button
+                variant="outlined"
+                component="label"
+                startIcon={<UploadIcon />}
+                fullWidth
+              >
+                {selectedFile ? selectedFile.name : 'Choose CSV File'}
+                <input
+                  type="file"
+                  accept=".csv,.txt"
+                  hidden
+                  onChange={handleFileSelect}
+                />
+              </Button>
+              {selectedFile && (
+                <Typography variant="caption" color="success.main" sx={{ display: 'block', mt: 1, fontWeight: 'bold' }}>
+                  ✓ {codes.split('\n').filter(c => c.trim()).length} codes ready to upload
+                </Typography>
+              )}
+            </Box>
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => {
+              setShowUploadDialog(false);
+              setCodes('');
+              setSelectedFile(null);
+            }}
+            disabled={uploading}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleUpload}
+            variant="contained"
+            disabled={uploading || !codes.trim()}
+            startIcon={uploading ? <CircularProgress size={20} color="inherit" /> : <UploadIcon />}
+          >
+            {uploading ? 'Uploading...' : 'Upload Codes'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Delete Dialog */}
+      <Dialog
+        open={showDeleteDialog}
+        onClose={() => !deleting && setShowDeleteDialog(false)}
+        maxWidth="xs"
+      >
+        <DialogTitle>Confirm Deletion</DialogTitle>
+        <DialogContent>
+          <Alert severity="warning">
+            Are you sure you want to delete ALL valid codes ({stats.total} codes)?
+            This action cannot be undone.
+          </Alert>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setShowDeleteDialog(false)} disabled={deleting}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleDeleteAll}
+            variant="contained"
+            color="error"
+            disabled={deleting}
+            startIcon={deleting ? <CircularProgress size={20} color="inherit" /> : <DeleteIcon />}
+          >
+            {deleting ? 'Deleting...' : 'Delete All'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </Box>
+  );
+}
+
+// QR Codes Tab Component
+function QRCodesTab({ project }: { project: Project }) {
+  const [loading, setLoading] = useState(true);
+  const [loadingQRs, setLoadingQRs] = useState(false);
+  const [stats, setStats] = useState({ total: 0, available: 0, reserved: 0, claimed: 0 });
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchStats();
+  }, []);
+
+  const fetchStats = async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch(`/api/admin/qr-codes/stats?projectId=${project.id}`);
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to fetch stats');
+      }
+
+      setStats(data);
+    } catch (error) {
+      console.error('Error fetching stats:', error);
+      setError(error instanceof Error ? error.message : 'Failed to load stats');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLoadFromPOAP = async () => {
+    setLoadingQRs(true);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      const response = await fetch('/api/admin/qr-codes/load', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          eventId: project.poapEventId,
+          editCode: project.poapEditCode,
+          projectId: project.id,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to load QR codes');
+      }
+
+      setSuccess(
+        `Successfully loaded ${data.loaded} QR codes (${data.duplicates} duplicates skipped)`
+      );
+      await fetchStats();
+    } catch (error) {
+      console.error('Error loading QR codes:', error);
+      setError(error instanceof Error ? error.message : 'Failed to load QR codes from POAP API');
+    } finally {
+      setLoadingQRs(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '300px' }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  return (
+    <Box>
+      <Typography variant="h6" gutterBottom>
+        QR Codes
+      </Typography>
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+        Load and manage POAP QR codes for this project
+      </Typography>
+
+      {error && (
+        <Alert severity="error" onClose={() => setError(null)} sx={{ mb: 3 }}>
+          {error}
+        </Alert>
+      )}
+
+      {success && (
+        <Alert severity="success" onClose={() => setSuccess(null)} sx={{ mb: 3 }}>
+          {success}
+        </Alert>
+      )}
+
+      {/* Stats */}
+      <Box sx={{
+        display: 'grid',
+        gridTemplateColumns: { xs: '1fr', sm: 'repeat(4, 1fr)' },
+        gap: 2,
+        mb: 3,
+      }}>
+        <Card sx={{ p: 3 }}>
+          <Typography variant="body2" color="text.secondary" gutterBottom sx={{ fontWeight: 'medium' }}>
+            Total QR Codes
+          </Typography>
+          <Typography variant="h3" sx={{ fontWeight: 'bold' }}>
+            {stats.total}
+          </Typography>
+        </Card>
+
+        <Card sx={{ p: 3 }}>
+          <Typography variant="body2" color="text.secondary" gutterBottom sx={{ fontWeight: 'medium' }}>
+            Available
+          </Typography>
+          <Typography variant="h3" sx={{ fontWeight: 'bold', color: 'success.main' }}>
+            {stats.available}
+          </Typography>
+        </Card>
+
+        <Card sx={{ p: 3 }}>
+          <Typography variant="body2" color="text.secondary" gutterBottom sx={{ fontWeight: 'medium' }}>
+            Reserved
+          </Typography>
+          <Typography variant="h3" sx={{ fontWeight: 'bold', color: 'warning.main' }}>
+            {stats.reserved}
+          </Typography>
+        </Card>
+
+        <Card sx={{ p: 3 }}>
+          <Typography variant="body2" color="text.secondary" gutterBottom sx={{ fontWeight: 'medium' }}>
+            Claimed
+          </Typography>
+          <Typography variant="h3" sx={{ fontWeight: 'bold', color: 'info.main' }}>
+            {stats.claimed}
+          </Typography>
+        </Card>
+      </Box>
+
+      {/* Actions */}
+      <Card sx={{ p: 3, mb: 3 }}>
+        <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'bold', mb: 2 }}>
+          Actions
+        </Typography>
+
+        <Stack spacing={2}>
+          <Button
+            variant="contained"
+            color="primary"
+            startIcon={loadingQRs ? <CircularProgress size={20} color="inherit" /> : <DownloadIcon />}
+            onClick={handleLoadFromPOAP}
+            disabled={loadingQRs}
+            fullWidth
+          >
+            {loadingQRs ? 'Loading QR Codes from POAP...' : 'Load QR Codes from POAP API'}
+          </Button>
+
+          <Alert severity="info" icon={<InfoIcon />}>
+            This will fetch QR codes from the POAP API using the Event ID ({project.poapEventId}) and Edit Code configured for this project.
+          </Alert>
+        </Stack>
+      </Card>
+
+      {/* Info */}
+      <Alert severity="info">
+        <AlertTitle>About QR Codes</AlertTitle>
+        QR codes are loaded from the POAP API and assigned to eligible users when they tweet with a valid code.
+        <br /><br />
+        <strong>QR Code States:</strong>
+        <ul style={{ marginTop: '8px', marginBottom: '8px', paddingLeft: '20px' }}>
+          <li><strong>Available:</strong> Ready to be assigned to users</li>
+          <li><strong>Reserved:</strong> Assigned to a user but not yet claimed</li>
+          <li><strong>Claimed:</strong> User has claimed the POAP</li>
+        </ul>
+        <strong>Note:</strong> Make sure you have configured the correct POAP Event ID and Edit Code in the General settings tab before loading QR codes.
+      </Alert>
+    </Box>
+  );
 }
 
 export default function ProjectDetailPage({
@@ -203,42 +1072,22 @@ export default function ProjectDetailPage({
         <Box sx={{ p: 3 }}>
           {/* General Tab */}
           <TabPanel value={tabValue} index={0}>
-            <Typography variant="h6" gutterBottom>
-              General Settings
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Project configuration coming soon...
-            </Typography>
+            <GeneralTab project={project} onUpdate={fetchProject} />
           </TabPanel>
 
           {/* POAP Config Tab */}
           <TabPanel value={tabValue} index={1}>
-            <Typography variant="h6" gutterBottom>
-              POAP Configuration
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Reply templates and settings coming soon...
-            </Typography>
+            <POAPConfigTab project={project} onUpdate={fetchProject} />
           </TabPanel>
 
           {/* Valid Codes Tab */}
           <TabPanel value={tabValue} index={2}>
-            <Typography variant="h6" gutterBottom>
-              Valid Codes
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Code management coming soon...
-            </Typography>
+            <ValidCodesTab project={project} />
           </TabPanel>
 
           {/* QR Codes Tab */}
           <TabPanel value={tabValue} index={3}>
-            <Typography variant="h6" gutterBottom>
-              QR Codes
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              QR code management coming soon...
-            </Typography>
+            <QRCodesTab project={project} />
           </TabPanel>
         </Box>
       </Card>

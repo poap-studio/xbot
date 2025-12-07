@@ -1,30 +1,42 @@
 /**
  * QR Codes Stats API
- * Get statistics about QR codes
+ * Get statistics about QR codes for a project
  */
 
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    const { searchParams } = new URL(request.url);
+    const projectId = searchParams.get('projectId');
+
+    if (!projectId) {
+      return NextResponse.json(
+        { error: 'Project ID is required' },
+        { status: 400 }
+      );
+    }
+
     const [total, available, reserved, claimed] = await Promise.all([
-      prisma.qRCode.count(),
+      prisma.qRCode.count({ where: { projectId } }),
       prisma.qRCode.count({
         where: {
+          projectId,
           reservedFor: null,
           claimed: false,
         },
       }),
       prisma.qRCode.count({
         where: {
+          projectId,
           reservedFor: { not: null },
           claimed: false,
         },
       }),
-      prisma.qRCode.count({ where: { claimed: true } }),
+      prisma.qRCode.count({ where: { projectId, claimed: true } }),
     ]);
 
     return NextResponse.json({
