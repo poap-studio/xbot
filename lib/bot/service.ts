@@ -128,6 +128,28 @@ export async function processSingleTweet(
       };
     }
 
+    // CRITICAL: Check if the code has been used by another tweet (race condition check)
+    // This can happen if multiple tweets with same code arrived in same batch
+    if (validCode.isUsed) {
+      console.log(
+        `Code "${tweet.hiddenCode}" already used by another tweet. Replying with not eligible message to @${username}`
+      );
+
+      // Reply with "not eligible" message since code is already used
+      try {
+        await replyWithNotEligible(tweetId, validCode.project.botAccountId || undefined);
+      } catch (error) {
+        console.error(`Failed to reply to tweet ${tweetId}:`, error);
+      }
+
+      return {
+        tweetId,
+        username,
+        success: false,
+        error: 'Code already used',
+      };
+    }
+
     const projectId = validCode.projectId;
     const project = validCode.project;
 
@@ -282,11 +304,15 @@ export async function runBotProcess(
     console.log(`💾 Saved ${tweets.length} tweets to database`);
 
     // 3. Process eligible tweets (respecting max limit)
-    const eligibleTweets = tweets.filter((t) => t.isEligible);
+    // IMPORTANT: Sort by createdAt (oldest first) to ensure first tweet wins if multiple use same code
+    const eligibleTweets = tweets
+      .filter((t) => t.isEligible)
+      .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+
     const tweetsToProcess = eligibleTweets.slice(0, maxTweets);
 
     console.log(
-      `📤 Processing ${tweetsToProcess.length} eligible tweets (max: ${maxTweets})...`
+      `📤 Processing ${tweetsToProcess.length} eligible tweets (max: ${maxTweets}) in chronological order...`
     );
 
     for (const tweet of tweetsToProcess) {
@@ -298,7 +324,7 @@ export async function runBotProcess(
         result.deliveriesFailed++;
         // Only track actual errors, not expected skips
         if (attempt.error &&
-            !['No hidden code', 'Invalid code', 'Already delivered', 'Already replied', 'No mint links available'].includes(attempt.error)) {
+            !['No hidden code', 'Invalid code', 'Code already used', 'Already delivered', 'Already replied', 'No mint links available'].includes(attempt.error)) {
           result.errors.push({
             tweetId: attempt.tweetId,
             error: attempt.error,
@@ -311,7 +337,10 @@ export async function runBotProcess(
     }
 
     // 4. Process non-eligible tweets (reply with "not eligible" message)
-    const notEligibleTweets = tweets.filter((t) => !t.isEligible);
+    // Also sort by timestamp for consistency
+    const notEligibleTweets = tweets
+      .filter((t) => !t.isEligible)
+      .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
     const notEligibleToProcess = notEligibleTweets.slice(0, maxTweets);
 
     if (notEligibleToProcess.length > 0) {
