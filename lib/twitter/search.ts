@@ -62,12 +62,16 @@ function buildSearchQuery(criteria: SearchCriteria): string {
  * @returns {Promise<string | null>} The found hidden code or null
  */
 async function findHiddenCode(text: string): Promise<string | null> {
-  // Get all available (unused) hidden codes from ACTIVE projects only
+  // Get all available (unused) hidden codes from ACTIVE projects with connected bots
   const availableCodes = await prisma.validCode.findMany({
     where: {
       isUsed: false,
       project: {
         isActive: true, // Only search codes from active projects
+        botAccountId: { not: null }, // Only projects with a bot assigned
+        botAccount: {
+          isConnected: true, // Only projects with a connected bot
+        },
       },
     },
     select: { code: true },
@@ -227,14 +231,21 @@ export async function getLastProcessedTweetId(): Promise<string | undefined> {
  */
 export async function searchNewEligibleTweets(): Promise<ProcessedTweet[]> {
   try {
-    // Get all active projects
+    // Get all active projects with connected bot accounts
     const activeProjects = await prisma.project.findMany({
-      where: { isActive: true },
+      where: {
+        isActive: true,
+        botAccountId: { not: null }, // Only projects with a bot assigned
+        botAccount: {
+          isConnected: true, // Only projects with a connected bot
+        },
+      },
       select: { twitterHashtag: true },
     });
 
     if (activeProjects.length === 0) {
-      throw new Error('No active projects found. Please create and activate a project first.');
+      console.warn('No active projects with connected bots found. Skipping tweet search.');
+      return [];
     }
 
     // Get unique hashtags from all active projects

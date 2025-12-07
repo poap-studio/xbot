@@ -394,18 +394,26 @@ export async function validateBotConfiguration(): Promise<void> {
   if (activeProjects.length === 0) {
     errors.push('No active projects configured');
   } else {
-    // Check that active projects have a bot assigned
+    // Warn about projects without bot assigned (these will be skipped)
     const projectsWithoutBot = activeProjects.filter(p => !p.botAccountId);
     if (projectsWithoutBot.length > 0) {
-      errors.push(`${projectsWithoutBot.length} active project(s) do not have a bot assigned`);
+      console.warn(`⚠️  ${projectsWithoutBot.length} active project(s) do not have a bot assigned and will be skipped`);
     }
 
-    // Check that assigned bots are connected
+    // Warn about projects with disconnected bot (these will be skipped)
     const projectsWithDisconnectedBot = activeProjects.filter(
       p => p.botAccount && !p.botAccount.isConnected
     );
     if (projectsWithDisconnectedBot.length > 0) {
-      errors.push(`${projectsWithDisconnectedBot.length} active project(s) have a disconnected bot`);
+      console.warn(`⚠️  ${projectsWithDisconnectedBot.length} active project(s) have a disconnected bot and will be skipped`);
+    }
+
+    // Only fail if there are NO processable projects
+    const processableProjects = activeProjects.filter(
+      p => p.botAccountId && p.botAccount && p.botAccount.isConnected
+    );
+    if (processableProjects.length === 0) {
+      errors.push('No active projects with connected bots available to process');
     }
   }
 
