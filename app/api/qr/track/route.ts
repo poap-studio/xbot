@@ -5,6 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { markCodeAsScanned } from '@/lib/codes/generator';
 
 export const dynamic = 'force-dynamic';
 
@@ -57,25 +58,21 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    console.log(`Processing QR scan for code: ${code}, isUsed: ${validCode.isUsed}`);
+    console.log(`Processing QR scan for code: ${code}, isScanned: ${validCode.isScanned}, isUsed: ${validCode.isUsed}`);
 
-    // Mark code as used (only if not already used)
-    if (!validCode.isUsed) {
-      await prisma.validCode.update({
-        where: { code_projectId: { code, projectId } },
-        data: {
-          isUsed: true,
-          usedAt: new Date(),
-        },
-      });
+    // Mark code as scanned (only if not already scanned)
+    // This indicates the user visited the tracking page
+    // NOTE: The code will be marked as "used" when the bot detects a valid tweet
+    if (!validCode.isScanned) {
+      await markCodeAsScanned(code, projectId);
 
-      console.log(`✓ Hidden code ${code} marked as used via QR scan`);
+      console.log(`✓ Hidden code ${code} marked as scanned via QR scan`);
 
-      // Notify SSE clients to update QR - IMPORTANT: Do this AFTER marking as used
+      // Notify SSE clients to update QR - IMPORTANT: Do this AFTER marking as scanned
       notifyQrUpdate();
       console.log('SSE update notification sent to all connected clients');
     } else {
-      console.log(`⚠ Code ${code} was already used`);
+      console.log(`⚠ Code ${code} was already scanned`);
     }
 
     // Generate tweet text from template

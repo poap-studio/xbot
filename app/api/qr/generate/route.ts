@@ -6,6 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import QRCode from 'qrcode';
+import { getOrCreateValidCode } from '@/lib/codes/generator';
 
 export const dynamic = 'force-dynamic';
 
@@ -37,30 +38,16 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Get next available (unused) hidden code for this project
-    const availableCode = await prisma.validCode.findFirst({
-      where: {
-        projectId,
-        isUsed: false
-      },
-      orderBy: { createdAt: 'asc' },
-    });
+    // Get or create an available code for this project
+    const code = await getOrCreateValidCode(projectId);
 
-    if (!availableCode) {
-      console.error(`No available hidden codes found for project ${projectId}`);
-      return NextResponse.json(
-        { error: 'No hidden codes available for this project. Please upload more codes in the admin panel.' },
-        { status: 503 }
-      );
-    }
-
-    console.log(`Generating QR for code: ${availableCode.code} (project: ${project.name})`);
+    console.log(`Generating QR for code: ${code} (project: ${project.name})`);
 
     // Get base URL
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
     // Create tracking URL that will redirect to Twitter
-    const trackingUrl = `${baseUrl}/api/qr/track?code=${encodeURIComponent(availableCode.code)}&projectId=${encodeURIComponent(projectId)}`;
+    const trackingUrl = `${baseUrl}/api/qr/track?code=${encodeURIComponent(code)}&projectId=${encodeURIComponent(projectId)}`;
 
     console.log(`Tracking URL: ${trackingUrl}`);
 
@@ -74,11 +61,11 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    console.log(`✓ QR generated successfully for code: ${availableCode.code}`);
+    console.log(`✓ QR generated successfully for code: ${code}`);
 
     return NextResponse.json({
       qrDataUrl,
-      code: availableCode.code,
+      code,
       projectName: project.name,
     });
   } catch (error) {

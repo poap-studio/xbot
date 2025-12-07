@@ -64,15 +64,18 @@ model ValidCode {
   code            String
   projectId       String
   project         Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  isUsed          Boolean  @default(false)
-  usedBy          String?  // twitterId
-  usedAt          DateTime?
+  isScanned       Boolean  @default(false)   // True when QR is scanned (user visits tracking page)
+  scannedAt       DateTime?                 // When the QR was first scanned
+  isUsed          Boolean  @default(false)   // True when code is detected in valid tweet
+  usedBy          String?                   // twitterId of user who tweeted with this code
+  usedAt          DateTime?                 // When the code was used in a tweet
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
   @@unique([code, projectId])
   @@index([code])
   @@index([isUsed])
+  @@index([isScanned])
   @@index([projectId])
   @@map("valid_codes")
 }

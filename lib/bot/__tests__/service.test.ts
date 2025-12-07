@@ -78,7 +78,8 @@ describe('Bot Orchestration Service', () => {
     });
     testProjectId = project.id;
 
-    // Create a valid code for the test
+    // Note: Valid codes are now auto-generated when needed
+    // Create a code for testing purposes only (simulates auto-generation)
     await prisma.validCode.create({
       data: {
         code: 'TESTCODE123',
