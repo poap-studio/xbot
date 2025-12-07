@@ -568,7 +568,7 @@ export async function loadQRCodesFromPOAP(
   eventId: string,
   editCode: string,
   projectId: string
-): Promise<{ loaded: number; newCodes: number; existing: number }> {
+): Promise<{ loaded: number; newCodes: number; existing: number; skippedClaimed: number }> {
   console.log(`Loading QR codes for event ${eventId} (project ${projectId})...`);
 
   // Get all QR hashes for the event
@@ -582,6 +582,7 @@ export async function loadQRCodesFromPOAP(
 
   let newCodes = 0;
   let existing = 0;
+  let skippedClaimed = 0;
 
   // Process each QR hash
   for (const qrHash of qrHashes) {
@@ -596,19 +597,26 @@ export async function loadQRCodesFromPOAP(
         continue;
       }
 
-      // Get the secret for this QR hash
-      console.log(`Getting secret for ${qrHash}...`);
-      const secret = await getClaimSecret(qrHash);
+      // Get QR code info to check if it's already claimed
+      console.log(`Checking claim status for ${qrHash}...`);
+      const qrInfo = await getQRCodeInfo(qrHash);
+
+      // Skip if already claimed
+      if (qrInfo.claimed) {
+        console.log(`Skipping ${qrHash} - already claimed by ${qrInfo.beneficiary}`);
+        skippedClaimed++;
+        continue;
+      }
 
       // Build mint link
       const mintLink = `https://poap.xyz/claim/${qrHash}`;
 
-      // Store in database
+      // Store in database (use secret from qrInfo if available, otherwise fetch it separately)
       await prisma.qRCode.create({
         data: {
           qrHash,
           mintLink,
-          secret,
+          secret: qrInfo.secret || '',
           projectId,
         },
       });
@@ -625,10 +633,10 @@ export async function loadQRCodesFromPOAP(
 
   const loaded = newCodes + existing;
   console.log(
-    `QR codes loaded: ${loaded} total (${newCodes} new, ${existing} existing)`
+    `QR codes loaded: ${loaded} total (${newCodes} new, ${existing} existing, ${skippedClaimed} skipped - already claimed)`
   );
 
-  return { loaded, newCodes, existing };
+  return { loaded, newCodes, existing, skippedClaimed };
 }
 
 /**
