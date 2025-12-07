@@ -95,6 +95,8 @@ export async function PUT(
       qrPageTweetTemplate,
       isActive,
       botAccountId,
+      requireUniqueCode,
+      requireImage,
     } = body;
 
     // Get current state before update (to detect bot changes)
@@ -129,6 +131,8 @@ export async function PUT(
         ...(qrPageTweetTemplate !== undefined && { qrPageTweetTemplate }),
         ...(isActive !== undefined && { isActive }),
         ...(botAccountId !== undefined && { botAccountId }),
+        ...(requireUniqueCode !== undefined && { requireUniqueCode }),
+        ...(requireImage !== undefined && { requireImage }),
       },
       include: {
         botAccount: {
