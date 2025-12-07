@@ -229,6 +229,14 @@ npm run prisma:generate
 
 ### Recent Changes
 
+#### Admin UI Reorganization (2025-12-07)
+Improved project detail page organization for better UX:
+- **Change**: Moved "Dynamic QR Code" section from standalone card to General tab
+- **Enhancement**: Removed redundant "Open Dynamic QR Page" button from Mint Links section
+- **Improvement**: Updated button text to "Load/Refresh Mint Links from POAP API" for clarity
+- **UX Enhancement**: Auto-save for "Allow Multiple Claims" setting (updates on toggle)
+- **Files**: `app/admin/projects/[id]/page.tsx`
+
 #### QR Code Twitter Redirect Fix (2025-12-07)
 Fixed critical bug where QR code scanning opened Twitter but didn't pre-fill tweet text:
 - **Issue**: Used incorrect deep link syntax `twitter://post?message=...`

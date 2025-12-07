@@ -90,7 +90,21 @@ interface Project {
 }
 
 // General Tab Component
-function GeneralTab({ project, onUpdate }: { project: Project; onUpdate: () => void }) {
+function GeneralTab({
+  project,
+  onUpdate,
+  qrDataUrl,
+  loadingQR,
+  copySuccess,
+  handleCopyUrl,
+}: {
+  project: Project;
+  onUpdate: () => void;
+  qrDataUrl: string | null;
+  loadingQR: boolean;
+  copySuccess: boolean;
+  handleCopyUrl: () => void;
+}) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -138,48 +152,163 @@ function GeneralTab({ project, onUpdate }: { project: Project; onUpdate: () => v
   };
 
   return (
-    <Box component="form" onSubmit={handleSubmit}>
-      <Typography variant="h6" gutterBottom>
-        General Settings
-      </Typography>
-
-      {error && (
-        <Alert severity="error" onClose={() => setError(null)} sx={{ mb: 3 }}>
-          {error}
-        </Alert>
-      )}
-
-      {success && (
-        <Alert severity="success" sx={{ mb: 3 }}>
-          Project updated successfully!
-        </Alert>
-      )}
-
-      <Stack spacing={3}>
-        <FormControlLabel
-          control={
-            <Switch
-              checked={formData.isActive}
-              onChange={handleChange('isActive')}
-            />
-          }
-          label="Active"
-        />
-        <Typography variant="caption" color="text.secondary">
-          When inactive, the bot will not process tweets or deliver POAPs for this project.
+    <Box>
+      {/* Dynamic QR Code Section */}
+      <Card sx={{ mb: 3, p: 3 }}>
+        <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', mb: 2 }}>
+          Dynamic QR Code
         </Typography>
 
-        <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end', pt: 2 }}>
-          <Button
-            type="submit"
-            variant="contained"
-            startIcon={<SaveIcon />}
-            disabled={saving}
-          >
-            {saving ? 'Saving...' : 'Save Changes'}
-          </Button>
+        <Box sx={{ display: 'flex', gap: 3, alignItems: 'flex-start', flexDirection: { xs: 'column', md: 'row' } }}>
+          {/* QR Code Display */}
+          <Box sx={{
+            minWidth: 200,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: 2
+          }}>
+            {loadingQR ? (
+              <Box sx={{
+                width: 200,
+                height: 200,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                bgcolor: 'background.paper',
+                borderRadius: 1,
+                border: 1,
+                borderColor: 'divider'
+              }}>
+                <CircularProgress />
+              </Box>
+            ) : qrDataUrl ? (
+              <Box sx={{
+                width: 200,
+                height: 200,
+                bgcolor: 'white',
+                p: 1,
+                borderRadius: 1,
+                boxShadow: 2
+              }}>
+                <Image
+                  src={qrDataUrl}
+                  alt="Project QR Code"
+                  width={184}
+                  height={184}
+                  style={{ width: '100%', height: '100%' }}
+                />
+              </Box>
+            ) : (
+              <Box sx={{
+                width: 200,
+                height: 200,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                bgcolor: 'background.paper',
+                borderRadius: 1,
+                border: 1,
+                borderColor: 'divider'
+              }}>
+                <Typography variant="body2" color="text.secondary">
+                  No QR available
+                </Typography>
+              </Box>
+            )}
+          </Box>
+
+          {/* QR Info and Actions */}
+          <Box sx={{ flex: 1 }}>
+            <Alert severity="info" sx={{ mb: 2 }}>
+              <Typography variant="body2" gutterBottom>
+                This QR code links to a dynamic page that shows a unique Twitter share link with a valid code from this project.
+                Each scan uses a different code.
+              </Typography>
+            </Alert>
+
+            <Stack spacing={2}>
+              <Box>
+                <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 'bold' }}>
+                  QR Page URL
+                </Typography>
+                <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                  <TextField
+                    fullWidth
+                    size="small"
+                    value={`${typeof window !== 'undefined' ? window.location.origin : ''}/qr/${project.id}`}
+                    InputProps={{
+                      readOnly: true,
+                      sx: { fontFamily: 'monospace', fontSize: '0.875rem' }
+                    }}
+                  />
+                  <Button
+                    variant="outlined"
+                    startIcon={copySuccess ? <CheckCircleIcon /> : <ContentCopyIcon />}
+                    onClick={handleCopyUrl}
+                    color={copySuccess ? 'success' : 'primary'}
+                    sx={{ minWidth: 100 }}
+                  >
+                    {copySuccess ? 'Copied!' : 'Copy'}
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    startIcon={<OpenInNewIcon />}
+                    onClick={() => window.open(`/qr/${project.id}`, '_blank')}
+                  >
+                    Open
+                  </Button>
+                </Box>
+              </Box>
+            </Stack>
+          </Box>
         </Box>
-      </Stack>
+      </Card>
+
+      {/* General Settings Form */}
+      <Box component="form" onSubmit={handleSubmit}>
+        <Typography variant="h6" gutterBottom>
+          General Settings
+        </Typography>
+
+        {error && (
+          <Alert severity="error" onClose={() => setError(null)} sx={{ mb: 3 }}>
+            {error}
+          </Alert>
+        )}
+
+        {success && (
+          <Alert severity="success" sx={{ mb: 3 }}>
+            Project updated successfully!
+          </Alert>
+        )}
+
+        <Stack spacing={3}>
+          <FormControlLabel
+            control={
+              <Switch
+                checked={formData.isActive}
+                onChange={handleChange('isActive')}
+              />
+            }
+            label="Active"
+          />
+          <Typography variant="caption" color="text.secondary">
+            When inactive, the bot will not process tweets or deliver POAPs for this project.
+          </Typography>
+
+          <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end', pt: 2 }}>
+            <Button
+              type="submit"
+              variant="contained"
+              startIcon={<SaveIcon />}
+              disabled={saving}
+            >
+              {saving ? 'Saving...' : 'Save Changes'}
+            </Button>
+          </Box>
+        </Stack>
+      </Box>
     </Box>
   );
 }
@@ -621,7 +750,36 @@ function MintLinksTab({ project, onUpdate }: { project: Project; onUpdate: () =>
             control={
               <Switch
                 checked={formData.allowMultipleClaims}
-                onChange={handleChange('allowMultipleClaims')}
+                onChange={async (e) => {
+                  const newValue = e.target.checked;
+                  handleChange('allowMultipleClaims')(e);
+
+                  // Auto-save on change
+                  try {
+                    const response = await fetch(`/api/admin/projects/${project.id}`, {
+                      method: 'PATCH',
+                      headers: {
+                        'Content-Type': 'application/json',
+                      },
+                      body: JSON.stringify({ allowMultipleClaims: newValue }),
+                    });
+
+                    const data = await response.json();
+
+                    if (!response.ok) {
+                      throw new Error(data.error || 'Failed to update claim settings');
+                    }
+
+                    setSuccess('Claim settings updated successfully!');
+                    onUpdate();
+                    setTimeout(() => setSuccess(null), 3000);
+                  } catch (error) {
+                    console.error('Error updating claim settings:', error);
+                    setError(error instanceof Error ? error.message : 'Failed to update claim settings');
+                    // Revert the change on error
+                    setFormData({ ...formData, allowMultipleClaims: !newValue });
+                  }
+                }}
               />
             }
             label="Allow Multiple Claims"
@@ -629,17 +787,6 @@ function MintLinksTab({ project, onUpdate }: { project: Project; onUpdate: () =>
           <Typography variant="body2" color="text.secondary" sx={{ ml: 4 }}>
             If enabled, users can claim multiple POAPs from this drop. If disabled, users can only claim once.
           </Typography>
-
-          <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
-            <Button
-              variant="contained"
-              startIcon={<SaveIcon />}
-              onClick={handleSave}
-              disabled={saving}
-            >
-              {saving ? 'Saving...' : 'Save Settings'}
-            </Button>
-          </Box>
         </Stack>
       </Card>
 
@@ -652,28 +799,14 @@ function MintLinksTab({ project, onUpdate }: { project: Project; onUpdate: () =>
         <Stack spacing={2}>
           <Button
             variant="contained"
-            color="success"
-            startIcon={<QrCodeIcon />}
-            onClick={() => window.open(`/qr/${project.id}`, '_blank')}
-            fullWidth
-          >
-            Open Dynamic QR Page
-          </Button>
-
-          <Button
-            variant="contained"
             color="primary"
             startIcon={loadingQRs ? <CircularProgress size={20} color="inherit" /> : <DownloadIcon />}
             onClick={handleLoadFromPOAP}
             disabled={loadingQRs}
             fullWidth
           >
-            {loadingQRs ? 'Loading Mint Links from POAP...' : 'Load Mint Links from POAP API'}
+            {loadingQRs ? 'Loading Mint Links from POAP...' : 'Load/Refresh Mint Links from POAP API'}
           </Button>
-
-          <Alert severity="info" icon={<InfoIcon />}>
-            The Dynamic QR Page shows a QR code that automatically updates with a new valid code from this project each time it's scanned.
-          </Alert>
         </Stack>
       </Card>
 
@@ -886,118 +1019,6 @@ export default function ProjectDetailPage({
         </Button>
       </Box>
 
-      {/* QR Code Section */}
-      <Card sx={{ mb: 3, p: 3 }}>
-        <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', mb: 2 }}>
-          Dynamic QR Code
-        </Typography>
-
-        <Box sx={{ display: 'flex', gap: 3, alignItems: 'flex-start', flexDirection: { xs: 'column', md: 'row' } }}>
-          {/* QR Code Display */}
-          <Box sx={{
-            minWidth: 200,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: 2
-          }}>
-            {loadingQR ? (
-              <Box sx={{
-                width: 200,
-                height: 200,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                bgcolor: 'background.paper',
-                borderRadius: 1,
-                border: 1,
-                borderColor: 'divider'
-              }}>
-                <CircularProgress />
-              </Box>
-            ) : qrDataUrl ? (
-              <Box sx={{
-                width: 200,
-                height: 200,
-                bgcolor: 'white',
-                p: 1,
-                borderRadius: 1,
-                boxShadow: 2
-              }}>
-                <Image
-                  src={qrDataUrl}
-                  alt="Project QR Code"
-                  width={184}
-                  height={184}
-                  style={{ width: '100%', height: '100%' }}
-                />
-              </Box>
-            ) : (
-              <Box sx={{
-                width: 200,
-                height: 200,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                bgcolor: 'background.paper',
-                borderRadius: 1,
-                border: 1,
-                borderColor: 'divider'
-              }}>
-                <Typography variant="body2" color="text.secondary">
-                  No QR available
-                </Typography>
-              </Box>
-            )}
-          </Box>
-
-          {/* QR Info and Actions */}
-          <Box sx={{ flex: 1 }}>
-            <Alert severity="info" sx={{ mb: 2 }}>
-              <Typography variant="body2" gutterBottom>
-                This QR code links to a dynamic page that shows a unique Twitter share link with a valid code from this project.
-                Each scan uses a different code.
-              </Typography>
-            </Alert>
-
-            <Stack spacing={2}>
-              <Box>
-                <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 'bold' }}>
-                  QR Page URL
-                </Typography>
-                <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-                  <TextField
-                    fullWidth
-                    size="small"
-                    value={`${typeof window !== 'undefined' ? window.location.origin : ''}/qr/${project.id}`}
-                    InputProps={{
-                      readOnly: true,
-                      sx: { fontFamily: 'monospace', fontSize: '0.875rem' }
-                    }}
-                  />
-                  <Button
-                    variant="outlined"
-                    startIcon={copySuccess ? <CheckCircleIcon /> : <ContentCopyIcon />}
-                    onClick={handleCopyUrl}
-                    color={copySuccess ? 'success' : 'primary'}
-                    sx={{ minWidth: 100 }}
-                  >
-                    {copySuccess ? 'Copied!' : 'Copy'}
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    startIcon={<OpenInNewIcon />}
-                    onClick={() => window.open(`/qr/${project.id}`, '_blank')}
-                  >
-                    Open
-                  </Button>
-                </Box>
-              </Box>
-            </Stack>
-          </Box>
-        </Box>
-      </Card>
-
       {/* Tabs */}
       <Card>
         <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
@@ -1011,7 +1032,14 @@ export default function ProjectDetailPage({
         <Box sx={{ p: 3 }}>
           {/* General Tab */}
           <TabPanel value={tabValue} index={0}>
-            <GeneralTab project={project} onUpdate={fetchProject} />
+            <GeneralTab
+              project={project}
+              onUpdate={fetchProject}
+              qrDataUrl={qrDataUrl}
+              loadingQR={loadingQR}
+              copySuccess={copySuccess}
+              handleCopyUrl={handleCopyUrl}
+            />
           </TabPanel>
 
           {/* Bot Config Tab */}
