@@ -83,14 +83,7 @@ export async function processNotEligibleTweet(
 
     return true;
   } catch (error) {
-    const errorMessage =
-      error instanceof Error ? error.message : 'Unknown error';
-
-    console.error(
-      `❌ Failed to reply to non-eligible tweet ${tweetId} from @${username}:`,
-      errorMessage
-    );
-
+    // Silently skip - failed to reply to non-eligible tweet (expected behavior)
     return false;
   }
 }
@@ -111,7 +104,13 @@ export async function processSingleTweet(
   try {
     // 0. Find project for this tweet based on hidden code
     if (!tweet.hiddenCode) {
-      throw new Error('No hidden code found in tweet');
+      // Silently skip tweets without valid code - this is expected behavior
+      return {
+        tweetId,
+        username,
+        success: false,
+        error: 'No hidden code',
+      };
     }
 
     const validCode = await prisma.validCode.findFirst({
@@ -120,7 +119,13 @@ export async function processSingleTweet(
     });
 
     if (!validCode || !validCode.project) {
-      throw new Error(`Hidden code "${tweet.hiddenCode}" not found or not associated with a project`);
+      // Silently skip tweets with invalid code - this is expected behavior
+      return {
+        tweetId,
+        username,
+        success: false,
+        error: 'Invalid code',
+      };
     }
 
     const projectId = validCode.projectId;
@@ -131,7 +136,7 @@ export async function processSingleTweet(
     // 1. Check if already delivered for this project
     const alreadyDelivered = await hasDelivery(tweetId, projectId);
     if (alreadyDelivered) {
-      console.log(`Tweet ${tweetId} already has a delivery for project ${projectId}. Skipping.`);
+      // Silently skip - already processed
       return {
         tweetId,
         username,
@@ -143,7 +148,7 @@ export async function processSingleTweet(
     // 2. Check if already replied (safety check)
     const alreadyReplied = await hasBeenRepliedTo(tweetId);
     if (alreadyReplied) {
-      console.log(`Tweet ${tweetId} already replied to. Skipping.`);
+      // Silently skip - already processed
       return {
         tweetId,
         username,
@@ -163,8 +168,6 @@ export async function processSingleTweet(
       });
 
       if (userAlreadyClaimed) {
-        console.log(`User ${username} (${twitterUserId}) already has a delivery for project ${projectId}. Multiple claims not allowed.`);
-
         // Reply with "already claimed" message
         const replyId = await replyWithAlreadyClaimed(tweetId, project.botAccountId || undefined);
 
@@ -181,7 +184,7 @@ export async function processSingleTweet(
     // 4. Reserve mint link for this project
     const mintLink = await reserveMintLink(twitterUserId, projectId);
     if (!mintLink) {
-      console.warn(`No available mint links for tweet ${tweetId} in project ${projectId}`);
+      // Silently skip - no mint links available
       return {
         tweetId,
         username,
@@ -222,10 +225,13 @@ export async function processSingleTweet(
     const errorMessage =
       error instanceof Error ? error.message : 'Unknown error';
 
-    console.error(
-      `❌ Failed to process tweet ${tweetId} from @${username}:`,
-      errorMessage
-    );
+    // Only log actual errors (not expected failures like missing codes)
+    if (!errorMessage.includes('hidden code') && !errorMessage.includes('Invalid code')) {
+      console.error(
+        `❌ Failed to process tweet ${tweetId} from @${username}:`,
+        errorMessage
+      );
+    }
 
     return {
       tweetId,
@@ -290,7 +296,9 @@ export async function runBotProcess(
         result.deliveriesSuccessful++;
       } else {
         result.deliveriesFailed++;
-        if (attempt.error) {
+        // Only track actual errors, not expected skips
+        if (attempt.error &&
+            !['No hidden code', 'Invalid code', 'Already delivered', 'Already replied', 'No mint links available'].includes(attempt.error)) {
           result.errors.push({
             tweetId: attempt.tweetId,
             error: attempt.error,
