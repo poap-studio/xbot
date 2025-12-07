@@ -271,6 +271,17 @@ npm run prisma:generate
 
 ### Recent Changes
 
+#### Improved Project Creation UX (2025-12-07)
+Streamlined project creation workflow in admin dashboard:
+- **UX**: "New Project" button now hidden when no projects exist (reduces confusion)
+- **UX**: "Create Project" button now auto-creates project and redirects to edit page
+- **Removed**: `/admin/projects/new` route no longer exists
+- **Behavior**: Clicking "Create Project" instantly creates a project with auto-generated name and default values
+- **Navigation**: Redirects immediately to project edit page for configuration
+- **Files**:
+  - `app/admin/page.tsx` (updated UI logic and added handleCreateProject function)
+  - `app/admin/projects/new/` (removed directory entirely)
+
 #### Optional Validation Requirements (2025-12-07)
 Implemented configurable validation requirements for POAP delivery:
 - **Feature**: "Require Unique Code" checkbox in General settings (enabled by default)

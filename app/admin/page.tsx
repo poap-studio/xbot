@@ -85,6 +85,34 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleCreateProject = async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch('/api/admin/projects', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({}), // Create with default values
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to create project');
+      }
+
+      // Redirect to project edit page
+      router.push(`/admin/projects/${data.project.id}`);
+    } catch (error) {
+      console.error('Error creating project:', error);
+      setError(error instanceof Error ? error.message : 'Failed to create project');
+      setLoading(false);
+    }
+  };
+
   const handleDeleteProject = async (projectId: string) => {
     if (!confirm('Are you sure you want to delete this project? All related data will be permanently deleted.')) {
       return;
@@ -144,14 +172,17 @@ export default function AdminDashboard() {
               Manage your POAP drops
             </Typography>
           </Box>
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={() => router.push('/admin/projects/new')}
-            sx={{ height: 'fit-content' }}
-          >
-            New Project
-          </Button>
+          {/* Only show New Project button when there are existing projects */}
+          {projects.length > 0 && (
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={handleCreateProject}
+              sx={{ height: 'fit-content' }}
+            >
+              New Project
+            </Button>
+          )}
         </Box>
 
         {/* Projects Grid */}
@@ -169,7 +200,7 @@ export default function AdminDashboard() {
             <Button
               variant="contained"
               startIcon={<AddIcon />}
-              onClick={() => router.push('/admin/projects/new')}
+              onClick={handleCreateProject}
             >
               Create Project
             </Button>
