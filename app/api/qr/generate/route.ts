@@ -60,7 +60,7 @@ export async function GET(request: NextRequest) {
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
     // Create tracking URL that will redirect to Twitter
-    const trackingUrl = `${baseUrl}/api/qr/track?code=${encodeURIComponent(availableCode.code)}`;
+    const trackingUrl = `${baseUrl}/api/qr/track?code=${encodeURIComponent(availableCode.code)}&projectId=${encodeURIComponent(projectId)}`;
 
     console.log(`Tracking URL: ${trackingUrl}`);
 

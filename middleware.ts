@@ -13,13 +13,14 @@ export async function middleware(request: NextRequest) {
   // Allow access to login page and auth API endpoints without protection
   if (
     pathname === '/admin/login' ||
-    pathname.startsWith('/admin/auth/')
+    pathname === '/admin/unauthorized' ||
+    pathname.startsWith('/api/admin/auth/')
   ) {
     return NextResponse.next();
   }
 
-  // Protect all other /admin routes
-  if (pathname.startsWith('/admin')) {
+  // Protect all /admin and /api/admin routes
+  if (pathname.startsWith('/admin') || pathname.startsWith('/api/admin')) {
     // Check for admin session cookie
     const sessionCookie = request.cookies.get('admin-session');
 
@@ -55,5 +56,6 @@ export async function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     '/admin/:path*',
+    '/api/admin/:path*',
   ],
 };
