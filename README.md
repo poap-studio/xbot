@@ -196,12 +196,14 @@ The system supports multiple Twitter bot accounts with per-project configuration
 1. User posts a tweet with:
    - **Mention to bot account** (e.g., @poapstudio)
    - **Unique code** (e.g., "A3B7K")
+   - **Project hashtag** (e.g., #POAP)
    - **Image attachment**
 2. Twitter webhook instantly notifies our system about the mention
 3. System validates:
+   - Tweet contains the required project hashtag (if not, tweet is ignored without response)
    - Code belongs to an active project
    - Bot account matches the project
-   - Tweet has required image
+   - Tweet has required image (if missing but has hashtag, bot replies with error message)
 4. Bot reserves a mint link and replies to tweet with claim URL
 5. User visits claim URL and logs in with Twitter
 6. User sees their mint link and claims POAP
@@ -268,6 +270,22 @@ npm run prisma:generate
 ```
 
 ### Recent Changes
+
+#### Hashtag Validation for Tweet Processing (2025-12-07)
+Implemented hashtag requirement for tweet processing with conditional response logic:
+- **Feature**: Tweets must now contain the project's configured hashtag to be processed
+- **Logic**: If tweet lacks hashtag → ignored completely (no bot response)
+- **Logic**: If tweet has hashtag but missing other requirements (image/code) → bot replies with error message
+- **Logic**: If tweet has hashtag, code, and image → normal POAP delivery
+- **Configuration**: Hashtag is configured per-project in Bot Config section
+- **Template Update**: Updated default QR page tweet template to include `{{bot}}` variable
+- **Backend**: Updated `processWebhookTweetEvent` to validate hashtag before processing
+- **Backend**: Enhanced `replyWithNotEligible` to accept `projectId` for per-project error messages
+- **Files**:
+  - `lib/twitter/webhook-processor.ts` (hashtag validation logic)
+  - `lib/twitter/reply.ts` (project-specific error messages)
+  - `lib/bot/service.ts` (updated processNotEligibleTweet signature)
+  - `prisma/schema.prisma` (updated default qrPageTweetTemplate)
 
 #### Tweet Template Variables Documentation (2025-12-07)
 Enhanced documentation for tweet template variables in admin interface:

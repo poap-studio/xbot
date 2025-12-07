@@ -25,7 +25,7 @@ model Project {
   twitterHashtag  String   @default("#POAP")
 
   // QR Page configuration
-  qrPageTweetTemplate String @default("I visited the POAP Studio booth at ETH Global, and here's the proof! The secret word is {{code}} {{hashtag}}")
+  qrPageTweetTemplate String @default("I visited the POAP Studio booth at ETH Global, and here's the proof! The secret word is {{code}} {{hashtag}} {{bot}}")
 
   // Status
   isActive        Boolean  @default(true)

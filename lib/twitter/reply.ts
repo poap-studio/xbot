@@ -219,14 +219,25 @@ export async function replyWithAlreadyClaimed(
 
 /**
  * Generate "not eligible" reply text
- * Uses template from first active project
+ * Uses template from project or first active project if not specified
+ * @param {string} projectId - Optional project ID to use for template
  * @returns {Promise<string>} Reply text
  */
-export async function generateNotEligibleText(): Promise<string> {
+export async function generateNotEligibleText(projectId?: string): Promise<string> {
   try {
-    const project = await prisma.project.findFirst({
-      where: { isActive: true },
-    });
+    let project;
+
+    if (projectId) {
+      project = await prisma.project.findUnique({
+        where: { id: projectId },
+      });
+    }
+
+    if (!project) {
+      project = await prisma.project.findFirst({
+        where: { isActive: true },
+      });
+    }
 
     if (!project) {
       throw new Error('No active project found');
@@ -253,14 +264,16 @@ export async function generateNotEligibleText(): Promise<string> {
  * Reply to a tweet with "not eligible" message
  * @param {string} tweetId - Tweet ID to reply to
  * @param {string} botAccountId - Optional bot account ID to use for replying
+ * @param {string} projectId - Optional project ID to use for template
  * @returns {Promise<string>} Reply tweet ID
  */
 export async function replyWithNotEligible(
   tweetId: string,
-  botAccountId?: string
+  botAccountId?: string,
+  projectId?: string
 ): Promise<string> {
   try {
-    const text = await generateNotEligibleText();
+    const text = await generateNotEligibleText(projectId);
     const replyId = await replyToTweet(tweetId, text, botAccountId);
     await markTweetAsReplied(tweetId, replyId);
 

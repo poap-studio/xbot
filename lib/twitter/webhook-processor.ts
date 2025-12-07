@@ -85,6 +85,7 @@ export async function processWebhookTweetEvent(webhookEvent: any): Promise<{
             id: true,
             name: true,
             allowMultipleClaims: true,
+            twitterHashtag: true,
           },
         },
       },
@@ -152,6 +153,30 @@ export async function processWebhookTweetEvent(webhookEvent: any): Promise<{
           continue;
         }
 
+        // Get the project details to check hashtag requirement
+        const project = botAccount.projects.find(p => p.id === projectId);
+        if (!project) {
+          console.log(`[Webhook] Project ${projectId} not found in bot's active projects`);
+          results.skipped++;
+          continue;
+        }
+
+        // Extract hashtags from tweet
+        const tweetHashtags = tweetEvent.entities?.hashtags?.map((h: { text: string }) => h.text.toLowerCase()) || [];
+        const requiredHashtag = project.twitterHashtag.replace('#', '').toLowerCase();
+        const hasHashtag = tweetHashtags.includes(requiredHashtag);
+
+        console.log(`[Webhook] Required hashtag: #${requiredHashtag}`);
+        console.log(`[Webhook] Tweet hashtags:`, tweetHashtags);
+        console.log(`[Webhook] Tweet has required hashtag: ${hasHashtag}`);
+
+        // If tweet doesn't have the required hashtag, ignore it completely (no response)
+        if (!hasHashtag) {
+          console.log(`[Webhook] Tweet missing required hashtag #${requiredHashtag}, ignoring without response`);
+          results.skipped++;
+          continue;
+        }
+
         // Check if tweet has media (image)
         const hasImage = Boolean(
           tweetEvent.entities?.media &&
@@ -173,7 +198,7 @@ export async function processWebhookTweetEvent(webhookEvent: any): Promise<{
           hasImage,
           hasCode: true,
           hiddenCode: validCode,
-          isEligible: hasImage, // Eligible if has both code and image
+          isEligible: hasImage && hasHashtag, // Eligible if has code, image, and hashtag
           createdAt,
         };
 
@@ -182,8 +207,9 @@ export async function processWebhookTweetEvent(webhookEvent: any): Promise<{
         // Save tweet to database
         await saveTweet(processedTweet);
 
-        // Process the tweet if eligible
+        // Process the tweet
         if (processedTweet.isEligible) {
+          // Tweet has hashtag, code, and image - deliver POAP
           console.log(`[Webhook] Processing eligible tweet...`);
           const result = await processSingleTweet(processedTweet);
 
@@ -195,8 +221,20 @@ export async function processWebhookTweetEvent(webhookEvent: any): Promise<{
             results.errors.push(`Tweet ${tweetEvent.id_str}: ${result.error}`);
           }
         } else {
-          console.log(`[Webhook] Tweet not eligible (missing image), skipping POAP delivery`);
-          results.skipped++;
+          // Tweet has hashtag and code but missing image - reply with error message
+          console.log(`[Webhook] Tweet not eligible (missing image), replying with error message`);
+
+          // Import and use processNotEligibleTweet to send error reply
+          const { processNotEligibleTweet } = await import('@/lib/bot/service');
+          const replied = await processNotEligibleTweet(processedTweet, projectId, botAccount.id);
+
+          if (replied) {
+            console.log(`[Webhook] ✅ Sent error reply to @${processedTweet.authorUsername}`);
+            results.processed++;
+          } else {
+            console.log(`[Webhook] ⚠️ Could not send error reply (might already be replied)`);
+            results.skipped++;
+          }
         }
 
       } catch (error) {

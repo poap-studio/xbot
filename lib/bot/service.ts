@@ -59,10 +59,14 @@ export interface DeliveryAttempt {
  * Process a single non-eligible tweet
  * Replies with "not eligible" message
  * @param {ProcessedTweet} tweet - Tweet to process
+ * @param {string} projectId - Optional project ID to use for template
+ * @param {string} botAccountId - Optional bot account ID to use for replying
  * @returns {Promise<boolean>} True if reply was successful
  */
 export async function processNotEligibleTweet(
-  tweet: ProcessedTweet
+  tweet: ProcessedTweet,
+  projectId?: string,
+  botAccountId?: string
 ): Promise<boolean> {
   const tweetId = tweet.id;
   const username = tweet.authorUsername;
@@ -76,7 +80,7 @@ export async function processNotEligibleTweet(
     }
 
     // 2. Reply with "not eligible" message
-    await replyWithNotEligible(tweetId);
+    await replyWithNotEligible(tweetId, botAccountId, projectId);
 
     console.log(
       `✅ Replied to non-eligible tweet ${tweetId} from @${username}`
