@@ -10,36 +10,51 @@ import QRCode from 'qrcode';
 export const dynamic = 'force-dynamic';
 
 /**
- * GET /api/qr/generate
- * Generate QR code with next available hidden code
+ * GET /api/qr/generate?projectId=xxx
+ * Generate QR code with next available hidden code for a project
  */
 export async function GET(request: NextRequest) {
   try {
-    // Get configuration
-    const config = await prisma.config.findFirst();
+    const { searchParams } = new URL(request.url);
+    const projectId = searchParams.get('projectId');
 
-    if (!config) {
+    if (!projectId) {
       return NextResponse.json(
-        { error: 'Configuration not found' },
-        { status: 500 }
+        { error: 'Project ID is required' },
+        { status: 400 }
       );
     }
 
-    // Get next available (unused) hidden code
+    // Verify project exists
+    const project = await prisma.project.findUnique({
+      where: { id: projectId },
+    });
+
+    if (!project) {
+      return NextResponse.json(
+        { error: 'Project not found' },
+        { status: 404 }
+      );
+    }
+
+    // Get next available (unused) hidden code for this project
     const availableCode = await prisma.validCode.findFirst({
-      where: { isUsed: false },
+      where: {
+        projectId,
+        isUsed: false
+      },
       orderBy: { createdAt: 'asc' },
     });
 
     if (!availableCode) {
-      console.error('No available hidden codes found');
+      console.error(`No available hidden codes found for project ${projectId}`);
       return NextResponse.json(
-        { error: 'No hidden codes available. Please upload more codes in the admin panel.' },
+        { error: 'No hidden codes available for this project. Please upload more codes in the admin panel.' },
         { status: 503 }
       );
     }
 
-    console.log(`Generating QR for code: ${availableCode.code}`);
+    console.log(`Generating QR for code: ${availableCode.code} (project: ${project.name})`);
 
     // Get base URL
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
@@ -64,6 +79,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       qrDataUrl,
       code: availableCode.code,
+      projectName: project.name,
     });
   } catch (error) {
     console.error('Error generating QR code:', error);

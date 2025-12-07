@@ -910,6 +910,16 @@ function QRCodesTab({ project }: { project: Project }) {
         <Stack spacing={2}>
           <Button
             variant="contained"
+            color="success"
+            startIcon={<QrCodeIcon />}
+            onClick={() => window.open(`/qr/${project.id}`, '_blank')}
+            fullWidth
+          >
+            Open Dynamic QR Page
+          </Button>
+
+          <Button
+            variant="contained"
             color="primary"
             startIcon={loadingQRs ? <CircularProgress size={20} color="inherit" /> : <DownloadIcon />}
             onClick={handleLoadFromPOAP}
@@ -920,7 +930,7 @@ function QRCodesTab({ project }: { project: Project }) {
           </Button>
 
           <Alert severity="info" icon={<InfoIcon />}>
-            This will fetch QR codes from the POAP API using the Event ID ({project.poapEventId}) and Edit Code configured for this project.
+            The Dynamic QR Page shows a QR code that automatically updates with a new valid code from this project each time it's scanned.
           </Alert>
         </Stack>
       </Card>

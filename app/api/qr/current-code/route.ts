@@ -9,14 +9,27 @@ import prisma from '@/lib/prisma';
 export const dynamic = 'force-dynamic';
 
 /**
- * GET /api/qr/current-code
- * Get current available hidden code (for polling)
+ * GET /api/qr/current-code?projectId=xxx
+ * Get current available hidden code for a project (for polling)
  */
 export async function GET(request: NextRequest) {
   try {
-    // Get next available (unused) hidden code
+    const { searchParams } = new URL(request.url);
+    const projectId = searchParams.get('projectId');
+
+    if (!projectId) {
+      return NextResponse.json(
+        { error: 'Project ID is required' },
+        { status: 400 }
+      );
+    }
+
+    // Get next available (unused) hidden code for this project
     const availableCode = await prisma.validCode.findFirst({
-      where: { isUsed: false },
+      where: {
+        projectId,
+        isUsed: false
+      },
       orderBy: { createdAt: 'asc' },
     });
 
