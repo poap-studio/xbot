@@ -331,7 +331,7 @@ function GeneralTab({
                   }}
                 />
               }
-              label="Require Unique Code"
+              label="Require Secret Code"
             />
             <Typography variant="caption" color="text.secondary" sx={{ display: 'block', ml: 4 }}>
               When disabled, POAPs will be delivered to any tweet with the bot mention and hashtag (no code validation).
@@ -767,6 +767,11 @@ function MintLinksTab({ project, onUpdate }: { project: Project; onUpdate: (upda
     setSaving(true);
     setError(null);
 
+    // Check if eventId or editCode changed
+    const eventIdChanged = formData.poapEventId !== project.poapEventId;
+    const editCodeChanged = formData.poapEditCode !== project.poapEditCode;
+    const shouldRefreshMintLinks = eventIdChanged || editCodeChanged;
+
     try {
       // First, update the POAP settings
       const response = await fetch(`/api/admin/projects/${project.id}`, {
@@ -807,11 +812,49 @@ function MintLinksTab({ project, onUpdate }: { project: Project; onUpdate: (upda
         console.warn('Failed to fetch POAP event name:', nameError);
         onUpdate(data.project);
       }
+
+      // If eventId or editCode changed, auto-refresh mint links
+      if (shouldRefreshMintLinks) {
+        console.log('POAP Event ID or Edit Code changed, auto-refreshing mint links...');
+        setSaving(false); // End saving state
+        setLoadingQRs(true); // Start loading QRs state
+
+        try {
+          const qrResponse = await fetch('/api/admin/qr-codes/load', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              eventId: formData.poapEventId,
+              editCode: formData.poapEditCode,
+              projectId: project.id,
+            }),
+          });
+
+          const qrData = await qrResponse.json();
+
+          if (!qrResponse.ok) {
+            throw new Error(qrData.error || 'Failed to load mint links');
+          }
+
+          await fetchStats();
+          console.log('✅ Mint links auto-refreshed successfully');
+        } catch (qrError) {
+          console.error('Error auto-refreshing mint links:', qrError);
+          setError(qrError instanceof Error ? qrError.message : 'Failed to auto-refresh mint links from POAP API');
+        } finally {
+          setLoadingQRs(false);
+        }
+      }
     } catch (error) {
       console.error('Error updating POAP settings:', error);
       setError(error instanceof Error ? error.message : 'Failed to update POAP settings');
-    } finally {
       setSaving(false);
+    } finally {
+      if (!shouldRefreshMintLinks) {
+        setSaving(false);
+      }
     }
   };
 
