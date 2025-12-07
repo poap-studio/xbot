@@ -86,7 +86,7 @@ export default function AdminDashboard() {
   };
 
   const handleDeleteProject = async (projectId: string) => {
-    if (!confirm('¿Estás seguro de eliminar este proyecto? Se eliminarán todos los datos relacionados.')) {
+    if (!confirm('Are you sure you want to delete this project? All related data will be permanently deleted.')) {
       return;
     }
 
@@ -104,7 +104,7 @@ export default function AdminDashboard() {
       fetchProjects();
     } catch (error) {
       console.error('Error deleting project:', error);
-      alert('Error al eliminar el proyecto: ' + (error instanceof Error ? error.message : 'Unknown error'));
+      alert('Error deleting project: ' + (error instanceof Error ? error.message : 'Unknown error'));
     }
   };
 
@@ -138,10 +138,10 @@ export default function AdminDashboard() {
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Box>
             <Typography variant="h4" gutterBottom sx={{ fontWeight: 'bold' }}>
-              Proyectos
+              Projects
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              Gestiona tus drops de POAP
+              Manage your POAP drops
             </Typography>
           </Box>
           <Button
@@ -150,7 +150,7 @@ export default function AdminDashboard() {
             onClick={() => router.push('/admin/projects/new')}
             sx={{ height: 'fit-content' }}
           >
-            Nuevo Proyecto
+            New Project
           </Button>
         </Box>
 
@@ -161,17 +161,17 @@ export default function AdminDashboard() {
               📦
             </Typography>
             <Typography variant="h6" gutterBottom>
-              No hay proyectos
+              No projects yet
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-              Crea tu primer proyecto para empezar a distribuir POAPs
+              Create your first project to start distributing POAPs
             </Typography>
             <Button
               variant="contained"
               startIcon={<AddIcon />}
               onClick={() => router.push('/admin/projects/new')}
             >
-              Crear Proyecto
+              Create Project
             </Button>
           </Card>
         ) : (
@@ -207,7 +207,7 @@ export default function AdminDashboard() {
                         </Typography>
                         <Stack direction="row" spacing={1} sx={{ mb: 1 }}>
                           <Chip
-                            label={project.isActive ? 'Activo' : 'Inactivo'}
+                            label={project.isActive ? 'Active' : 'Inactive'}
                             color={project.isActive ? 'success' : 'default'}
                             size="small"
                             icon={project.isActive ? <CheckIcon /> : <CloseIcon />}
@@ -255,7 +255,7 @@ export default function AdminDashboard() {
                           {project.stats.deliveries}
                         </Typography>
                         <Typography variant="caption" color="text.secondary">
-                          Entregas
+                          Deliveries
                         </Typography>
                       </Box>
                       <Box sx={{ textAlign: 'center', p: 1, bgcolor: 'background.default', borderRadius: 1 }}>
@@ -263,7 +263,7 @@ export default function AdminDashboard() {
                           {project.stats.validCodes}
                         </Typography>
                         <Typography variant="caption" color="text.secondary">
-                          Códigos
+                          Codes
                         </Typography>
                       </Box>
                       <Box sx={{ textAlign: 'center', p: 1, bgcolor: 'background.default', borderRadius: 1 }}>
@@ -286,7 +286,7 @@ export default function AdminDashboard() {
                       onClick={() => router.push(`/admin/projects/${project.id}`)}
                       fullWidth
                     >
-                      Editar
+                      Edit
                     </Button>
                     <IconButton
                       color="error"

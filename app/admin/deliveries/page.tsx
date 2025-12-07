@@ -1,6 +1,6 @@
 /**
  * Deliveries Monitoring Page
- * View and monitor all POAP deliveries
+ * View and monitor all POAP deliveries with project filtering
  */
 
 'use client';
@@ -27,6 +27,7 @@ import {
   ToggleButton,
   ToggleButtonGroup,
   Link as MuiLink,
+  Autocomplete,
 } from '@mui/material';
 import {
   Download as DownloadIcon,
@@ -34,7 +35,14 @@ import {
   HourglassEmpty as HourglassEmptyIcon,
   FilterList as FilterListIcon,
   Search as SearchIcon,
+  Twitter as TwitterIcon,
 } from '@mui/icons-material';
+
+interface Project {
+  id: string;
+  name: string;
+  poapEventId: string;
+}
 
 interface Delivery {
   id: string;
@@ -46,12 +54,15 @@ interface Delivery {
   deliveredAt: string;
   claimed: boolean;
   claimedAt: string | null;
+  project: Project;
 }
 
 export default function DeliveriesPage() {
   const [loading, setLoading] = useState(true);
   const [deliveries, setDeliveries] = useState<Delivery[]>([]);
   const [filteredDeliveries, setFilteredDeliveries] = useState<Delivery[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [filter, setFilter] = useState<'all' | 'claimed' | 'unclaimed'>('all');
   const [search, setSearch] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -62,7 +73,7 @@ export default function DeliveriesPage() {
 
   useEffect(() => {
     applyFilters();
-  }, [deliveries, filter, search]);
+  }, [deliveries, filter, search, selectedProject]);
 
   const fetchDeliveries = async () => {
     setLoading(true);
@@ -77,6 +88,14 @@ export default function DeliveriesPage() {
       }
 
       setDeliveries(data.deliveries);
+
+      // Extract unique projects
+      const uniqueProjects = Array.from(
+        new Map(
+          data.deliveries.map((d: Delivery) => [d.project.id, d.project])
+        ).values()
+      );
+      setProjects(uniqueProjects);
     } catch (error) {
       console.error('Error fetching deliveries:', error);
       setError(error instanceof Error ? error.message : 'Failed to load deliveries');
@@ -87,6 +106,11 @@ export default function DeliveriesPage() {
 
   const applyFilters = () => {
     let filtered = [...deliveries];
+
+    // Apply project filter
+    if (selectedProject) {
+      filtered = filtered.filter((d) => d.project.id === selectedProject.id);
+    }
 
     // Apply status filter
     if (filter === 'claimed') {
@@ -102,7 +126,8 @@ export default function DeliveriesPage() {
         (d) =>
           d.username.toLowerCase().includes(searchLower) ||
           d.tweetId.includes(searchLower) ||
-          d.qrHash.toLowerCase().includes(searchLower)
+          d.qrHash.toLowerCase().includes(searchLower) ||
+          d.project.name.toLowerCase().includes(searchLower)
       );
     }
 
@@ -115,7 +140,7 @@ export default function DeliveriesPage() {
 
   if (loading) {
     return (
-      <Container maxWidth="lg" sx={{ py: 4 }}>
+      <Container maxWidth="xl" sx={{ py: 4 }}>
         <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
           <CircularProgress />
         </Box>
@@ -124,7 +149,7 @@ export default function DeliveriesPage() {
   }
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
+    <Container maxWidth="xl" sx={{ py: 4 }}>
       <Stack spacing={3}>
         {/* Header */}
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -133,7 +158,7 @@ export default function DeliveriesPage() {
               Drops
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              Monitor all POAP deliveries
+              Monitor all POAP deliveries across projects
             </Typography>
           </Box>
           <Button
@@ -164,10 +189,39 @@ export default function DeliveriesPage() {
         {/* Filters Card */}
         <Card sx={{ p: 3 }}>
           <Stack spacing={3}>
+            {/* Project Filter */}
+            <Autocomplete
+              options={projects}
+              getOptionLabel={(option) => option.name}
+              value={selectedProject}
+              onChange={(_, newValue) => setSelectedProject(newValue)}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Filter by Project / POAP"
+                  placeholder="Select a project to filter..."
+                  InputLabelProps={{ shrink: true }}
+                />
+              )}
+              renderOption={(props, option) => (
+                <li {...props} key={option.id}>
+                  <Box>
+                    <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
+                      {option.name}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      Event ID: {option.poapEventId}
+                    </Typography>
+                  </Box>
+                </li>
+              )}
+              isOptionEqualToValue={(option, value) => option.id === value.id}
+            />
+
             {/* Search */}
             <TextField
               fullWidth
-              placeholder="Search by user, tweet ID or QR hash..."
+              placeholder="Search by user, tweet ID, QR hash, or project name..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               InputProps={{
@@ -189,13 +243,13 @@ export default function DeliveriesPage() {
                 size="small"
               >
                 <ToggleButton value="all">
-                  All ({deliveries.length})
+                  All ({deliveries.filter(d => !selectedProject || d.project.id === selectedProject.id).length})
                 </ToggleButton>
                 <ToggleButton value="claimed">
-                  Claimed ({deliveries.filter((d) => d.claimed).length})
+                  Claimed ({deliveries.filter(d => d.claimed && (!selectedProject || d.project.id === selectedProject.id)).length})
                 </ToggleButton>
                 <ToggleButton value="unclaimed">
-                  Pending ({deliveries.filter((d) => !d.claimed).length})
+                  Pending ({deliveries.filter(d => !d.claimed && (!selectedProject || d.project.id === selectedProject.id)).length})
                 </ToggleButton>
               </ToggleButtonGroup>
             </Box>
@@ -207,19 +261,22 @@ export default function DeliveriesPage() {
           <Table>
             <TableHead>
               <TableRow sx={{ bgcolor: 'action.hover' }}>
+                <TableCell sx={{ fontWeight: 'bold' }}>POAP / Project</TableCell>
                 <TableCell sx={{ fontWeight: 'bold' }}>User</TableCell>
                 <TableCell sx={{ fontWeight: 'bold' }}>Tweet</TableCell>
                 <TableCell sx={{ fontWeight: 'bold' }}>QR Hash</TableCell>
-                <TableCell sx={{ fontWeight: 'bold' }}>Delivered</TableCell>
+                <TableCell sx={{ fontWeight: 'bold' }}>Delivered At</TableCell>
                 <TableCell sx={{ fontWeight: 'bold' }}>Status</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {filteredDeliveries.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} align="center" sx={{ py: 8 }}>
+                  <TableCell colSpan={6} align="center" sx={{ py: 8 }}>
                     <Typography variant="body2" color="text.secondary">
-                      No deliveries found
+                      {selectedProject
+                        ? `No deliveries found for "${selectedProject.name}"`
+                        : 'No deliveries found'}
                     </Typography>
                   </TableCell>
                 </TableRow>
@@ -233,9 +290,31 @@ export default function DeliveriesPage() {
                     }}
                   >
                     <TableCell>
-                      <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
+                      <Box>
+                        <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
+                          {delivery.project.name}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          Event: {delivery.project.poapEventId}
+                        </Typography>
+                      </Box>
+                    </TableCell>
+                    <TableCell>
+                      <MuiLink
+                        href={`https://twitter.com/${delivery.username}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        underline="hover"
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 0.5,
+                          fontWeight: 'medium',
+                        }}
+                      >
+                        <TwitterIcon fontSize="small" />
                         @{delivery.username}
-                      </Typography>
+                      </MuiLink>
                     </TableCell>
                     <TableCell>
                       <MuiLink
@@ -260,16 +339,23 @@ export default function DeliveriesPage() {
                           fontFamily: 'monospace',
                         }}
                       >
-                        {delivery.qrHash.substring(0, 8)}...
+                        {delivery.qrHash.substring(0, 10)}...
                       </Box>
                     </TableCell>
                     <TableCell>
                       <Box>
                         <Typography variant="body2">
-                          {new Date(delivery.deliveredAt).toLocaleDateString('es-ES')}
+                          {new Date(delivery.deliveredAt).toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric',
+                          })}
                         </Typography>
                         <Typography variant="caption" color="text.secondary">
-                          {new Date(delivery.deliveredAt).toLocaleTimeString('es-ES')}
+                          {new Date(delivery.deliveredAt).toLocaleTimeString('en-US', {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
                         </Typography>
                       </Box>
                     </TableCell>
@@ -303,15 +389,15 @@ export default function DeliveriesPage() {
             <Stack direction="row" spacing={4} justifyContent="center">
               <Box sx={{ textAlign: 'center' }}>
                 <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-                  {deliveries.length}
+                  {filteredDeliveries.length}
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
-                  Total Deliveries
+                  {selectedProject ? 'Filtered Deliveries' : 'Total Deliveries'}
                 </Typography>
               </Box>
               <Box sx={{ textAlign: 'center' }}>
                 <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'success.main' }}>
-                  {deliveries.filter((d) => d.claimed).length}
+                  {filteredDeliveries.filter((d) => d.claimed).length}
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
                   Claimed
@@ -319,7 +405,7 @@ export default function DeliveriesPage() {
               </Box>
               <Box sx={{ textAlign: 'center' }}>
                 <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'warning.main' }}>
-                  {deliveries.filter((d) => !d.claimed).length}
+                  {filteredDeliveries.filter((d) => !d.claimed).length}
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
                   Pending
@@ -327,8 +413,8 @@ export default function DeliveriesPage() {
               </Box>
               <Box sx={{ textAlign: 'center' }}>
                 <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'info.main' }}>
-                  {deliveries.length > 0
-                    ? Math.round((deliveries.filter((d) => d.claimed).length / deliveries.length) * 100)
+                  {filteredDeliveries.length > 0
+                    ? Math.round((filteredDeliveries.filter((d) => d.claimed).length / filteredDeliveries.length) * 100)
                     : 0}%
                 </Typography>
                 <Typography variant="caption" color="text.secondary">

@@ -10,13 +10,20 @@ export const dynamic = 'force-dynamic';
 
 /**
  * GET /api/admin/deliveries
- * Returns all deliveries with user information
+ * Returns all deliveries with user information and project details
  */
 export async function GET() {
   try {
     const deliveries = await prisma.delivery.findMany({
       include: {
         twitterUser: true,
+        project: {
+          select: {
+            id: true,
+            name: true,
+            poapEventId: true,
+          },
+        },
       },
       orderBy: {
         deliveredAt: 'desc',
@@ -33,6 +40,11 @@ export async function GET() {
       deliveredAt: delivery.deliveredAt.toISOString(),
       claimed: delivery.claimed,
       claimedAt: delivery.claimedAt?.toISOString() || null,
+      project: {
+        id: delivery.project.id,
+        name: delivery.project.name,
+        poapEventId: delivery.project.poapEventId,
+      },
     }));
 
     return NextResponse.json({
