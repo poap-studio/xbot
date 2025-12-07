@@ -271,6 +271,21 @@ npm run prisma:generate
 
 ### Recent Changes
 
+#### Optional Validation Requirements (2025-12-07)
+Implemented configurable validation requirements for POAP delivery:
+- **Feature**: "Require Unique Code" checkbox in General settings (enabled by default)
+- **Feature**: "Require Image" checkbox in General settings (enabled by default)
+- **Logic**: If "Require Unique Code" is disabled → POAPs delivered to any tweet with bot mention + hashtag (no code validation)
+- **Logic**: If "Require Image" is disabled → POAPs delivered without image requirement
+- **Always Required**: Bot mention + project hashtag
+- **Configuration**: Both settings managed in General tab with auto-save functionality
+- **Backend**: Enhanced webhook processor to handle dynamic validation based on project settings
+- **Backend**: Project matching now supports both code-based and hashtag-based identification
+- **Files**:
+  - `prisma/schema.prisma` (added requireUniqueCode and requireImage fields)
+  - `app/admin/projects/[id]/page.tsx` (added UI controls in General tab)
+  - `lib/twitter/webhook-processor.ts` (dynamic validation logic)
+
 #### Hashtag Validation for Tweet Processing (2025-12-07)
 Implemented hashtag requirement for tweet processing with conditional response logic:
 - **Feature**: Tweets must now contain the project's configured hashtag to be processed

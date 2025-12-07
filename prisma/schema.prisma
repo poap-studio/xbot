@@ -15,6 +15,8 @@ model Project {
 
   // Multiple claims configuration
   allowMultipleClaims Boolean  @default(false)
+  requireUniqueCode   Boolean  @default(true)  // If false, POAP delivered without code validation
+  requireImage        Boolean  @default(true)  // If false, POAP delivered without image requirement
 
   // Reply messages
   botReplyEligible    String   @default("¡Felicidades! Has compartido el código correcto. Reclama tu POAP aquí: {{claimUrl}}")

@@ -86,6 +86,8 @@ export async function processWebhookTweetEvent(webhookEvent: any): Promise<{
             name: true,
             allowMultipleClaims: true,
             twitterHashtag: true,
+            requireUniqueCode: true,
+            requireImage: true,
           },
         },
       },
@@ -112,20 +114,17 @@ export async function processWebhookTweetEvent(webhookEvent: any): Promise<{
           continue;
         }
 
-        // Extract codes from tweet text
+        // Extract codes from tweet text (if code validation is required)
         const codes = extractCodesFromText(tweetEvent.text);
         console.log(`[Webhook] Found ${codes.length} potential codes:`, codes);
 
-        if (codes.length === 0) {
-          console.log(`[Webhook] No valid codes found in tweet`);
-          results.skipped++;
-          continue;
-        }
-
-        // Find which code belongs to one of this bot's projects
+        // Try to find which project this tweet is for
+        // First, try to match by code (if any code is found)
         let validCode: string | undefined;
         let projectId: string | undefined;
+        let project: typeof botAccount.projects[0] | undefined;
 
+        // Try to find project by code first
         for (const code of codes) {
           const codeRecord = await prisma.validCode.findFirst({
             where: { code },
@@ -134,11 +133,12 @@ export async function processWebhookTweetEvent(webhookEvent: any): Promise<{
 
           if (codeRecord) {
             // Check if this code belongs to one of the bot's projects
-            const belongsToBot = botAccount.projects.some(p => p.id === codeRecord.projectId);
+            const foundProject = botAccount.projects.find(p => p.id === codeRecord.projectId);
 
-            if (belongsToBot) {
+            if (foundProject) {
               validCode = code;
               projectId = codeRecord.projectId;
+              project = foundProject;
               console.log(`[Webhook] Found valid code ${code} for project ${projectId}`);
               break;
             } else {
@@ -147,21 +147,33 @@ export async function processWebhookTweetEvent(webhookEvent: any): Promise<{
           }
         }
 
-        if (!validCode || !projectId) {
-          console.log(`[Webhook] No valid code found for this bot's projects`);
-          results.skipped++;
-          continue;
-        }
-
-        // Get the project details to check hashtag requirement
-        const project = botAccount.projects.find(p => p.id === projectId);
+        // If no code found, check if any project allows tweets without code
         if (!project) {
-          console.log(`[Webhook] Project ${projectId} not found in bot's active projects`);
+          // Try to match by hashtag for projects that don't require unique code
+          const projectsWithoutCodeReq = botAccount.projects.filter(p => !p.requireUniqueCode);
+
+          for (const proj of projectsWithoutCodeReq) {
+            // Check if tweet has this project's hashtag
+            const tweetHashtags = tweetEvent.entities?.hashtags?.map((h: { text: string }) => h.text.toLowerCase()) || [];
+            const requiredHashtag = proj.twitterHashtag.replace('#', '').toLowerCase();
+
+            if (tweetHashtags.includes(requiredHashtag)) {
+              project = proj;
+              projectId = proj.id;
+              console.log(`[Webhook] Matched project ${projectId} by hashtag #${requiredHashtag} (no code required)`);
+              break;
+            }
+          }
+        }
+
+        // If still no project found, skip this tweet
+        if (!project || !projectId) {
+          console.log(`[Webhook] No matching project found for this tweet`);
           results.skipped++;
           continue;
         }
 
-        // Extract hashtags from tweet
+        // Validate hashtag (always required)
         const tweetHashtags = tweetEvent.entities?.hashtags?.map((h: { text: string }) => h.text.toLowerCase()) || [];
         const requiredHashtag = project.twitterHashtag.replace('#', '').toLowerCase();
         const hasHashtag = tweetHashtags.includes(requiredHashtag);
@@ -177,6 +189,35 @@ export async function processWebhookTweetEvent(webhookEvent: any): Promise<{
           continue;
         }
 
+        // Validate unique code (if required)
+        if (project.requireUniqueCode && !validCode) {
+          console.log(`[Webhook] Project requires unique code but none found, replying with error`);
+
+          const { processNotEligibleTweet } = await import('@/lib/bot/service');
+          const processedTweet = {
+            id: tweetEvent.id_str,
+            text: tweetEvent.text,
+            authorId: tweetEvent.user.id_str,
+            authorUsername: tweetEvent.user.screen_name,
+            hasImage: false,
+            hasCode: false,
+            hiddenCode: undefined,
+            isEligible: false,
+            createdAt: new Date(tweetEvent.created_at),
+          };
+
+          await saveTweet(processedTweet);
+          const replied = await processNotEligibleTweet(processedTweet, projectId, botAccount.id);
+
+          if (replied) {
+            console.log(`[Webhook] ✅ Sent error reply (missing code)`);
+            results.processed++;
+          } else {
+            results.skipped++;
+          }
+          continue;
+        }
+
         // Check if tweet has media (image)
         const hasImage = Boolean(
           tweetEvent.entities?.media &&
@@ -185,6 +226,39 @@ export async function processWebhookTweetEvent(webhookEvent: any): Promise<{
         );
 
         console.log(`[Webhook] Tweet has image: ${hasImage}`);
+        console.log(`[Webhook] Project requires image: ${project.requireImage}`);
+
+        // Validate image (if required)
+        if (project.requireImage && !hasImage) {
+          console.log(`[Webhook] Project requires image but tweet doesn't have one, replying with error`);
+
+          const processedTweet = {
+            id: tweetEvent.id_str,
+            text: tweetEvent.text,
+            authorId: tweetEvent.user.id_str,
+            authorUsername: tweetEvent.user.screen_name,
+            hasImage,
+            hasCode: Boolean(validCode),
+            hiddenCode: validCode,
+            isEligible: false,
+            createdAt: new Date(tweetEvent.created_at),
+          };
+
+          await saveTweet(processedTweet);
+          const { processNotEligibleTweet } = await import('@/lib/bot/service');
+          const replied = await processNotEligibleTweet(processedTweet, projectId, botAccount.id);
+
+          if (replied) {
+            console.log(`[Webhook] ✅ Sent error reply (missing image)`);
+            results.processed++;
+          } else {
+            results.skipped++;
+          }
+          continue;
+        }
+
+        // All validations passed - tweet is eligible for POAP delivery
+        console.log(`[Webhook] Tweet meets all requirements, processing...`);
 
         // Parse created_at to Date
         const createdAt = new Date(tweetEvent.created_at);
@@ -196,45 +270,26 @@ export async function processWebhookTweetEvent(webhookEvent: any): Promise<{
           authorId: tweetEvent.user.id_str,
           authorUsername: tweetEvent.user.screen_name,
           hasImage,
-          hasCode: true,
+          hasCode: Boolean(validCode),
           hiddenCode: validCode,
-          isEligible: hasImage && hasHashtag, // Eligible if has code, image, and hashtag
+          isEligible: true, // All validations passed
           createdAt,
         };
 
-        console.log(`[Webhook] Tweet eligibility: ${processedTweet.isEligible ? 'ELIGIBLE' : 'NOT ELIGIBLE'}`);
+        console.log(`[Webhook] Tweet is ELIGIBLE for POAP delivery`);
 
         // Save tweet to database
         await saveTweet(processedTweet);
 
-        // Process the tweet
-        if (processedTweet.isEligible) {
-          // Tweet has hashtag, code, and image - deliver POAP
-          console.log(`[Webhook] Processing eligible tweet...`);
-          const result = await processSingleTweet(processedTweet);
+        // Process and deliver POAP
+        const result = await processSingleTweet(processedTweet);
 
-          if (result.success) {
-            console.log(`[Webhook] ✅ Successfully delivered POAP to @${result.username}`);
-            results.processed++;
-          } else {
-            console.error(`[Webhook] ❌ Failed to process tweet: ${result.error}`);
-            results.errors.push(`Tweet ${tweetEvent.id_str}: ${result.error}`);
-          }
+        if (result.success) {
+          console.log(`[Webhook] ✅ Successfully delivered POAP to @${result.username}`);
+          results.processed++;
         } else {
-          // Tweet has hashtag and code but missing image - reply with error message
-          console.log(`[Webhook] Tweet not eligible (missing image), replying with error message`);
-
-          // Import and use processNotEligibleTweet to send error reply
-          const { processNotEligibleTweet } = await import('@/lib/bot/service');
-          const replied = await processNotEligibleTweet(processedTweet, projectId, botAccount.id);
-
-          if (replied) {
-            console.log(`[Webhook] ✅ Sent error reply to @${processedTweet.authorUsername}`);
-            results.processed++;
-          } else {
-            console.log(`[Webhook] ⚠️ Could not send error reply (might already be replied)`);
-            results.skipped++;
-          }
+          console.error(`[Webhook] ❌ Failed to process tweet: ${result.error}`);
+          results.errors.push(`Tweet ${tweetEvent.id_str}: ${result.error}`);
         }
 
       } catch (error) {

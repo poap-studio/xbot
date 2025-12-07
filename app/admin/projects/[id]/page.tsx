@@ -78,6 +78,8 @@ interface Project {
   twitterHashtag: string;
   isActive: boolean;
   allowMultipleClaims: boolean;
+  requireUniqueCode: boolean;
+  requireImage: boolean;
   botReplyEligible: string;
   botReplyNotEligible: string;
   botReplyAlreadyClaimed: string;
@@ -111,6 +113,8 @@ function GeneralTab({
   const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     isActive: project.isActive,
+    requireUniqueCode: project.requireUniqueCode,
+    requireImage: project.requireImage,
   });
 
   return (
@@ -240,50 +244,146 @@ function GeneralTab({
         )}
 
         <Stack spacing={3}>
-          <FormControlLabel
-            control={
-              <Switch
-                checked={formData.isActive}
-                onChange={async (e) => {
-                  const newValue = e.target.checked;
-                  setFormData({ ...formData, isActive: newValue });
+          <Box>
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={formData.isActive}
+                  onChange={async (e) => {
+                    const newValue = e.target.checked;
+                    setFormData({ ...formData, isActive: newValue });
 
-                  // Auto-save on change
-                  setSaving(true);
-                  setError(null);
+                    // Auto-save on change
+                    setSaving(true);
+                    setError(null);
 
-                  try {
-                    const response = await fetch(`/api/admin/projects/${project.id}`, {
-                      method: 'PATCH',
-                      headers: {
-                        'Content-Type': 'application/json',
-                      },
-                      body: JSON.stringify({ isActive: newValue }),
-                    });
+                    try {
+                      const response = await fetch(`/api/admin/projects/${project.id}`, {
+                        method: 'PATCH',
+                        headers: {
+                          'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ isActive: newValue }),
+                      });
 
-                    const data = await response.json();
+                      const data = await response.json();
 
-                    if (!response.ok) {
-                      throw new Error(data.error || 'Failed to update project');
+                      if (!response.ok) {
+                        throw new Error(data.error || 'Failed to update project');
+                      }
+
+                      onUpdate(data.project);
+                    } catch (error) {
+                      console.error('Error updating project:', error);
+                      setError(error instanceof Error ? error.message : 'Failed to update project');
+                      // Revert the change on error
+                      setFormData({ ...formData, isActive: !newValue });
+                    } finally {
+                      setSaving(false);
                     }
+                  }}
+                />
+              }
+              label="Active"
+            />
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', ml: 4 }}>
+              When inactive, the bot will not process tweets or deliver POAPs for this project.
+            </Typography>
+          </Box>
 
-                    onUpdate(data.project);
-                  } catch (error) {
-                    console.error('Error updating project:', error);
-                    setError(error instanceof Error ? error.message : 'Failed to update project');
-                    // Revert the change on error
-                    setFormData({ ...formData, isActive: !newValue });
-                  } finally {
-                    setSaving(false);
-                  }
-                }}
-              />
-            }
-            label="Active"
-          />
-          <Typography variant="caption" color="text.secondary">
-            When inactive, the bot will not process tweets or deliver POAPs for this project.
-          </Typography>
+          <Box>
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={formData.requireUniqueCode}
+                  onChange={async (e) => {
+                    const newValue = e.target.checked;
+                    setFormData({ ...formData, requireUniqueCode: newValue });
+
+                    // Auto-save on change
+                    setSaving(true);
+                    setError(null);
+
+                    try {
+                      const response = await fetch(`/api/admin/projects/${project.id}`, {
+                        method: 'PATCH',
+                        headers: {
+                          'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ requireUniqueCode: newValue }),
+                      });
+
+                      const data = await response.json();
+
+                      if (!response.ok) {
+                        throw new Error(data.error || 'Failed to update project');
+                      }
+
+                      onUpdate(data.project);
+                    } catch (error) {
+                      console.error('Error updating project:', error);
+                      setError(error instanceof Error ? error.message : 'Failed to update project');
+                      // Revert the change on error
+                      setFormData({ ...formData, requireUniqueCode: !newValue });
+                    } finally {
+                      setSaving(false);
+                    }
+                  }}
+                />
+              }
+              label="Require Unique Code"
+            />
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', ml: 4 }}>
+              When disabled, POAPs will be delivered to any tweet with the bot mention and hashtag (no code validation).
+            </Typography>
+          </Box>
+
+          <Box>
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={formData.requireImage}
+                  onChange={async (e) => {
+                    const newValue = e.target.checked;
+                    setFormData({ ...formData, requireImage: newValue });
+
+                    // Auto-save on change
+                    setSaving(true);
+                    setError(null);
+
+                    try {
+                      const response = await fetch(`/api/admin/projects/${project.id}`, {
+                        method: 'PATCH',
+                        headers: {
+                          'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ requireImage: newValue }),
+                      });
+
+                      const data = await response.json();
+
+                      if (!response.ok) {
+                        throw new Error(data.error || 'Failed to update project');
+                      }
+
+                      onUpdate(data.project);
+                    } catch (error) {
+                      console.error('Error updating project:', error);
+                      setError(error instanceof Error ? error.message : 'Failed to update project');
+                      // Revert the change on error
+                      setFormData({ ...formData, requireImage: !newValue });
+                    } finally {
+                      setSaving(false);
+                    }
+                  }}
+                />
+              }
+              label="Require Image"
+            />
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', ml: 4 }}>
+              When disabled, POAPs will be delivered even if the tweet doesn't contain an image.
+            </Typography>
+          </Box>
         </Stack>
       </Box>
     </Box>
