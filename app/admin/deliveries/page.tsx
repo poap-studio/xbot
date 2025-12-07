@@ -266,7 +266,7 @@ export default function DeliveriesPage() {
                 <TableCell sx={{ fontWeight: 'bold' }}>Tweet</TableCell>
                 <TableCell sx={{ fontWeight: 'bold' }}>QR Hash</TableCell>
                 <TableCell sx={{ fontWeight: 'bold' }}>Delivered At</TableCell>
-                <TableCell sx={{ fontWeight: 'bold' }}>Status</TableCell>
+                <TableCell sx={{ fontWeight: 'bold' }}>Minted</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>

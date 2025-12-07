@@ -117,6 +117,15 @@ function GeneralTab({
     requireImage: project.requireImage,
   });
 
+  // Sync formData with project when it changes
+  useEffect(() => {
+    setFormData({
+      isActive: project.isActive,
+      requireUniqueCode: project.requireUniqueCode,
+      requireImage: project.requireImage,
+    });
+  }, [project.isActive, project.requireUniqueCode, project.requireImage]);
+
   return (
     <Box>
       {/* Dynamic QR Code Section */}
@@ -411,6 +420,22 @@ function BotConfigTab({ project, onUpdate }: { project: Project; onUpdate: (upda
     botReplyAlreadyClaimed: project.botReplyAlreadyClaimed,
     qrPageTweetTemplate: project.qrPageTweetTemplate,
   });
+
+  // Sync selectedBotId with project when it changes
+  useEffect(() => {
+    setSelectedBotId(project.botAccountId || '');
+  }, [project.botAccountId]);
+
+  // Sync formData with project when it changes
+  useEffect(() => {
+    setFormData({
+      twitterHashtag: project.twitterHashtag,
+      botReplyEligible: project.botReplyEligible,
+      botReplyNotEligible: project.botReplyNotEligible,
+      botReplyAlreadyClaimed: project.botReplyAlreadyClaimed,
+      qrPageTweetTemplate: project.qrPageTweetTemplate,
+    });
+  }, [project.twitterHashtag, project.botReplyEligible, project.botReplyNotEligible, project.botReplyAlreadyClaimed, project.qrPageTweetTemplate]);
 
   // Load bot accounts on mount
   useEffect(() => {
@@ -751,6 +776,15 @@ function MintLinksTab({ project, onUpdate }: { project: Project; onUpdate: (upda
     poapEditCode: project.poapEditCode,
     allowMultipleClaims: project.allowMultipleClaims,
   });
+
+  // Sync formData with project when it changes
+  useEffect(() => {
+    setFormData({
+      poapEventId: project.poapEventId,
+      poapEditCode: project.poapEditCode,
+      allowMultipleClaims: project.allowMultipleClaims,
+    });
+  }, [project.poapEventId, project.poapEditCode, project.allowMultipleClaims]);
 
   useEffect(() => {
     fetchStats();

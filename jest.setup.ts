@@ -10,6 +10,12 @@ import { resolve } from 'path';
 // Load environment variables from .env.local for tests
 config({ path: resolve(__dirname, '.env.local') });
 
+// Set default environment variables for tests if not already set
+if (!process.env.NEXTAUTH_URL && !process.env.NEXT_PUBLIC_APP_URL) {
+  process.env.NEXTAUTH_URL = 'http://localhost:3000';
+  process.env.NEXT_PUBLIC_APP_URL = 'http://localhost:3000';
+}
+
 // Mock window.location (only in jsdom environment)
 if (typeof window !== 'undefined') {
   delete (window as any).location;

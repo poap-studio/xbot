@@ -278,7 +278,7 @@ export default function AdminDashboard() {
                           {project.stats.qrCodes}
                         </Typography>
                         <Typography variant="caption" color="text.secondary">
-                          QR Codes
+                          Mint Links
                         </Typography>
                       </Box>
                       <Box sx={{ textAlign: 'center', p: 1, bgcolor: 'background.default', borderRadius: 1 }}>
@@ -294,7 +294,7 @@ export default function AdminDashboard() {
                           {project.stats.validCodes}
                         </Typography>
                         <Typography variant="caption" color="text.secondary">
-                          Codes
+                          QR views
                         </Typography>
                       </Box>
                       <Box sx={{ textAlign: 'center', p: 1, bgcolor: 'background.default', borderRadius: 1 }}>
