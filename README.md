@@ -271,6 +271,37 @@ npm run prisma:generate
 
 ### Recent Changes
 
+#### Project-Specific Bot Reply Templates (2025-12-07)
+Fixed critical bug where bot reply messages used templates from wrong project:
+- **Bug Fix**: All reply template functions now accept optional `projectId` parameter
+- **Bug Fix**: Updated `generateReplyText()` to use specific project's success template
+- **Bug Fix**: Updated `generateAlreadyClaimedText()` to use specific project's "already claimed" template
+- **Bug Fix**: Updated `generateNotEligibleText()` to prioritize specific project template
+- **Backend**: Modified `replyWithClaimUrl()`, `replyWithAlreadyClaimed()`, and `replyWithNotEligible()` to pass projectId
+- **Backend**: Updated `processSingleTweet()` to pass projectId when calling reply functions
+- **Impact**: Multi-project setups now correctly use each project's configured message templates instead of first active project
+- **Files**:
+  - `lib/twitter/reply.ts` (updated all reply template generation functions)
+  - `lib/bot/service.ts` (pass projectId to reply functions)
+
+#### Theme Color Update (2025-12-07)
+Changed application color scheme from pink/purple to blue:
+- **Design**: Primary color changed from `#eac9f8` (soft pink/purple) to `#46b2f8` (soft blue)
+- **Design**: Updated light variant to `#6dc5ff` and dark variant to `#2a9fe6`
+- **Design**: Updated button hover box-shadow to use blue rgba values
+- **Files**:
+  - `lib/theme.ts` (palette colors and component styles)
+
+#### Webhook Debugging Tools (2025-12-07)
+Added diagnostic scripts for troubleshooting webhook and tweet processing issues:
+- **Tool**: `scripts/subscribe-bot-to-webhook.ts` - Subscribe bot account to webhook using OAuth 1.0a
+- **Tool**: `scripts/check-webhook.ts` - Comprehensive webhook and bot configuration diagnostic
+- **Tool**: `scripts/check-webhook-detail.ts` - View detailed webhook event information
+- **Tool**: `scripts/analyze-tweet-event.ts` - Analyze specific tweet processing including code validation
+- **Tool**: `scripts/monitor-webhook-events.ts` - Real-time webhook event monitoring (polls every 2s)
+- **Purpose**: These scripts help debug webhook subscription, tweet processing, and POAP delivery issues
+- **Files**: All scripts located in `/scripts/` directory
+
 #### Improved Project Creation UX (2025-12-07)
 Streamlined project creation workflow in admin dashboard:
 - **UX**: "New Project" button now hidden when no projects exist (reduces confusion)
