@@ -39,7 +39,6 @@ export default function MintLinksPage() {
   const [stats, setStats] = useState<MintLinkStats | null>(null);
   const [links, setLinks] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
 
   useEffect(() => {
     fetchStats();
@@ -74,7 +73,6 @@ export default function MintLinksPage() {
 
     setImporting(true);
     setError(null);
-    setSuccess(null);
 
     try {
       const linkArray = links
@@ -94,12 +92,8 @@ export default function MintLinksPage() {
         throw new Error(data.error || 'Failed to import links');
       }
 
-      setSuccess(
-        `${data.imported} links imported successfully (${data.duplicates} duplicates skipped)`
-      );
       setLinks('');
       fetchStats();
-      setTimeout(() => setSuccess(null), 5000);
     } catch (error) {
       console.error('Error importing links:', error);
       setError(error instanceof Error ? error.message : 'Failed to import links');
@@ -135,12 +129,6 @@ export default function MintLinksPage() {
         {error && (
           <Alert severity="error" onClose={() => setError(null)}>
             {error}
-          </Alert>
-        )}
-
-        {success && (
-          <Alert severity="success" onClose={() => setSuccess(null)}>
-            {success}
           </Alert>
         )}
 

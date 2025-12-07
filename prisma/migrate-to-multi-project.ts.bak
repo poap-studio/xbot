@@ -1,0 +1,184 @@
+/**
+ * Migration script: Convert single-project to multi-project schema
+ *
+ * This script migrates existing data from the old single-project schema
+ * to the new multi-project schema while preserving all data.
+ *
+ * Steps:
+ * 1. Fetch existing Config data
+ * 2. Create new Project from Config
+ * 3. Update all ValidCode, QRCode, Delivery, and Tweet records to reference the new Project
+ * 4. Clean up old Config fields that moved to Project
+ */
+
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
+
+async function main() {
+  console.log('🚀 Starting migration to multi-project schema...\n');
+
+  try {
+    // Step 1: Get existing config
+    console.log('📋 Step 1: Fetching existing configuration...');
+    const existingConfig = await prisma.config.findFirst();
+
+    if (!existingConfig) {
+      console.log('⚠️  No existing config found. Creating default project...');
+    }
+
+    const config = existingConfig || {
+      poapEventId: '',
+      poapEditCode: '',
+      allowMultipleClaims: false,
+      botReplyEligible: '¡Felicidades! Has compartido el código correcto. Reclama tu POAP aquí: {{claimUrl}}',
+      botReplyNotEligible: 'Gracias por tu interés. Asegúrate de incluir un código válido y una imagen en tu tweet.',
+      botReplyAlreadyClaimed: 'You have already claimed a POAP for this event. Only one claim per user is allowed.',
+      twitterHashtag: '#POAP',
+      qrPageTweetTemplate: 'I visited the POAP Studio booth at ETH Global, and here\'s the proof! The secret word is {{code}} {{hashtag}}',
+      botAccountId: null,
+    };
+
+    // Step 2: Fetch POAP event name
+    console.log('🏷️  Step 2: Fetching POAP event name...');
+    let projectName = 'Default Project';
+
+    if (config.poapEventId) {
+      try {
+        const response = await fetch(`https://api.poap.tech/events/id/${config.poapEventId}`, {
+          headers: {
+            'X-API-Key': process.env.POAP_API_KEY || '',
+          },
+        });
+
+        if (response.ok) {
+          const eventData = await response.json();
+          projectName = eventData.name || projectName;
+          console.log(`   Found event name: ${projectName}`);
+        }
+      } catch (error) {
+        console.log(`   ⚠️  Could not fetch event name, using default`);
+      }
+    }
+
+    // Step 3: Create new Project
+    console.log('\n📦 Step 3: Creating new Project...');
+
+    // Check if project already exists
+    const existingProject = await (prisma as any).project?.findFirst();
+
+    if (existingProject) {
+      console.log(`   ✅ Project already exists: ${existingProject.name}`);
+      console.log(`   Skipping project creation.`);
+      console.log('\n✨ Migration already completed!');
+      return;
+    }
+
+    const project = await (prisma as any).project.create({
+      data: {
+        name: projectName,
+        poapEventId: config.poapEventId || '',
+        poapEditCode: config.poapEditCode || '',
+        allowMultipleClaims: config.allowMultipleClaims || false,
+        botReplyEligible: config.botReplyEligible,
+        botReplyNotEligible: config.botReplyNotEligible,
+        botReplyAlreadyClaimed: config.botReplyAlreadyClaimed,
+        twitterHashtag: config.twitterHashtag,
+        qrPageTweetTemplate: config.qrPageTweetTemplate,
+        isActive: true,
+        botAccountId: config.botAccountId,
+      },
+    });
+
+    console.log(`   ✅ Created project: ${project.name} (${project.id})`);
+
+    // Step 4: Migrate ValidCodes
+    console.log('\n🔑 Step 4: Migrating ValidCodes...');
+    const validCodes = await prisma.validCode.findMany();
+    console.log(`   Found ${validCodes.length} valid codes`);
+
+    for (const code of validCodes) {
+      await (prisma as any).validCode.update({
+        where: { id: code.id },
+        data: { projectId: project.id },
+      });
+    }
+    console.log(`   ✅ Migrated ${validCodes.length} valid codes`);
+
+    // Step 5: Migrate QRCodes
+    console.log('\n📱 Step 5: Migrating QR Codes...');
+    const qrCodes = await prisma.qRCode.findMany();
+    console.log(`   Found ${qrCodes.length} QR codes`);
+
+    for (const qr of qrCodes) {
+      await (prisma as any).qRCode.update({
+        where: { id: qr.id },
+        data: { projectId: project.id },
+      });
+    }
+    console.log(`   ✅ Migrated ${qrCodes.length} QR codes`);
+
+    // Step 6: Migrate Deliveries
+    console.log('\n📦 Step 6: Migrating Deliveries...');
+    const deliveries = await prisma.delivery.findMany();
+    console.log(`   Found ${deliveries.length} deliveries`);
+
+    for (const delivery of deliveries) {
+      await (prisma as any).delivery.update({
+        where: { id: delivery.id },
+        data: { projectId: project.id },
+      });
+    }
+    console.log(`   ✅ Migrated ${deliveries.length} deliveries`);
+
+    // Step 7: Migrate Tweets
+    console.log('\n🐦 Step 7: Migrating Tweets...');
+    const tweets = await prisma.tweet.findMany();
+    console.log(`   Found ${tweets.length} tweets`);
+
+    for (const tweet of tweets) {
+      await (prisma as any).tweet.update({
+        where: { id: tweet.id },
+        data: { projectId: project.id },
+      });
+    }
+    console.log(`   ✅ Migrated ${tweets.length} tweets`);
+
+    // Step 8: Update Config (remove fields that moved to Project)
+    console.log('\n⚙️  Step 8: Updating global config...');
+    await prisma.config.updateMany({
+      data: {
+        poapEventId: '',
+        poapEditCode: '',
+        allowMultipleClaims: false,
+        botReplyEligible: '',
+        botReplyNotEligible: '',
+        botReplyAlreadyClaimed: '',
+        twitterHashtag: '',
+        qrPageTweetTemplate: '',
+        botAccountId: null,
+      },
+    });
+    console.log('   ✅ Config updated (project-specific fields cleared)');
+
+    console.log('\n✨ Migration completed successfully!');
+    console.log(`\n📊 Summary:`);
+    console.log(`   - Project created: ${project.name}`);
+    console.log(`   - Valid codes migrated: ${validCodes.length}`);
+    console.log(`   - QR codes migrated: ${qrCodes.length}`);
+    console.log(`   - Deliveries migrated: ${deliveries.length}`);
+    console.log(`   - Tweets migrated: ${tweets.length}`);
+
+  } catch (error) {
+    console.error('\n❌ Migration failed:', error);
+    throw error;
+  } finally {
+    await prisma.$disconnect();
+  }
+}
+
+main()
+  .catch((e) => {
+    console.error(e);
+    process.exit(1);
+  });

@@ -1,0 +1,47 @@
+/**
+ * Execute raw SQL migration using pg
+ */
+import 'dotenv/config';
+import { Client } from 'pg';
+import * as fs from 'fs';
+import * as path from 'path';
+
+async function main() {
+  console.log('🚀 Running SQL migration...\n');
+
+  const client = new Client({
+    connectionString: process.env.DATABASE_URL,
+    ssl: {
+      rejectUnauthorized: false,
+    },
+  });
+
+  try {
+    await client.connect();
+    console.log('✅ Connected to database\n');
+
+    // Read the migration SQL file
+    const migrationPath = path.join(__dirname, 'migrations', '20251206_multi_project', 'migration.sql');
+    const sql = fs.readFileSync(migrationPath, 'utf-8');
+
+    console.log('📄 Migration SQL loaded');
+    console.log('🔄 Executing migration...\n');
+
+    // Execute the entire migration as a transaction
+    await client.query(sql);
+
+    console.log('✅ Migration executed successfully!');
+
+  } catch (error) {
+    console.error('❌ Migration failed:', error);
+    throw error;
+  } finally {
+    await client.end();
+    console.log('\n📊 Database connection closed');
+  }
+}
+
+main().catch((e) => {
+  console.error(e);
+  process.exit(1);
+});

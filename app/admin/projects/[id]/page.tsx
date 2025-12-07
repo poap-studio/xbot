@@ -109,7 +109,6 @@ function GeneralTab({
 }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
   const [formData, setFormData] = useState({
     isActive: project.isActive,
   });
@@ -240,12 +239,6 @@ function GeneralTab({
           </Alert>
         )}
 
-        {success && (
-          <Alert severity="success" sx={{ mb: 3 }}>
-            Project updated successfully!
-          </Alert>
-        )}
-
         <Stack spacing={3}>
           <FormControlLabel
             control={
@@ -258,7 +251,6 @@ function GeneralTab({
                   // Auto-save on change
                   setSaving(true);
                   setError(null);
-                  setSuccess(false);
 
                   try {
                     const response = await fetch(`/api/admin/projects/${project.id}`, {
@@ -275,9 +267,7 @@ function GeneralTab({
                       throw new Error(data.error || 'Failed to update project');
                     }
 
-                    setSuccess(true);
                     onUpdate(data.project);
-                    setTimeout(() => setSuccess(false), 3000);
                   } catch (error) {
                     console.error('Error updating project:', error);
                     setError(error instanceof Error ? error.message : 'Failed to update project');
@@ -304,7 +294,6 @@ function GeneralTab({
 function BotConfigTab({ project, onUpdate }: { project: Project; onUpdate: (updatedProject: Partial<Project>) => void }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
   const [loadingBots, setLoadingBots] = useState(true);
   const [botAccounts, setBotAccounts] = useState<Array<{
     id: string;
@@ -353,7 +342,6 @@ function BotConfigTab({ project, onUpdate }: { project: Project; onUpdate: (upda
     // Auto-save bot selection
     setSaving(true);
     setError(null);
-    setSuccess(false);
 
     try {
       const response = await fetch(`/api/admin/projects/${project.id}`, {
@@ -370,9 +358,7 @@ function BotConfigTab({ project, onUpdate }: { project: Project; onUpdate: (upda
         throw new Error(data.error || 'Failed to update bot account');
       }
 
-      setSuccess(true);
       onUpdate(data.project);
-      setTimeout(() => setSuccess(false), 3000);
     } catch (error) {
       console.error('Error updating bot account:', error);
       setError(error instanceof Error ? error.message : 'Failed to update bot account');
@@ -408,7 +394,6 @@ function BotConfigTab({ project, onUpdate }: { project: Project; onUpdate: (upda
     e.preventDefault();
     setSaving(true);
     setError(null);
-    setSuccess(false);
 
     try {
       const response = await fetch(`/api/admin/projects/${project.id}`, {
@@ -425,9 +410,7 @@ function BotConfigTab({ project, onUpdate }: { project: Project; onUpdate: (upda
         throw new Error(data.error || 'Failed to update bot config');
       }
 
-      setSuccess(true);
       onUpdate(data.project);
-      setTimeout(() => setSuccess(false), 3000);
     } catch (error) {
       console.error('Error updating bot config:', error);
       setError(error instanceof Error ? error.message : 'Failed to update bot config');
@@ -448,12 +431,6 @@ function BotConfigTab({ project, onUpdate }: { project: Project; onUpdate: (upda
       {error && (
         <Alert severity="error" onClose={() => setError(null)} sx={{ mb: 3 }}>
           {error}
-        </Alert>
-      )}
-
-      {success && (
-        <Alert severity="success" sx={{ mb: 3 }}>
-          Bot configuration updated successfully!
         </Alert>
       )}
 
@@ -658,7 +635,6 @@ function MintLinksTab({ project, onUpdate }: { project: Project; onUpdate: (upda
   const [saving, setSaving] = useState(false);
   const [stats, setStats] = useState({ total: 0, available: 0, reserved: 0, claimed: 0 });
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     poapEventId: project.poapEventId,
     poapEditCode: project.poapEditCode,
@@ -679,7 +655,6 @@ function MintLinksTab({ project, onUpdate }: { project: Project; onUpdate: (upda
   const handleSave = async () => {
     setSaving(true);
     setError(null);
-    setSuccess(null);
 
     try {
       // First, update the POAP settings
@@ -713,19 +688,14 @@ function MintLinksTab({ project, onUpdate }: { project: Project; onUpdate: (upda
         const nameData = await nameResponse.json();
 
         if (nameResponse.ok && nameData.name) {
-          setSuccess(`POAP settings updated successfully! Project renamed to: "${nameData.name}"`);
           onUpdate({ ...data.project, name: nameData.name });
         } else {
-          setSuccess('POAP settings updated successfully!');
           onUpdate(data.project);
         }
       } catch (nameError) {
         console.warn('Failed to fetch POAP event name:', nameError);
-        setSuccess('POAP settings updated successfully!');
         onUpdate(data.project);
       }
-
-      setTimeout(() => setSuccess(null), 5000);
     } catch (error) {
       console.error('Error updating POAP settings:', error);
       setError(error instanceof Error ? error.message : 'Failed to update POAP settings');
@@ -758,7 +728,6 @@ function MintLinksTab({ project, onUpdate }: { project: Project; onUpdate: (upda
   const handleLoadFromPOAP = async () => {
     setLoadingQRs(true);
     setError(null);
-    setSuccess(null);
 
     try {
       const response = await fetch('/api/admin/qr-codes/load', {
@@ -779,9 +748,6 @@ function MintLinksTab({ project, onUpdate }: { project: Project; onUpdate: (upda
         throw new Error(data.error || 'Failed to load QR codes');
       }
 
-      setSuccess(
-        `Successfully loaded ${data.loaded} QR codes (${data.duplicates} duplicates skipped)`
-      );
       await fetchStats();
     } catch (error) {
       console.error('Error loading QR codes:', error);
@@ -811,12 +777,6 @@ function MintLinksTab({ project, onUpdate }: { project: Project; onUpdate: (upda
       {error && (
         <Alert severity="error" onClose={() => setError(null)} sx={{ mb: 3 }}>
           {error}
-        </Alert>
-      )}
-
-      {success && (
-        <Alert severity="success" onClose={() => setSuccess(null)} sx={{ mb: 3 }}>
-          {success}
         </Alert>
       )}
 
@@ -953,9 +913,7 @@ function MintLinksTab({ project, onUpdate }: { project: Project; onUpdate: (upda
                       throw new Error(data.error || 'Failed to update claim settings');
                     }
 
-                    setSuccess('Claim settings updated successfully!');
                     onUpdate(data.project);
-                    setTimeout(() => setSuccess(null), 3000);
                   } catch (error) {
                     console.error('Error updating claim settings:', error);
                     setError(error instanceof Error ? error.message : 'Failed to update claim settings');

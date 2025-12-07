@@ -45,7 +45,6 @@ export default function HiddenCodesPage() {
     available: 0,
   });
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
   const [codes, setCodes] = useState<string>('');
   const [showUploadDialog, setShowUploadDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -103,7 +102,6 @@ export default function HiddenCodesPage() {
 
     setUploading(true);
     setError(null);
-    setSuccess(null);
 
     try {
       const codeList = codes
@@ -125,9 +123,6 @@ export default function HiddenCodesPage() {
         throw new Error(data.error || 'Failed to upload codes');
       }
 
-      setSuccess(
-        `${data.added} codes added successfully (${data.duplicates} duplicates skipped)`
-      );
       setCodes('');
       setSelectedFile(null);
       setShowUploadDialog(false);
@@ -143,7 +138,6 @@ export default function HiddenCodesPage() {
   const handleDeleteAll = async () => {
     setDeleting(true);
     setError(null);
-    setSuccess(null);
 
     try {
       const response = await fetch('/api/admin/hidden-codes/delete-all', {
@@ -156,7 +150,6 @@ export default function HiddenCodesPage() {
         throw new Error(data.error || 'Failed to delete codes');
       }
 
-      setSuccess(`${data.deleted} codes deleted successfully`);
       setShowDeleteDialog(false);
       await fetchStats();
     } catch (error) {
@@ -198,12 +191,6 @@ export default function HiddenCodesPage() {
         {error && (
           <Alert severity="error" onClose={() => setError(null)}>
             {error}
-          </Alert>
-        )}
-
-        {success && (
-          <Alert severity="success" onClose={() => setSuccess(null)}>
-            {success}
           </Alert>
         )}
 

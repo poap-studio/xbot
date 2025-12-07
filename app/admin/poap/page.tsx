@@ -55,7 +55,6 @@ export default function PoapConfigPage() {
     claimed: 0,
   });
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
 
   useEffect(() => {
     fetchConfig();
@@ -103,7 +102,6 @@ export default function PoapConfigPage() {
   const handleSave = async () => {
     setSaving(true);
     setError(null);
-    setSuccess(null);
 
     try {
       const response = await fetch('/api/admin/poap/config', {
@@ -123,8 +121,6 @@ export default function PoapConfigPage() {
       if (!response.ok) {
         throw new Error(data.error || 'Failed to save configuration');
       }
-
-      setSuccess('Configuration saved successfully');
     } catch (error) {
       console.error('Error saving config:', error);
       setError(error instanceof Error ? error.message : 'Failed to save configuration');
@@ -141,7 +137,6 @@ export default function PoapConfigPage() {
 
     setLoadingQRCodes(true);
     setError(null);
-    setSuccess(null);
 
     try {
       const response = await fetch('/api/admin/qr-codes/load', {
@@ -161,7 +156,6 @@ export default function PoapConfigPage() {
         throw new Error(data.error || 'Failed to load QR codes');
       }
 
-      setSuccess(`${data.loaded} QR codes loaded successfully (${data.newCodes} new, ${data.existing} already existed)`);
       await fetchQRStats();
     } catch (error) {
       console.error('Error loading QR codes:', error);
@@ -198,12 +192,6 @@ export default function PoapConfigPage() {
         {error && (
           <Alert severity="error" onClose={() => setError(null)}>
             {error}
-          </Alert>
-        )}
-
-        {success && (
-          <Alert severity="success" onClose={() => setSuccess(null)}>
-            {success}
           </Alert>
         )}
 

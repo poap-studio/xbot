@@ -37,7 +37,6 @@ export default function QrPageConfigPage() {
     hashtag: '',
   });
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
 
   useEffect(() => {
     fetchConfig();
@@ -71,7 +70,6 @@ export default function QrPageConfigPage() {
   const handleSave = async () => {
     setSaving(true);
     setError(null);
-    setSuccess(null);
 
     try {
       const response = await fetch('/api/admin/qr-page/config', {
@@ -89,8 +87,6 @@ export default function QrPageConfigPage() {
       if (!response.ok) {
         throw new Error(data.error || 'Failed to save config');
       }
-
-      setSuccess('Configuration saved successfully');
     } catch (error) {
       console.error('Error saving config:', error);
       setError(error instanceof Error ? error.message : 'Failed to save config');
@@ -130,12 +126,6 @@ export default function QrPageConfigPage() {
         {error && (
           <Alert severity="error" onClose={() => setError(null)}>
             {error}
-          </Alert>
-        )}
-
-        {success && (
-          <Alert severity="success" onClose={() => setSuccess(null)}>
-            {success}
           </Alert>
         )}
 
