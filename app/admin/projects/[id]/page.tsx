@@ -112,45 +112,6 @@ function GeneralTab({
     isActive: project.isActive,
   });
 
-  const handleChange = (field: string) => (event: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({
-      ...formData,
-      [field]: event.target.type === 'checkbox' ? event.target.checked : event.target.value,
-    });
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSaving(true);
-    setError(null);
-    setSuccess(false);
-
-    try {
-      const response = await fetch(`/api/admin/projects/${project.id}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to update project');
-      }
-
-      setSuccess(true);
-      onUpdate();
-      setTimeout(() => setSuccess(false), 3000);
-    } catch (error) {
-      console.error('Error updating project:', error);
-      setError(error instanceof Error ? error.message : 'Failed to update project');
-    } finally {
-      setSaving(false);
-    }
-  };
-
   return (
     <Box>
       {/* Dynamic QR Code Section */}
@@ -265,8 +226,8 @@ function GeneralTab({
         </Box>
       </Card>
 
-      {/* General Settings Form */}
-      <Box component="form" onSubmit={handleSubmit}>
+      {/* General Settings */}
+      <Box>
         <Typography variant="h6" gutterBottom>
           General Settings
         </Typography>
@@ -288,7 +249,42 @@ function GeneralTab({
             control={
               <Switch
                 checked={formData.isActive}
-                onChange={handleChange('isActive')}
+                onChange={async (e) => {
+                  const newValue = e.target.checked;
+                  setFormData({ ...formData, isActive: newValue });
+
+                  // Auto-save on change
+                  setSaving(true);
+                  setError(null);
+                  setSuccess(false);
+
+                  try {
+                    const response = await fetch(`/api/admin/projects/${project.id}`, {
+                      method: 'PATCH',
+                      headers: {
+                        'Content-Type': 'application/json',
+                      },
+                      body: JSON.stringify({ isActive: newValue }),
+                    });
+
+                    const data = await response.json();
+
+                    if (!response.ok) {
+                      throw new Error(data.error || 'Failed to update project');
+                    }
+
+                    setSuccess(true);
+                    onUpdate();
+                    setTimeout(() => setSuccess(false), 3000);
+                  } catch (error) {
+                    console.error('Error updating project:', error);
+                    setError(error instanceof Error ? error.message : 'Failed to update project');
+                    // Revert the change on error
+                    setFormData({ ...formData, isActive: !newValue });
+                  } finally {
+                    setSaving(false);
+                  }
+                }}
               />
             }
             label="Active"
@@ -296,17 +292,6 @@ function GeneralTab({
           <Typography variant="caption" color="text.secondary">
             When inactive, the bot will not process tweets or deliver POAPs for this project.
           </Typography>
-
-          <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end', pt: 2 }}>
-            <Button
-              type="submit"
-              variant="contained"
-              startIcon={<SaveIcon />}
-              disabled={saving}
-            >
-              {saving ? 'Saving...' : 'Save Changes'}
-            </Button>
-          </Box>
         </Stack>
       </Box>
     </Box>
@@ -739,6 +724,26 @@ function MintLinksTab({ project, onUpdate }: { project: Project; onUpdate: () =>
         </Card>
       </Box>
 
+      {/* Actions */}
+      <Card sx={{ p: 3, mb: 3 }}>
+        <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'bold', mb: 2 }}>
+          Actions
+        </Typography>
+
+        <Stack spacing={2}>
+          <Button
+            variant="contained"
+            color="primary"
+            startIcon={loadingQRs ? <CircularProgress size={20} color="inherit" /> : <DownloadIcon />}
+            onClick={handleLoadFromPOAP}
+            disabled={loadingQRs}
+            fullWidth
+          >
+            {loadingQRs ? 'Loading Mint Links from POAP...' : 'Load/Refresh Mint Links from POAP API'}
+          </Button>
+        </Stack>
+      </Card>
+
       {/* Claim Settings */}
       <Card sx={{ p: 3, mb: 3 }}>
         <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'bold', mb: 2 }}>
@@ -787,26 +792,6 @@ function MintLinksTab({ project, onUpdate }: { project: Project; onUpdate: () =>
           <Typography variant="body2" color="text.secondary" sx={{ ml: 4 }}>
             If enabled, users can claim multiple POAPs from this drop. If disabled, users can only claim once.
           </Typography>
-        </Stack>
-      </Card>
-
-      {/* Actions */}
-      <Card sx={{ p: 3, mb: 3 }}>
-        <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'bold', mb: 2 }}>
-          Actions
-        </Typography>
-
-        <Stack spacing={2}>
-          <Button
-            variant="contained"
-            color="primary"
-            startIcon={loadingQRs ? <CircularProgress size={20} color="inherit" /> : <DownloadIcon />}
-            onClick={handleLoadFromPOAP}
-            disabled={loadingQRs}
-            fullWidth
-          >
-            {loadingQRs ? 'Loading Mint Links from POAP...' : 'Load/Refresh Mint Links from POAP API'}
-          </Button>
         </Stack>
       </Card>
 

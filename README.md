@@ -235,6 +235,9 @@ Improved project detail page organization for better UX:
 - **Enhancement**: Removed redundant "Open Dynamic QR Page" button from Mint Links section
 - **Improvement**: Updated button text to "Load/Refresh Mint Links from POAP API" for clarity
 - **UX Enhancement**: Auto-save for "Allow Multiple Claims" setting (updates on toggle)
+- **UX Enhancement**: Auto-save for "Active" setting in General tab (updates on toggle)
+- **Organization**: Moved "Actions" card above "Claim Settings" in Mint Links tab
+- **Cleanup**: Removed all "Save" buttons - settings save automatically on change
 - **Files**: `app/admin/projects/[id]/page.tsx`
 
 #### QR Code Twitter Redirect Fix (2025-12-07)
