@@ -84,13 +84,13 @@ export async function GET(request: NextRequest) {
     console.log(`Hashtag: ${project.twitterHashtag}`);
     console.log(`Generated tweet text: ${tweetText}`);
 
-    // Create Twitter app deep link with fallback to web
-    // For mobile: twitter://post?message=...
-    // For web fallback: we'll use a redirect page
-    const twitterAppUrl = `twitter://post?message=${encodeURIComponent(tweetText)}`;
+    // Create Twitter deep link for mobile app
+    // Use twitter:// scheme which forces opening in the app
+    // Fallback to web intent URL if app is not installed
+    const twitterAppUrl = `twitter://post?text=${encodeURIComponent(tweetText)}`;
     const twitterWebUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}`;
 
-    // Create HTML page that tries to open the app first, then falls back to web
+    // Create HTML page that tries to open Twitter app first, then falls back to web
     const html = `
 <!DOCTYPE html>
 <html>
@@ -147,13 +147,25 @@ export async function GET(request: NextRequest) {
     <a href="${twitterWebUrl}" class="button">Click here to tweet</a>
   </div>
   <script>
-    // Try to open the app first
+    // Try to open Twitter app first using deep link
+    var appOpened = false;
+
+    // Attempt to open the app
     window.location.href = "${twitterAppUrl}";
 
-    // If app doesn't open within 2 seconds, redirect to web
+    // If app doesn't open within 1 second, fallback to web
     setTimeout(function() {
-      window.location.href = "${twitterWebUrl}";
-    }, 2000);
+      if (!appOpened) {
+        window.location.href = "${twitterWebUrl}";
+      }
+    }, 1000);
+
+    // Detect if user left the page (app opened)
+    document.addEventListener('visibilitychange', function() {
+      if (document.hidden) {
+        appOpened = true;
+      }
+    });
   </script>
 </body>
 </html>
