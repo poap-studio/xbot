@@ -129,10 +129,17 @@ If context is lost, continue from here:
 - ✅ All pages translated to English
 - ✅ Build successful with no errors
 
+**2025-12-07 - Project-Specific Dynamic QR Pages**
+- ✅ Created `/qr/[projectId]` route for project-specific QR pages
+- ✅ Updated QR generation API to filter codes by project
+- ✅ Added "Open Dynamic QR Page" button in project detail
+- ✅ QR page displays project name and auto-updates with new codes
+- ✅ Each project now has its own isolated QR code rotation
+
 **Deployment:**
-- Commit: f662416
+- Latest Commit: c28070d
 - Deployed to Vercel: https://xbot.vercel.app
 - Status: Production ready
 
 Last Updated: 2025-12-07
-Status: ✅ Multi-project implementation complete and deployed
+Status: ✅ Multi-project implementation complete with project-specific QR pages
