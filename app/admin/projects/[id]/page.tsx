@@ -101,7 +101,7 @@ function GeneralTab({
   handleCopyUrl,
 }: {
   project: Project;
-  onUpdate: () => void;
+  onUpdate: (updatedProject: Partial<Project>) => void;
   qrDataUrl: string | null;
   loadingQR: boolean;
   copySuccess: boolean;
@@ -276,7 +276,7 @@ function GeneralTab({
                     }
 
                     setSuccess(true);
-                    onUpdate();
+                    onUpdate(data.project);
                     setTimeout(() => setSuccess(false), 3000);
                   } catch (error) {
                     console.error('Error updating project:', error);
@@ -301,7 +301,7 @@ function GeneralTab({
 }
 
 // Bot Config Tab Component
-function BotConfigTab({ project, onUpdate }: { project: Project; onUpdate: () => void }) {
+function BotConfigTab({ project, onUpdate }: { project: Project; onUpdate: (updatedProject: Partial<Project>) => void }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -371,7 +371,7 @@ function BotConfigTab({ project, onUpdate }: { project: Project; onUpdate: () =>
       }
 
       setSuccess(true);
-      onUpdate();
+      onUpdate(data.project);
       setTimeout(() => setSuccess(false), 3000);
     } catch (error) {
       console.error('Error updating bot account:', error);
@@ -426,7 +426,7 @@ function BotConfigTab({ project, onUpdate }: { project: Project; onUpdate: () =>
       }
 
       setSuccess(true);
-      onUpdate();
+      onUpdate(data.project);
       setTimeout(() => setSuccess(false), 3000);
     } catch (error) {
       console.error('Error updating bot config:', error);
@@ -652,7 +652,7 @@ function BotConfigTab({ project, onUpdate }: { project: Project; onUpdate: () =>
 }
 
 // Mint Links Tab Component
-function MintLinksTab({ project, onUpdate }: { project: Project; onUpdate: () => void }) {
+function MintLinksTab({ project, onUpdate }: { project: Project; onUpdate: (updatedProject: Partial<Project>) => void }) {
   const [loading, setLoading] = useState(true);
   const [loadingQRs, setLoadingQRs] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -714,15 +714,17 @@ function MintLinksTab({ project, onUpdate }: { project: Project; onUpdate: () =>
 
         if (nameResponse.ok && nameData.name) {
           setSuccess(`POAP settings updated successfully! Project renamed to: "${nameData.name}"`);
+          onUpdate({ ...data.project, name: nameData.name });
         } else {
           setSuccess('POAP settings updated successfully!');
+          onUpdate(data.project);
         }
       } catch (nameError) {
         console.warn('Failed to fetch POAP event name:', nameError);
         setSuccess('POAP settings updated successfully!');
+        onUpdate(data.project);
       }
 
-      onUpdate();
       setTimeout(() => setSuccess(null), 5000);
     } catch (error) {
       console.error('Error updating POAP settings:', error);
@@ -952,7 +954,7 @@ function MintLinksTab({ project, onUpdate }: { project: Project; onUpdate: () =>
                     }
 
                     setSuccess('Claim settings updated successfully!');
-                    onUpdate();
+                    onUpdate(data.project);
                     setTimeout(() => setSuccess(null), 3000);
                   } catch (error) {
                     console.error('Error updating claim settings:', error);
@@ -1101,6 +1103,12 @@ export default function ProjectDetailPage({
     }
   };
 
+  const updateProject = (updatedFields: Partial<Project>) => {
+    if (project) {
+      setProject({ ...project, ...updatedFields });
+    }
+  };
+
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
   };
@@ -1195,7 +1203,7 @@ export default function ProjectDetailPage({
           <TabPanel value={tabValue} index={0}>
             <GeneralTab
               project={project}
-              onUpdate={fetchProject}
+              onUpdate={updateProject}
               qrDataUrl={qrDataUrl}
               loadingQR={loadingQR}
               copySuccess={copySuccess}
@@ -1205,12 +1213,12 @@ export default function ProjectDetailPage({
 
           {/* Bot Config Tab */}
           <TabPanel value={tabValue} index={1}>
-            <BotConfigTab project={project} onUpdate={fetchProject} />
+            <BotConfigTab project={project} onUpdate={updateProject} />
           </TabPanel>
 
           {/* Mint Links Tab */}
           <TabPanel value={tabValue} index={2}>
-            <MintLinksTab project={project} onUpdate={fetchProject} />
+            <MintLinksTab project={project} onUpdate={updateProject} />
           </TabPanel>
         </Box>
       </Card>
