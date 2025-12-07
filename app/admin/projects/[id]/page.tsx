@@ -30,6 +30,7 @@ import {
   DialogContent,
   DialogActions,
   MenuItem,
+  Avatar,
 } from '@mui/material';
 import {
   ArrowBack as ArrowBackIcon,
@@ -487,37 +488,36 @@ function BotConfigTab({ project, onUpdate }: { project: Project; onUpdate: () =>
                   </MenuItem>
                   {botAccounts.map((bot) => (
                     <MenuItem key={bot.id} value={bot.id}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        {bot.profileImageUrl && (
-                          <Image
-                            src={bot.profileImageUrl}
-                            alt={bot.username}
-                            width={24}
-                            height={24}
-                            style={{ borderRadius: '50%' }}
-                          />
-                        )}
-                        <Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, width: '100%' }}>
+                        <Avatar
+                          src={bot.profileImageUrl || undefined}
+                          alt={bot.username}
+                          sx={{ width: 32, height: 32 }}
+                        >
+                          {bot.username.charAt(0).toUpperCase()}
+                        </Avatar>
+                        <Box sx={{ flex: 1, minWidth: 0 }}>
                           <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
                             @{bot.username}
                           </Typography>
                           {bot.displayName && (
-                            <Typography variant="caption" color="text.secondary">
+                            <Typography variant="caption" color="text.secondary" noWrap>
                               {bot.displayName}
                             </Typography>
                           )}
                         </Box>
-                        {!bot.isConnected && (
-                          <Chip label="Disconnected" size="small" color="error" sx={{ ml: 1 }} />
-                        )}
-                        {bot._count.projects > 0 && (
-                          <Chip
-                            label={`${bot._count.projects} project${bot._count.projects > 1 ? 's' : ''}`}
-                            size="small"
-                            variant="outlined"
-                            sx={{ ml: 1 }}
-                          />
-                        )}
+                        <Box sx={{ display: 'flex', gap: 0.5, flexShrink: 0 }}>
+                          {!bot.isConnected && (
+                            <Chip label="Disconnected" size="small" color="error" />
+                          )}
+                          {bot._count.projects > 0 && (
+                            <Chip
+                              label={`${bot._count.projects}`}
+                              size="small"
+                              variant="outlined"
+                            />
+                          )}
+                        </Box>
                       </Box>
                     </MenuItem>
                   ))}

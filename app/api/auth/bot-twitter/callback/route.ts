@@ -111,9 +111,9 @@ export async function GET(request: NextRequest) {
     // Projects can be updated separately to use this bot account
     console.log(`Bot account connected: @${user.data.username} (${user.data.id})`);
 
-    // Clear OAuth cookies
+    // Clear OAuth cookies and redirect to success page
     const response = NextResponse.redirect(
-      `${process.env.NEXT_PUBLIC_APP_URL}/admin?success=bot_connected`
+      `${process.env.NEXT_PUBLIC_APP_URL}/admin/bot-connected?username=${user.data.username}`
     );
 
     response.cookies.delete('oauth_token');
