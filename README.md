@@ -271,6 +271,26 @@ npm run prisma:generate
 
 ### Recent Changes
 
+#### Hashtag-First Webhook Processing Logic (2025-12-07)
+Rewrote webhook processor to match projects by hashtag first (critical bug fix):
+- **Bug Fix**: Tweets with hashtag but missing code/image were being ignored instead of receiving error replies
+- **Logic Change**: Now searches projects by hashtag FIRST, then validates requirements per project
+- **Feature**: Single tweet can now trigger multiple POAP drops for different projects with same hashtag
+- **Flow**:
+  1. Extract hashtags from tweet
+  2. Find ALL projects matching any tweet hashtag
+  3. Skip tweet if no projects match (no response)
+  4. For EACH matching project:
+     - Find valid code for that specific project
+     - Validate code requirement → reply with error template if required but missing
+     - Validate image requirement → reply with error template if required but missing
+     - Check if user already claimed → reply with "already claimed" template if applicable
+     - Process POAP delivery if all requirements met
+- **Impact**: Ensures no eligible tweets are missed and all validation errors receive proper responses
+- **Multi-Drop**: Supports scenarios where one tweet triggers POAPs for multiple events
+- **Files**:
+  - `lib/twitter/webhook-processor.ts` (complete rewrite of project matching logic)
+
 #### Project-Specific Bot Reply Templates (2025-12-07)
 Fixed critical bug where bot reply messages used templates from wrong project:
 - **Bug Fix**: All reply template functions now accept optional `projectId` parameter
