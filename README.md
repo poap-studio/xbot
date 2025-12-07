@@ -6,8 +6,10 @@ Automated bot that delivers POAP mint links to Twitter users who post eligible t
 
 - **Automated Tweet Monitoring**: Monitors hashtags for eligible tweets with images and special codes
 - **POAP Delivery**: Reserves and delivers unique mint links to eligible users
+- **Dynamic QR Code Generation**: Generate QR codes with secret codes that redirect to Twitter with pre-filled tweets
 - **Web Claim Interface**: Twitter OAuth login to view and claim POAPs
-- **Admin Dashboard**: Configure bot settings, view statistics, and export delivery data
+- **Admin Dashboard**: Configure bot settings, view statistics, and export delivery data with organized tabs
+- **Multi-Bot Support**: Manage multiple Twitter bots with different configurations
 
 ## 🏗️ Architecture
 
@@ -151,14 +153,15 @@ The cron job is automatically configured via `vercel.json`.
 ### Admin Configuration
 
 1. Navigate to `/admin`
-2. Configure:
-   - POAP Event ID and Secret Code
-   - Bot reply text template
-   - Twitter hashtag to monitor
-   - Required code text in tweets
+2. Configure project settings in organized tabs:
+   - **General**: Project name, Twitter hashtag, POAP event settings
+   - **Bot Config**: Select and configure Twitter bots, reply templates
+   - **Dynamic QR**: Generate QR codes with secret codes and tweet templates
+   - **Data**: View statistics, export delivery data as CSV
 
-### User Flow
+### User Flows
 
+#### Flow 1: Tweet-based POAP Claim
 1. User posts a tweet with:
    - Configured hashtag (e.g., #POAP)
    - Required code text (e.g., "ELIGIBLE")
@@ -167,6 +170,14 @@ The cron job is automatically configured via `vercel.json`.
 3. Bot replies to tweet with claim URL
 4. User visits claim URL and logs in with Twitter
 5. User sees their mint link and claims POAP
+
+#### Flow 2: QR Code POAP Claim
+1. Admin generates QR code with secret code in admin dashboard
+2. User scans QR code (typically at event booth)
+3. QR redirects to Twitter app with pre-filled tweet containing secret code
+4. User posts the tweet with hashtag
+5. Bot detects tweet and delivers POAP mint link via reply
+6. User claims POAP from mint link
 
 ## 📁 Project Structure
 
@@ -178,7 +189,8 @@ xbot/
 │   │   ├── admin/        # Admin endpoints
 │   │   ├── auth/         # NextAuth
 │   │   ├── cron/         # Cron jobs
-│   │   └── deliveries/   # User deliveries
+│   │   ├── deliveries/   # User deliveries
+│   │   └── qr/           # QR code generation & tracking
 │   ├── claim/            # Claim page
 │   ├── globals.css
 │   ├── layout.tsx
@@ -211,15 +223,38 @@ npm run prisma:migrate
 npm run prisma:generate
 ```
 
+### Recent Changes
+
+#### QR Code Twitter Redirect Fix (2025-12-07)
+Fixed critical bug where QR code scanning opened Twitter but didn't pre-fill tweet text:
+- **Issue**: Used incorrect deep link syntax `twitter://post?message=...`
+- **Fix**: Changed to correct syntax `twitter://post?text=...` in `app/api/qr/track/route.ts:90`
+- **Enhancement**: Implemented mobile-first redirect strategy with 1-second fallback and visibility detection
+- **Files**: `app/api/qr/track/route.ts`
+
+#### Documentation Workflow Requirement (2025-12-07)
+Added mandatory documentation requirement to development workflow:
+- **Requirement**: All project changes must be documented in README.md
+- **Process**: After each feature/fix, review entire README for coherence
+- **Files**: `.claude/CLAUDE.md` lines 80-95, 104
+
 ## 📝 API Routes
 
-- `GET /api/deliveries` - Get user's deliveries
+### Public Routes
+- `GET /api/deliveries` - Get user's deliveries (requires auth)
+- `GET /api/qr/generate?projectId=XXX` - Generate QR code with secret code
+- `GET /api/qr/track?code=XXX&projectId=YYY` - Track QR scan and redirect to Twitter
+- `GET /api/qr/sse?projectId=XXX` - Server-Sent Events for real-time QR updates
+
+### Admin Routes (requires auth)
 - `GET /api/admin/config` - Get bot configuration
 - `POST /api/admin/config` - Update configuration
 - `GET /api/admin/stats` - Get statistics
 - `GET /api/admin/deliveries` - Get all deliveries
 - `GET /api/admin/deliveries/csv` - Download CSV
-- `GET /api/cron/process-tweets` - Cron job endpoint
+
+### System Routes
+- `GET /api/cron/process-tweets` - Cron job endpoint (requires CRON_SECRET)
 
 ## 📄 License
 
