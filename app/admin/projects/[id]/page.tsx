@@ -5,7 +5,7 @@
 
 'use client';
 
-import { useEffect, useState, use } from 'react';
+import { useEffect, useState, use, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Box,
@@ -1056,6 +1056,8 @@ export default function ProjectDetailPage({
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
   const [loadingQR, setLoadingQR] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
+  const [currentCode, setCurrentCode] = useState<string | null>(null);
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     fetchProject();
@@ -1064,8 +1066,41 @@ export default function ProjectDetailPage({
   useEffect(() => {
     if (project) {
       loadQRCode();
+
+      // Set up polling to detect when QR is scanned
+      pollingIntervalRef.current = setInterval(() => {
+        checkForNewCode();
+      }, 3000); // Check every 3 seconds
     }
+
+    // Cleanup on unmount or when project changes
+    return () => {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+      }
+    };
   }, [project]);
+
+  const checkForNewCode = async () => {
+    if (!project || !currentCode) {
+      // Don't poll until we have an initial code
+      return;
+    }
+
+    try {
+      // Fetch the current available code without generating a new QR
+      const response = await fetch(`/api/qr/current-code?projectId=${project.id}`);
+      const data = await response.json();
+
+      if (response.ok && data.code && data.code !== currentCode) {
+        console.log('New code detected. Old:', currentCode, 'New:', data.code);
+        loadQRCode();
+      }
+    } catch (error) {
+      // Silently fail - this is just a backup mechanism
+      console.debug('Polling check error:', error);
+    }
+  };
 
   const loadQRCode = async () => {
     if (!project) return;
@@ -1077,6 +1112,7 @@ export default function ProjectDetailPage({
 
       if (response.ok && data.qrDataUrl) {
         setQrDataUrl(data.qrDataUrl);
+        setCurrentCode(data.code);
       }
     } catch (error) {
       console.error('Error loading QR code:', error);
