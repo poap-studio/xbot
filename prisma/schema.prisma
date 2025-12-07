@@ -61,7 +61,7 @@ model Config {
 
 model ValidCode {
   id              String   @id @default(cuid())
-  code            String
+  code            String   @unique  // UNIQUE globally - each code identifies ONE project
   projectId       String
   project         Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
   isScanned       Boolean  @default(false)   // True when QR is scanned (user visits tracking page)
@@ -72,8 +72,6 @@ model ValidCode {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  @@unique([code, projectId])
-  @@index([code])
   @@index([isUsed])
   @@index([isScanned])
   @@index([projectId])
@@ -90,6 +88,9 @@ model BotAccount {
   // OAuth credentials para postear (encrypted)
   accessToken     String
   accessSecret    String
+
+  // Webhook configuration
+  webhookId       String?  // Twitter webhook ID for this bot account
 
   // Estado de conexión
   isConnected     Boolean  @default(true)
