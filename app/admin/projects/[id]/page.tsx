@@ -384,7 +384,16 @@ function BotConfigTab({ project, onUpdate }: { project: Project; onUpdate: () =>
 
   const handleConnectNewBot = () => {
     // Open OAuth flow in new window
-    window.open('/api/auth/bot-twitter', '_blank');
+    const popup = window.open('/api/auth/bot-twitter', 'Connect Bot', 'width=600,height=700');
+
+    // Poll to detect when popup closes and reload bot list
+    const pollTimer = setInterval(() => {
+      if (popup && popup.closed) {
+        clearInterval(pollTimer);
+        // Reload bot accounts list after connection
+        fetchBotAccounts();
+      }
+    }, 500);
   };
 
   const handleChange = (field: string) => (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -520,7 +529,7 @@ function BotConfigTab({ project, onUpdate }: { project: Project; onUpdate: () =>
                   onClick={handleConnectNewBot}
                   sx={{ minWidth: 180, height: 56 }}
                 >
-                  Connect New Bot
+                  Connect Bot
                 </Button>
               </Box>
 

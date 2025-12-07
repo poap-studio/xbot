@@ -23,13 +23,13 @@ export async function GET(request: NextRequest) {
     if (!process.env.TWITTER_API_KEY || !process.env.TWITTER_API_SECRET) {
       console.error('Twitter API credentials not configured');
       return NextResponse.redirect(
-        `${process.env.NEXT_PUBLIC_APP_URL}/admin/bot?error=twitter_not_configured`
+        `${process.env.NEXT_PUBLIC_APP_URL}/admin?error=twitter_not_configured`
       );
     }
 
     if (!process.env.NEXT_PUBLIC_APP_URL) {
       console.error('NEXT_PUBLIC_APP_URL not configured');
-      return NextResponse.redirect('/admin/bot?error=app_url_not_configured');
+      return NextResponse.redirect('/admin?error=app_url_not_configured');
     }
 
     console.log('Initializing Twitter OAuth flow...');
@@ -90,7 +90,7 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.redirect(
-      `${process.env.NEXT_PUBLIC_APP_URL}/admin/bot?error=${encodeURIComponent(errorMessage)}`
+      `${process.env.NEXT_PUBLIC_APP_URL}/admin?error=${encodeURIComponent(errorMessage)}`
     );
   }
 }
