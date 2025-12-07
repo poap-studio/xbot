@@ -1,17 +1,17 @@
 /**
  * API Route: Fetch POAP Event Name
- * Fetches the event name from POAP API and updates project name
+ * POST - Fetch POAP event name and update project name
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getMintLinks, getQRCodeInfo } from '@/lib/poap/api';
 import prisma from '@/lib/prisma';
+import { getEventInfo } from '@/lib/poap/api';
 
 export const dynamic = 'force-dynamic';
 
 /**
  * POST /api/admin/projects/[id]/fetch-poap-name
- * Fetches POAP event name and updates project
+ * Fetch POAP event name from POAP API and update project name
  */
 export async function POST(
   request: NextRequest,
@@ -20,87 +20,51 @@ export async function POST(
   try {
     const { id } = await params;
     const body = await request.json();
-    const { poapEventId, poapEditCode } = body;
+    const { poapEventId } = body;
 
-    if (!poapEventId || !poapEditCode) {
+    if (!poapEventId) {
       return NextResponse.json(
-        { error: 'POAP Event ID and Edit Code are required' },
+        { error: 'POAP Event ID is required' },
         { status: 400 }
       );
     }
 
-    // Get a mint link to extract event information
-    const mintLinks = await getMintLinks(poapEventId, poapEditCode);
+    console.log(`Fetching POAP event info for event ${poapEventId}...`);
 
-    if (!mintLinks || mintLinks.length === 0) {
-      // If no mint links, use fallback name with current date
-      const fallbackName = `New project ${new Date().toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-      })}`;
+    // Fetch event info from POAP API
+    const eventInfo = await getEventInfo(poapEventId);
 
-      await prisma.project.update({
-        where: { id },
-        data: { name: fallbackName },
-      });
-
-      return NextResponse.json({
-        name: fallbackName,
-        isFallback: true,
-      });
-    }
-
-    // Get QR code info to extract event details
-    const qrInfo = await getQRCodeInfo(mintLinks[0].qr_hash);
-
-    let projectName = `New project ${new Date().toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-    })}`;
-
-    if (qrInfo.event && qrInfo.event.name) {
-      projectName = qrInfo.event.name;
-    }
-
-    // Update project name
-    await prisma.project.update({
-      where: { id },
-      data: { name: projectName },
-    });
-
-    return NextResponse.json({
-      name: projectName,
-      isFallback: !qrInfo.event?.name,
-    });
-  } catch (error) {
-    console.error('Error fetching POAP event name:', error);
-
-    // On error, use fallback name
-    const { id } = await params;
-    const fallbackName = `New project ${new Date().toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-    })}`;
-
-    try {
-      await prisma.project.update({
-        where: { id },
-        data: { name: fallbackName },
-      });
-
-      return NextResponse.json({
-        name: fallbackName,
-        isFallback: true,
-        error: error instanceof Error ? error.message : 'Failed to fetch POAP event name',
-      });
-    } catch (updateError) {
+    if (!eventInfo.name) {
       return NextResponse.json(
-        { error: 'Failed to update project name' },
+        { error: 'Could not retrieve event name from POAP API' },
         { status: 500 }
       );
     }
+
+    console.log(`Got POAP event name: ${eventInfo.name}`);
+
+    // Update project name with POAP event name
+    const project = await prisma.project.update({
+      where: { id },
+      data: {
+        name: eventInfo.name,
+      },
+    });
+
+    return NextResponse.json({
+      success: true,
+      name: project.name,
+      description: eventInfo.description,
+      imageUrl: eventInfo.imageUrl,
+    });
+  } catch (error) {
+    console.error('Error fetching POAP event name:', error);
+    return NextResponse.json(
+      {
+        error: 'Failed to fetch POAP event name',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      },
+      { status: 500 }
+    );
   }
 }

@@ -12,17 +12,12 @@ import {
   Container,
   Typography,
   Card,
-  TextField,
   Button,
   Alert,
-  Stack,
-  FormControlLabel,
-  Switch,
   Breadcrumbs,
   Link as MuiLink,
 } from '@mui/material';
 import {
-  ArrowBack as ArrowBackIcon,
   Save as SaveIcon,
 } from '@mui/icons-material';
 import Link from 'next/link';
@@ -31,23 +26,8 @@ export default function NewProjectPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [formData, setFormData] = useState({
-    poapEventId: '',
-    poapEditCode: '',
-    twitterHashtag: '#POAP',
-    allowMultipleClaims: false,
-    isActive: true,
-  });
 
-  const handleChange = (field: string) => (event: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({
-      ...formData,
-      [field]: event.target.type === 'checkbox' ? event.target.checked : event.target.value,
-    });
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleCreateProject = async () => {
     setLoading(true);
     setError(null);
 
@@ -57,7 +37,7 @@ export default function NewProjectPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({}), // Empty body, backend will generate defaults
       });
 
       const data = await response.json();
@@ -66,7 +46,7 @@ export default function NewProjectPage() {
         throw new Error(data.error || 'Failed to create project');
       }
 
-      // Redirect to project detail page
+      // Redirect to project detail page for configuration
       router.push(`/admin/projects/${data.project.id}`);
     } catch (error) {
       console.error('Error creating project:', error);
@@ -91,17 +71,10 @@ export default function NewProjectPage() {
       </Breadcrumbs>
 
       {/* Header */}
-      <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <Box sx={{ mb: 3 }}>
         <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
           Create New Project
         </Typography>
-        <Button
-          startIcon={<ArrowBackIcon />}
-          onClick={() => router.push('/admin')}
-          variant="outlined"
-        >
-          Cancel
-        </Button>
       </Box>
 
       {/* Error Alert */}
@@ -111,109 +84,45 @@ export default function NewProjectPage() {
         </Alert>
       )}
 
-      {/* Form */}
-      <Card>
-        <Box component="form" onSubmit={handleSubmit} sx={{ p: 3 }}>
-          <Stack spacing={3}>
-            {/* POAP Event ID */}
-            <TextField
-              label="POAP Event ID"
-              placeholder="123456"
-              value={formData.poapEventId}
-              onChange={handleChange('poapEventId')}
-              required
-              fullWidth
-              helperText="The POAP event ID from poap.xyz"
-            />
+      {/* Create Project Card */}
+      <Card sx={{ p: 4, textAlign: 'center' }}>
+        <Typography variant="h6" gutterBottom>
+          Create a New POAP Project
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
+          Click the button below to create a new project. You'll be redirected to configure all settings.
+        </Typography>
 
-            {/* POAP Edit Code */}
-            <TextField
-              label="POAP Edit Code"
-              placeholder="abc123xyz"
-              value={formData.poapEditCode}
-              onChange={handleChange('poapEditCode')}
-              required
-              fullWidth
-              type="password"
-              helperText="The edit code to load QR codes from POAP API"
-            />
-
-            {/* Twitter Hashtag */}
-            <TextField
-              label="Twitter Hashtag"
-              placeholder="#POAP"
-              value={formData.twitterHashtag}
-              onChange={handleChange('twitterHashtag')}
-              required
-              fullWidth
-              helperText="The hashtag to monitor on Twitter (include #)"
-            />
-
-            {/* Settings */}
-            <Box>
-              <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 'bold' }}>
-                Settings
-              </Typography>
-              <Stack spacing={1}>
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={formData.allowMultipleClaims}
-                      onChange={handleChange('allowMultipleClaims')}
-                    />
-                  }
-                  label="Allow Multiple Claims"
-                />
-                <Typography variant="caption" color="text.secondary" sx={{ ml: 4, mt: -1 }}>
-                  Allow users to claim multiple POAPs from this drop
-                </Typography>
-
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={formData.isActive}
-                      onChange={handleChange('isActive')}
-                    />
-                  }
-                  label="Active"
-                />
-                <Typography variant="caption" color="text.secondary" sx={{ ml: 4, mt: -1 }}>
-                  Activate this project immediately after creation
-                </Typography>
-              </Stack>
-            </Box>
-
-            {/* Submit Button */}
-            <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end', pt: 2 }}>
-              <Button
-                onClick={() => router.push('/admin')}
-                disabled={loading}
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                variant="contained"
-                startIcon={<SaveIcon />}
-                disabled={loading}
-              >
-                {loading ? 'Creating...' : 'Create Project'}
-              </Button>
-            </Box>
-          </Stack>
+        <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center' }}>
+          <Button
+            onClick={() => router.push('/admin')}
+            disabled={loading}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={<SaveIcon />}
+            onClick={handleCreateProject}
+            disabled={loading}
+            size="large"
+          >
+            {loading ? 'Creating...' : 'Create Project'}
+          </Button>
         </Box>
       </Card>
 
       {/* Info Box */}
       <Alert severity="info" sx={{ mt: 3 }}>
         <Typography variant="body2" gutterBottom sx={{ fontWeight: 'bold' }}>
-          After creating the project, you'll be able to:
+          After creating the project, you'll configure:
         </Typography>
         <ul style={{ margin: '8px 0 0 0', paddingLeft: '20px' }}>
-          <li>Configure reply templates and bot settings</li>
-          <li>Upload valid codes for users to tweet</li>
-          <li>Load QR codes from POAP API</li>
-          <li>Monitor deliveries and track claims</li>
+          <li>POAP Event ID and Edit Code</li>
+          <li>Twitter hashtag to monitor</li>
+          <li>Reply templates and bot settings</li>
+          <li>Valid codes for users to tweet</li>
+          <li>QR codes from POAP API</li>
         </ul>
       </Alert>
     </Container>

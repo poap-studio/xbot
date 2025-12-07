@@ -630,3 +630,46 @@ export async function loadQRCodesFromPOAP(
 
   return { loaded, newCodes, existing };
 }
+
+/**
+ * Get POAP event information including name
+ * @param {string} eventId - POAP event ID
+ * @returns {Promise<{name: string, description: string, imageUrl: string}>} Event info
+ */
+export async function getEventInfo(
+  eventId: string
+): Promise<{ name: string; description: string; imageUrl: string }> {
+  console.log(`[POAP API] Getting event info for ${eventId}...`);
+
+  const token = await getValidToken();
+  const apiKey = (process.env.POAP_API_KEY || '').trim();
+
+  const url = `${POAP_API_BASE}/events/id/${eventId}`;
+
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'accept': 'application/json',
+      'Authorization': `Bearer ${token}`,
+      'X-API-Key': apiKey,
+    },
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error(`[POAP API] Get event info failed: ${response.status}`);
+    console.error(`[POAP API] Error response: ${errorText}`);
+    throw new Error(
+      `Failed to get event info: ${response.status} - ${errorText}`
+    );
+  }
+
+  const data = await response.json();
+  console.log(`[POAP API] Event info obtained: ${data.name}`);
+
+  return {
+    name: data.name,
+    description: data.description,
+    imageUrl: data.image_url,
+  };
+}

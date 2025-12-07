@@ -59,6 +59,17 @@ export async function GET(
 }
 
 /**
+ * PATCH /api/admin/projects/[id]
+ * Update project (partial update)
+ */
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  return PUT(request, { params });
+}
+
+/**
  * PUT /api/admin/projects/[id]
  * Update project
  */

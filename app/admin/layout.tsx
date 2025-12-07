@@ -26,7 +26,6 @@ import {
   Link as LinkIcon,
   SmartToy as SmartToyIcon,
   LocalShipping as DeliveryIcon,
-  Description as LogsIcon,
   Home as HomeIcon,
   QrCode2 as QrCodeIcon,
   Logout as LogoutIcon,
@@ -38,7 +37,6 @@ const DRAWER_WIDTH = 240;
 const navigation = [
   { name: 'Projects', href: '/admin', icon: <DashboardIcon /> },
   { name: 'Drops', href: '/admin/deliveries', icon: <DeliveryIcon /> },
-  { name: 'Cron Logs', href: '/admin/cron-logs', icon: <LogsIcon /> },
 ];
 
 export default function AdminLayout({
