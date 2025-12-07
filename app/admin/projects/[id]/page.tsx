@@ -99,7 +99,6 @@ function GeneralTab({ project, onUpdate }: { project: Project; onUpdate: () => v
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [formData, setFormData] = useState({
-    name: project.name,
     twitterHashtag: project.twitterHashtag,
     isActive: project.isActive,
   });
@@ -162,14 +161,6 @@ function GeneralTab({ project, onUpdate }: { project: Project; onUpdate: () => v
       )}
 
       <Stack spacing={3}>
-        <TextField
-          label="Project Name"
-          value={formData.name}
-          onChange={handleChange('name')}
-          required
-          fullWidth
-        />
-
         <TextField
           label="Twitter Hashtag"
           value={formData.twitterHashtag}

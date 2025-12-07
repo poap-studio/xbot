@@ -32,7 +32,6 @@ export default function NewProjectPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
-    name: '',
     poapEventId: '',
     poapEditCode: '',
     twitterHashtag: '#POAP',
@@ -116,17 +115,6 @@ export default function NewProjectPage() {
       <Card>
         <Box component="form" onSubmit={handleSubmit} sx={{ p: 3 }}>
           <Stack spacing={3}>
-            {/* Project Name */}
-            <TextField
-              label="Project Name"
-              placeholder="ETHGlobal Bangkok 2024"
-              value={formData.name}
-              onChange={handleChange('name')}
-              required
-              fullWidth
-              helperText="A descriptive name for this POAP drop campaign"
-            />
-
             {/* POAP Event ID */}
             <TextField
               label="POAP Event ID"
