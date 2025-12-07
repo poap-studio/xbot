@@ -254,8 +254,8 @@ export async function processWebhookTweetEvent(webhookEvent: any): Promise<{
             // Save tweet to database
             await saveTweet(processedTweet);
 
-            // Process and deliver POAP
-            const result = await processSingleTweet(processedTweet);
+            // Process and deliver POAP (pass project ID since we already know it from hashtag)
+            const result = await processSingleTweet(processedTweet, project.id);
 
             if (result.success) {
               console.log(`[Webhook]   ✅ Successfully delivered POAP to @${result.username}`);

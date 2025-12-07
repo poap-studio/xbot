@@ -97,66 +97,123 @@ export async function processNotEligibleTweet(
  * Process a single eligible tweet
  * Reserves mint link, replies with claim URL, and records delivery
  * @param {ProcessedTweet} tweet - Tweet to process
+ * @param {string} [explicitProjectId] - Optional project ID (when project is known, e.g., from webhook hashtag matching)
  * @returns {Promise<DeliveryAttempt>} Delivery attempt result
  */
 export async function processSingleTweet(
-  tweet: ProcessedTweet
+  tweet: ProcessedTweet,
+  explicitProjectId?: string
 ): Promise<DeliveryAttempt> {
   const tweetId = tweet.id;
   const username = tweet.authorUsername;
   const twitterUserId = tweet.authorId;
 
   try {
-    // 0. Find project for this tweet based on hidden code
-    if (!tweet.hiddenCode) {
-      // Silently skip tweets without valid code - this is expected behavior
-      return {
-        tweetId,
-        username,
-        success: false,
-        error: 'No hidden code',
-      };
-    }
+    let projectId: string;
+    let project: any;
+    let validCode: any = null;
 
-    const validCode = await prisma.validCode.findFirst({
-      where: { code: tweet.hiddenCode },
-      include: { project: true },
-    });
+    // 0. Determine project - either from explicit ID or by looking up code
+    if (explicitProjectId) {
+      // Project is explicitly provided (e.g., from webhook hashtag matching)
+      projectId = explicitProjectId;
 
-    if (!validCode || !validCode.project) {
-      // Silently skip tweets with invalid code - this is expected behavior
-      return {
-        tweetId,
-        username,
-        success: false,
-        error: 'Invalid code',
-      };
-    }
+      // Fetch the project
+      project = await prisma.project.findUnique({
+        where: { id: projectId },
+      });
 
-    // CRITICAL: Check if the code has been used by another tweet (race condition check)
-    // This can happen if multiple tweets with same code arrived in same batch
-    if (validCode.isUsed) {
-      console.log(
-        `Code "${tweet.hiddenCode}" already used by another tweet. Replying with not eligible message to @${username}`
-      );
-
-      // Reply with "not eligible" message since code is already used
-      try {
-        await replyWithNotEligible(tweetId, validCode.project.botAccountId || undefined);
-      } catch (error) {
-        console.error(`Failed to reply to tweet ${tweetId}:`, error);
+      if (!project) {
+        return {
+          tweetId,
+          username,
+          success: false,
+          error: 'Project not found',
+        };
       }
 
-      return {
-        tweetId,
-        username,
-        success: false,
-        error: 'Code already used',
-      };
-    }
+      // If tweet has a hidden code, look up the validCode record for marking it as used later
+      if (tweet.hiddenCode) {
+        validCode = await prisma.validCode.findFirst({
+          where: {
+            code: tweet.hiddenCode,
+            projectId: project.id,
+          },
+        });
 
-    const projectId = validCode.projectId;
-    const project = validCode.project;
+        // CRITICAL: Check if the code has been used by another tweet (race condition check)
+        if (validCode && validCode.isUsed) {
+          console.log(
+            `Code "${tweet.hiddenCode}" already used by another tweet. Replying with not eligible message to @${username}`
+          );
+
+          // Reply with "not eligible" message since code is already used
+          try {
+            await replyWithNotEligible(tweetId, project.botAccountId || undefined);
+          } catch (error) {
+            console.error(`Failed to reply to tweet ${tweetId}:`, error);
+          }
+
+          return {
+            tweetId,
+            username,
+            success: false,
+            error: 'Code already used',
+          };
+        }
+      }
+    } else {
+      // Legacy behavior: find project by hidden code
+      if (!tweet.hiddenCode) {
+        // Silently skip tweets without valid code - this is expected behavior
+        return {
+          tweetId,
+          username,
+          success: false,
+          error: 'No hidden code',
+        };
+      }
+
+      validCode = await prisma.validCode.findFirst({
+        where: { code: tweet.hiddenCode },
+        include: { project: true },
+      });
+
+      if (!validCode || !validCode.project) {
+        // Silently skip tweets with invalid code - this is expected behavior
+        return {
+          tweetId,
+          username,
+          success: false,
+          error: 'Invalid code',
+        };
+      }
+
+      // CRITICAL: Check if the code has been used by another tweet (race condition check)
+      // This can happen if multiple tweets with same code arrived in same batch
+      if (validCode.isUsed) {
+        console.log(
+          `Code "${tweet.hiddenCode}" already used by another tweet. Replying with not eligible message to @${username}`
+        );
+
+        // Reply with "not eligible" message since code is already used
+        try {
+          await replyWithNotEligible(tweetId, validCode.project.botAccountId || undefined);
+        } catch (error) {
+          console.error(`Failed to reply to tweet ${tweetId}:`, error);
+        }
+
+        return {
+          tweetId,
+          username,
+          success: false,
+          error: 'Code already used',
+        };
+      }
+
+      projectId = validCode.projectId;
+      project = validCode.project;
+    }
 
     console.log(`Processing tweet ${tweetId} for project "${project.name}" (${projectId})`);
 
@@ -235,8 +292,10 @@ export async function processSingleTweet(
     // 7. Record delivery with project ID
     await recordDelivery(twitterUserId, username, tweetId, mintLink, qrHash, projectId);
 
-    // 8. Mark hidden code as used
-    await markHiddenCodeAsUsed(tweet.hiddenCode, twitterUserId, projectId);
+    // 8. Mark hidden code as used (only if code was provided)
+    if (tweet.hiddenCode && validCode) {
+      await markHiddenCodeAsUsed(tweet.hiddenCode, twitterUserId, projectId);
+    }
 
     console.log(
       `✅ Successfully delivered POAP to @${username} for tweet ${tweetId} (project: ${project.name})`
