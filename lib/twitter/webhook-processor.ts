@@ -17,6 +17,8 @@ interface WebhookTweetEvent {
     id_str: string;
     created_at: string; // e.g., "Mon Dec 07 18:00:43 +0000 2025"
     text: string;
+    is_quote_status?: boolean;
+    quoted_status_id_str?: string;
     user: {
       id_str: string;
       screen_name: string;
@@ -114,7 +116,14 @@ export async function processWebhookTweetEvent(webhookEvent: any): Promise<{
           continue;
         }
 
-        // Step 1: Extract tweet hashtags
+        // Step 1: Detect if Quote Tweet or Standard Mention
+        const isQuote = tweetEvent.is_quote_status === true;
+        if (isQuote) {
+          console.log(`[Webhook] Tweet is a QUOTE TWEET of ${tweetEvent.quoted_status_id_str}`);
+        }
+
+        // Step 2: Extract hashtags from the user's commentary (tweetEvent.text)
+        // Note: tweetEvent.entities.hashtags contains hashtags from the USER'S text, not the quoted tweet
         const tweetHashtags = tweetEvent.entities?.hashtags?.map((h: { text: string }) => h.text.toLowerCase()) || [];
         console.log(`[Webhook] Tweet hashtags:`, tweetHashtags);
 
