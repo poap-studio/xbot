@@ -21,11 +21,22 @@ export async function GET(request: NextRequest) {
 
   try {
     console.log('=== TWITTER WEBHOOK CRC REQUEST ===');
+    console.log('Timestamp:', new Date().toISOString());
+    console.log('Full URL:', request.url);
+
+    // Log IP and user agent for debugging
+    const ipAddress = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
+    const userAgent = request.headers.get('user-agent') || 'unknown';
+    console.log('IP Address:', ipAddress);
+    console.log('User Agent:', userAgent);
 
     // Get CRC token from query params
     const crcToken = request.nextUrl.searchParams.get('crc_token');
 
     console.log('CRC Token received:', crcToken ? 'YES' : 'NO');
+    if (crcToken) {
+      console.log('CRC Token (first 20 chars):', crcToken.substring(0, 20) + '...');
+    }
 
     // Get all headers
     const headers: Record<string, string> = {};
@@ -111,6 +122,16 @@ export async function POST(request: NextRequest) {
 
   try {
     console.log('=== TWITTER WEBHOOK EVENT RECEIVED ===');
+    console.log('Timestamp:', new Date().toISOString());
+    console.log('Full URL:', request.url);
+
+    // Log IP and origin for debugging
+    const ipAddress = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
+    const userAgent = request.headers.get('user-agent') || 'unknown';
+    const origin = request.headers.get('origin') || 'none';
+    console.log('IP Address:', ipAddress);
+    console.log('User Agent:', userAgent);
+    console.log('Origin:', origin);
 
     // Get all headers
     const headers: Record<string, string> = {};
@@ -118,7 +139,8 @@ export async function POST(request: NextRequest) {
       headers[key] = value;
     });
 
-    console.log('Headers:', Object.keys(headers).join(', '));
+    console.log('Headers received:', Object.keys(headers).join(', '));
+    console.log('X-Twitter-Webhooks-Signature:', headers['x-twitter-webhooks-signature'] || 'NOT PRESENT');
 
     // Parse body
     let body: any = null;
@@ -127,6 +149,10 @@ export async function POST(request: NextRequest) {
     try {
       body = await request.json();
       console.log('Body keys:', Object.keys(body).join(', '));
+
+      // Log full payload for debugging (first 2000 chars to avoid excessive logging)
+      const bodyString = JSON.stringify(body, null, 2);
+      console.log('Full webhook payload:', bodyString.substring(0, 2000) + (bodyString.length > 2000 ? '... (truncated)' : ''));
 
       // Try to detect event type
       if (body.tweet_create_events) eventType = 'TWEET_CREATE';
@@ -140,8 +166,27 @@ export async function POST(request: NextRequest) {
 
       console.log('Detected event type:', eventType);
 
+      // Log specific details for tweet create events
+      if (eventType === 'TWEET_CREATE' && body.tweet_create_events) {
+        console.log(`Number of tweets in event: ${body.tweet_create_events.length}`);
+        body.tweet_create_events.forEach((tweet: any, index: number) => {
+          console.log(`Tweet ${index + 1}:`, {
+            id: tweet.id_str,
+            author: `@${tweet.user?.screen_name}` || 'unknown',
+            text: tweet.text?.substring(0, 100) || 'no text',
+            created_at: tweet.created_at,
+            has_hashtags: Boolean(tweet.entities?.hashtags?.length),
+            has_media: Boolean(tweet.entities?.media?.length),
+            mentions_count: tweet.entities?.user_mentions?.length || 0,
+          });
+        });
+        console.log('Bot account ID (for_user_id):', body.for_user_id);
+      }
+
     } catch (e) {
-      console.log('Could not parse body as JSON');
+      console.error('Error parsing body as JSON:', e);
+      // Note: Can't read request body again after failed JSON parse attempt
+      console.error('Failed to parse webhook body - body may be malformed');
     }
 
     // Store the event in database

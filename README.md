@@ -4,7 +4,7 @@ Automated bot that delivers POAP mint links to Twitter users who post eligible t
 
 **Production:** [https://twitterbot.poap.studio](https://twitterbot.poap.studio)
 **Repository:** [https://github.com/poap-studio/xbot](https://github.com/poap-studio/xbot)
-**Deployment:** Vercel ([Dashboard](https://vercel.com/alberto-g-toribios-projects/xbot))
+**Deployment:** Vercel ([Dashboard](https://vercel.com/adminpoapfrs-projects/xbot))
 
 ## 🚀 Features
 
@@ -270,6 +270,20 @@ npm run prisma:generate
 ```
 
 ### Recent Changes
+
+#### Enhanced Webhook Logging (2026-01-14)
+Improved logging for Twitter webhook events to facilitate debugging and monitoring:
+- **Enhancement**: Added timestamp (ISO format) to all webhook log entries
+- **Enhancement**: Added full webhook payload logging (first 2000 chars to avoid log bloat)
+- **Enhancement**: Added detailed tweet information logging for TWEET_CREATE events (ID, author, text preview, hashtags, media)
+- **Enhancement**: Added IP address, user agent, and origin logging for all webhook requests
+- **Enhancement**: Added X-Twitter-Webhooks-Signature header logging for security validation
+- **Enhancement**: Added CRC token preview logging (first 20 chars) for CRC validation requests
+- **Enhancement**: Added full URL logging for both GET (CRC) and POST (events) requests
+- **Enhancement**: Added number of tweets in event and bot account ID logging
+- **Purpose**: Easier troubleshooting of webhook reception, tweet processing, and POAP delivery issues
+- **Files**:
+  - `app/api/webhooks/twitter/route.ts` (enhanced logging in GET and POST handlers)
 
 #### Hashtag-First Webhook Processing Logic (2025-12-07)
 Rewrote webhook processor to match projects by hashtag first (critical bug fix):
