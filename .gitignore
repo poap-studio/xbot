@@ -43,7 +43,8 @@ next-env.d.ts
 /playwright/.cache/
 
 # prisma
-/prisma/migrations/
+# NOTE: Migrations MUST be committed to repository for production deployments
+# /prisma/migrations/ - REMOVED: migrations need to be in git for Vercel
 .env.vercel.production
 .env.production
 test-*.js
