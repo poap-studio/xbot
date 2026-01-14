@@ -243,6 +243,76 @@ export async function replyWithAlreadyClaimed(
 }
 
 /**
+ * Generate "no POAPs available" reply text
+ * Uses template from project or first active project if not specified
+ * @param {string} projectId - Optional project ID to use for template
+ * @returns {Promise<string>} Reply text
+ */
+export async function generateNoPoapsAvailableText(projectId?: string): Promise<string> {
+  try {
+    let project;
+
+    if (projectId) {
+      project = await prisma.project.findUnique({
+        where: { id: projectId },
+      });
+    }
+
+    if (!project) {
+      project = await prisma.project.findFirst({
+        where: { isActive: true },
+      });
+    }
+
+    if (!project) {
+      throw new Error('No active project found');
+    }
+
+    const text = project.botReplyNoPoapsAvailable || 'Sorry, there are no POAPs available at this time. Please try again later or contact the organizers.';
+
+    // Validate length
+    if (text.length > 280) {
+      console.warn(
+        `Generated "no POAPs available" reply text is too long (${text.length} chars). Truncating...`
+      );
+      return text.substring(0, 277) + '...';
+    }
+
+    return text;
+  } catch (error) {
+    console.error('Failed to generate "no POAPs available" reply text:', error);
+    return 'Sorry, there are no POAPs available at this time. Please try again later or contact the organizers.';
+  }
+}
+
+/**
+ * Reply to a tweet with "no POAPs available" message
+ * @param {string} tweetId - ID of tweet to reply to
+ * @param {string} botAccountId - Optional bot account ID to use for replying
+ * @param {string} projectId - Optional project ID to use for reply template
+ * @returns {Promise<string>} ID of the reply tweet
+ * @throws {Error} If reply fails
+ */
+export async function replyWithNoPoapsAvailable(
+  tweetId: string,
+  botAccountId?: string,
+  projectId?: string
+): Promise<string> {
+  try {
+    const text = await generateNoPoapsAvailableText(projectId);
+    const replyId = await replyToTweet(tweetId, text, botAccountId);
+    await markTweetAsReplied(tweetId, replyId);
+
+    return replyId;
+  } catch (error) {
+    if (error instanceof Error) {
+      throw new Error(`Failed to reply with no POAPs available message: ${error.message}`);
+    }
+    throw new Error('Failed to reply with no POAPs available message: Unknown error');
+  }
+}
+
+/**
  * Generate "not eligible" reply text
  * Uses template from project or first active project if not specified
  * @param {string} projectId - Optional project ID to use for template

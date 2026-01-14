@@ -83,6 +83,7 @@ interface Project {
   botReplyEligible: string;
   botReplyNotEligible: string;
   botReplyAlreadyClaimed: string;
+  botReplyNoPoapsAvailable: string;
   qrPageTweetTemplate: string;
   botAccountId: string | null;
   botAccount: {
@@ -418,6 +419,7 @@ function BotConfigTab({ project, onUpdate }: { project: Project; onUpdate: (upda
     botReplyEligible: project.botReplyEligible,
     botReplyNotEligible: project.botReplyNotEligible,
     botReplyAlreadyClaimed: project.botReplyAlreadyClaimed,
+    botReplyNoPoapsAvailable: project.botReplyNoPoapsAvailable,
     qrPageTweetTemplate: project.qrPageTweetTemplate,
   });
 
@@ -433,9 +435,10 @@ function BotConfigTab({ project, onUpdate }: { project: Project; onUpdate: (upda
       botReplyEligible: project.botReplyEligible,
       botReplyNotEligible: project.botReplyNotEligible,
       botReplyAlreadyClaimed: project.botReplyAlreadyClaimed,
+      botReplyNoPoapsAvailable: project.botReplyNoPoapsAvailable,
       qrPageTweetTemplate: project.qrPageTweetTemplate,
     });
-  }, [project.twitterHashtag, project.botReplyEligible, project.botReplyNotEligible, project.botReplyAlreadyClaimed, project.qrPageTweetTemplate]);
+  }, [project.twitterHashtag, project.botReplyEligible, project.botReplyNotEligible, project.botReplyAlreadyClaimed, project.botReplyNoPoapsAvailable, project.qrPageTweetTemplate]);
 
   // Load bot accounts on mount
   useEffect(() => {
@@ -704,6 +707,17 @@ function BotConfigTab({ project, onUpdate }: { project: Project; onUpdate: (upda
               multiline
               rows={3}
               helperText="Reply sent when user already claimed this POAP. Use {username} as placeholder."
+            />
+
+            <TextField
+              label="No POAPs Available Reply Message"
+              value={formData.botReplyNoPoapsAvailable}
+              onChange={handleChange('botReplyNoPoapsAvailable')}
+              required
+              fullWidth
+              multiline
+              rows={3}
+              helperText="Reply sent when there are no POAPs available, event is misconfigured, or event ID/secret are incorrect. Use {username} as placeholder."
             />
           </Stack>
         </Box>

@@ -268,13 +268,31 @@ export async function processSingleTweet(
     // 4. Reserve mint link for this project
     const mintLink = await reserveMintLink(twitterUserId, projectId);
     if (!mintLink) {
-      // Silently skip - no mint links available
-      return {
-        tweetId,
-        username,
-        success: false,
-        error: 'No mint links available',
-      };
+      // No mint links available - reply to user with error message
+      console.log(`No mint links available for project ${projectId}, replying to user @${username}`);
+
+      try {
+        const { replyWithNoPoapsAvailable } = await import('@/lib/twitter/reply');
+        const replyId = await replyWithNoPoapsAvailable(tweetId, project.botAccountId || undefined, projectId);
+
+        console.log(`Replied to @${username} with "no POAPs available" message (reply ID: ${replyId})`);
+
+        return {
+          tweetId,
+          username,
+          success: false,
+          error: 'No mint links available',
+          replyId,
+        };
+      } catch (replyError) {
+        console.error(`Failed to reply to @${username}:`, replyError);
+        return {
+          tweetId,
+          username,
+          success: false,
+          error: 'No mint links available',
+        };
+      }
     }
 
     // 5. Reply to tweet with claim URL (using website URL instead of direct mint link)

@@ -271,6 +271,27 @@ npm run prisma:generate
 
 ### Recent Changes
 
+#### Added "No POAPs Available" Reply Message (2026-01-14)
+Implemented new configurable reply message for when POAPs are unavailable:
+- **Feature**: New `botReplyNoPoapsAvailable` field in project configuration
+- **Default Message**: "Sorry, there are no POAPs available at this time. Please try again later or contact the organizers."
+- **Use Cases**: Bot replies with this message when:
+  - No mint links are available for the project
+  - POAP event is misconfigured (invalid event ID or secret)
+  - Event ID and secret don't match the configured project
+- **Admin UI**: New text field in Bot Config tab for customizing the message
+- **API Functions**:
+  - `generateNoPoapsAvailableText(projectId)` - Generates message from project template
+  - `replyWithNoPoapsAvailable(tweetId, botAccountId, projectId)` - Sends reply to user
+- **Bot Logic**: Automatically replies to eligible tweets when mint link reservation fails
+- **User Experience**: Users receive immediate feedback instead of being ignored
+- **Files**:
+  - `prisma/schema.prisma` (added botReplyNoPoapsAvailable field)
+  - `prisma/migrations/20260114_add_bot_reply_no_poaps_available/` (database migration)
+  - `app/admin/projects/[id]/page.tsx` (added UI field in Bot Config tab)
+  - `lib/twitter/reply.ts` (added generateNoPoapsAvailableText and replyWithNoPoapsAvailable functions)
+  - `lib/bot/service.ts` (integrated reply when no mint links available)
+
 #### Automatic Bot Account Validation and Cleanup (2026-01-14)
 Implemented automatic validation and cleanup of invalid bot accounts:
 - **Feature**: Bot accounts are automatically validated when loading the bot selection dropdown

@@ -22,6 +22,7 @@ model Project {
   botReplyEligible    String   @default("¡Felicidades! Has compartido el código correcto. Reclama tu POAP aquí: {{claimUrl}}")
   botReplyNotEligible String   @default("Gracias por tu interés. Asegúrate de incluir un código válido y una imagen en tu tweet.")
   botReplyAlreadyClaimed String @default("You have already claimed a POAP for this event. Only one claim per user is allowed.")
+  botReplyNoPoapsAvailable String @default("Sorry, there are no POAPs available at this time. Please try again later or contact the organizers.")
 
   // Search configuration
   twitterHashtag  String   @default("#POAP")
