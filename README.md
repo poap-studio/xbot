@@ -271,6 +271,25 @@ npm run prisma:generate
 
 ### Recent Changes
 
+#### Fixed Webhook Registration to Reuse Existing Webhooks (2026-01-14)
+Fixed critical bug where bot assignment failed if webhook existed but webhookId wasn't in database:
+- **Problem**: When assigning bot to project, code attempted to create NEW webhook even if one existed
+- **Root Cause**: Only checked if bot had `webhookId` in DB, not if webhook existed in Twitter
+- **Impact**: If webhook existed but `webhookId` was missing (manual intervention, migration), assignment failed
+- **Solution 1 - Check Existing Webhooks**:
+  - Call `listWebhooks()` before attempting to create webhook
+  - Reuse existing webhook if found
+  - Create new webhook only if none exists
+  - Always save webhookId to database
+- **Solution 2 - Handle Duplicate Subscriptions**:
+  - Detect "DuplicateSubscriptionFailed" error from Twitter
+  - Treat duplicate subscription as success (subscription already exists)
+  - Prevents false failures when bot is already subscribed
+- **Files**:
+  - `app/api/admin/projects/[id]/route.ts` (improved webhook setup logic)
+  - `lib/twitter/webhooks.ts` (handle duplicate subscription gracefully)
+- **User Impact**: Bot assignment now succeeds even when webhook configuration has drifted
+
 #### Comprehensive Step-by-Step Logging for POAP Delivery (2026-01-14)
 Added detailed logging for the entire 8-step POAP delivery process:
 - **Problem**: Tweet processing stopping silently without error logs, impossible to diagnose failures
