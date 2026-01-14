@@ -100,7 +100,8 @@ export async function processWebhookTweetEvent(webhookEvent: any): Promise<{
         console.error(`[Webhook] ⚠️ DATABASE CONNECTION POOL EXHAUSTED`);
         console.error(`[Webhook] Error code: ${dbError.code}`);
         console.error(`[Webhook] This indicates too many concurrent database connections.`);
-        console.error(`[Webhook] Current pool config should be: connection_limit=10, pool_timeout=20s`);
+        console.error(`[Webhook] Current pool config: connection_limit=100, pool_timeout=60s`);
+        console.error(`[Webhook] If this persists, consider implementing request queuing or using PgBouncer.`);
       }
       throw dbError; // Re-throw to be caught by outer catch
     }
@@ -161,29 +162,40 @@ export async function processWebhookTweetEvent(webhookEvent: any): Promise<{
         );
         console.log(`[Webhook] Tweet has image: ${hasImage}`);
 
-        // Step 6: Process each matching project
+        // Step 6: Batch fetch all valid codes for all matching projects (single query instead of N queries in loop)
+        let validCodesMap = new Map<string, string>(); // projectId -> validCode
+
+        if (codes.length > 0 && matchingProjects.length > 0) {
+          const projectIds = matchingProjects.map(p => p.id);
+
+          const validCodeRecords = await prisma.validCode.findMany({
+            where: {
+              code: { in: codes },
+              projectId: { in: projectIds },
+            },
+            select: { code: true, projectId: true },
+          });
+
+          // Build map of first valid code per project
+          for (const record of validCodeRecords) {
+            if (!validCodesMap.has(record.projectId)) {
+              validCodesMap.set(record.projectId, record.code);
+            }
+          }
+        }
+
+        // Step 7: Process each matching project
         for (const project of matchingProjects) {
           try {
             console.log(`\n[Webhook] Processing project "${project.name}" (${project.id})`);
             console.log(`[Webhook]   Requires code: ${project.requireUniqueCode}`);
             console.log(`[Webhook]   Requires image: ${project.requireImage}`);
 
-            // Find valid code for THIS specific project
-            let validCodeForProject: string | undefined;
-            for (const code of codes) {
-              const codeRecord = await prisma.validCode.findFirst({
-                where: {
-                  code,
-                  projectId: project.id,
-                },
-                select: { isUsed: true },
-              });
+            // Get valid code for THIS specific project from our pre-fetched map
+            const validCodeForProject = validCodesMap.get(project.id);
 
-              if (codeRecord) {
-                validCodeForProject = code;
-                console.log(`[Webhook]   Found valid code "${code}" for this project`);
-                break;
-              }
+            if (validCodeForProject) {
+              console.log(`[Webhook]   Found valid code "${validCodeForProject}" for this project`);
             }
 
             // Validate: Check if code is required but missing

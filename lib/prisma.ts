@@ -27,10 +27,11 @@ function getOptimizedDatabaseUrl(): string {
   }
 
   // Add optimized parameters for serverless
-  // connection_limit: 10 connections per lambda instance (reasonable for Vercel)
-  // pool_timeout: 20 seconds (increased from default 10s to handle high load)
+  // connection_limit: 100 connections per lambda instance (high for concurrent webhooks)
+  // pool_timeout: 60 seconds (increased to handle high load and prevent timeouts)
+  // statement_cache_size: 0 (recommended for serverless to avoid caching issues)
   const separator = databaseUrl.includes('?') ? '&' : '?';
-  const poolParams = 'connection_limit=10&pool_timeout=20';
+  const poolParams = 'connection_limit=100&pool_timeout=60&statement_cache_size=0';
 
   return `${databaseUrl}${separator}${poolParams}`;
 }
