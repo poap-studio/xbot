@@ -76,22 +76,34 @@ export async function processWebhookTweetEvent(webhookEvent: any): Promise<{
     console.log(`[Webhook] Processing events for bot account: ${botAccountId}`);
 
     // Get the bot account to verify it exists and get its username
-    const botAccount = await prisma.botAccount.findUnique({
-      where: { twitterId: botAccountId },
-      include: {
-        projects: {
-          where: { isActive: true },
-          select: {
-            id: true,
-            name: true,
-            allowMultipleClaims: true,
-            twitterHashtag: true,
-            requireUniqueCode: true,
-            requireImage: true,
+    let botAccount;
+    try {
+      botAccount = await prisma.botAccount.findUnique({
+        where: { twitterId: botAccountId },
+        include: {
+          projects: {
+            where: { isActive: true },
+            select: {
+              id: true,
+              name: true,
+              allowMultipleClaims: true,
+              twitterHashtag: true,
+              requireUniqueCode: true,
+              requireImage: true,
+            },
           },
         },
-      },
-    });
+      });
+    } catch (dbError: any) {
+      // Log detailed connection pool errors
+      if (dbError.code === 'P2024') {
+        console.error(`[Webhook] ⚠️ DATABASE CONNECTION POOL EXHAUSTED`);
+        console.error(`[Webhook] Error code: ${dbError.code}`);
+        console.error(`[Webhook] This indicates too many concurrent database connections.`);
+        console.error(`[Webhook] Current pool config should be: connection_limit=10, pool_timeout=20s`);
+      }
+      throw dbError; // Re-throw to be caught by outer catch
+    }
 
     if (!botAccount) {
       console.error(`[Webhook] Bot account not found: ${botAccountId}`);

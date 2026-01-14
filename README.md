@@ -271,6 +271,21 @@ npm run prisma:generate
 
 ### Recent Changes
 
+#### Fixed Connection Pool Exhaustion in Serverless (2026-01-14)
+Fixed critical database connection pool exhaustion issue causing webhook failures:
+- **Bug Fix**: Connection pool timeout errors (P2024) during webhook processing
+- **Root Cause**: Default connection limit (5) too low for serverless environment with concurrent requests
+- **Solution**: Increased connection_limit from 5 to 10 per lambda instance
+- **Solution**: Increased pool_timeout from 10s to 20s to handle high load
+- **Enhancement**: Automatic injection of optimized connection pool parameters to DATABASE_URL
+- **Enhancement**: Added detailed logging for connection pool errors with diagnostic information
+- **Enhancement**: Added try-catch wrapper in webhook processor to detect and log P2024 errors
+- **Impact**: Webhooks now process reliably under high load without connection timeouts
+- **Technical**: Connection parameters are automatically added if not present in DATABASE_URL
+- **Files**:
+  - `lib/prisma.ts` (added getOptimizedDatabaseUrl() and datasources config)
+  - `lib/twitter/webhook-processor.ts` (added connection pool error detection)
+
 #### Enhanced Webhook Logging (2026-01-14)
 Improved logging for Twitter webhook events to facilitate debugging and monitoring:
 - **Enhancement**: Added timestamp (ISO format) to all webhook log entries
