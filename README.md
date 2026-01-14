@@ -271,6 +271,21 @@ npm run prisma:generate
 
 ### Recent Changes
 
+#### Fix Webhook Processing Serverless Termination Issue (2026-01-14)
+Fixed critical issue where webhook processing was terminated before completion in serverless environment:
+- **Problem**: Tweet webhooks received and saved to database, but bot didn't reply or deliver POAPs
+- **Root Cause**: Webhook handler used fire-and-forget async pattern (`processWebhookTweetEvent().then()`) that could be killed when serverless function terminated after responding with 200 OK
+- **Evidence**: 109-second delay between webhook receipt and tweet save indicated database connection pool contention, combined with botReplied=false and no delivery record
+- **Impact**: Silent failures - webhooks acknowledged but processing incomplete, no error logs captured
+- **Solution**: Changed webhook handler to await processing synchronously before responding:
+  - Modified `app/api/webhooks/twitter/route.ts` to use `await processWebhookTweetEvent(body)`
+  - Ensures processing completes before serverless function terminates
+  - All errors now properly logged and visible
+  - Processing status known before acknowledging webhook to Twitter
+- **Trade-off**: Webhook response time may be slightly slower but within Twitter's acceptable limits
+- **Files**: `app/api/webhooks/twitter/route.ts` (lines 207-223)
+- **Debugging Aid**: Created `TROUBLESHOOTING_SESSION_2026-01-14.md` with comprehensive investigation timeline
+
 #### Fixed Webhook Registration to Reuse Existing Webhooks (2026-01-14)
 Fixed critical bug where bot assignment failed if webhook existed but webhookId wasn't in database:
 - **Problem**: When assigning bot to project, code attempted to create NEW webhook even if one existed

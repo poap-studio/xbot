@@ -208,23 +208,24 @@ export async function POST(request: NextRequest) {
     if (eventType === 'TWEET_CREATE' && body.tweet_create_events) {
       console.log('[Webhook] Processing TWEET_CREATE event...');
 
-      // Process asynchronously to respond quickly to Twitter
-      processWebhookTweetEvent(body)
-        .then(result => {
-          console.log(`[Webhook] Processing completed: ${result.processed} processed, ${result.skipped} skipped, ${result.errors.length} errors`);
-          if (result.errors.length > 0) {
-            console.error('[Webhook] Errors:', result.errors);
-          }
-        })
-        .catch(error => {
-          console.error('[Webhook] Error in async processing:', error);
-        });
+      // Process synchronously to ensure completion before function terminates
+      // This prevents silent failures when serverless function times out
+      try {
+        const result = await processWebhookTweetEvent(body);
+        console.log(`[Webhook] Processing completed: ${result.processed} processed, ${result.skipped} skipped, ${result.errors.length} errors`);
+        if (result.errors.length > 0) {
+          console.error('[Webhook] Errors:', result.errors);
+        }
+      } catch (error) {
+        console.error('[Webhook] Error in processing:', error);
+        // Still return 200 to avoid Twitter retries on our internal errors
+      }
     }
 
     console.log(`Processing time: ${Date.now() - startTime}ms`);
     console.log('======================================');
 
-    // Respond with 200 OK immediately
+    // Respond with 200 OK
     return NextResponse.json({ success: true });
 
   } catch (error) {
