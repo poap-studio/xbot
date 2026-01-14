@@ -271,6 +271,26 @@ npm run prisma:generate
 
 ### Recent Changes
 
+#### Comprehensive Step-by-Step Logging for POAP Delivery (2026-01-14)
+Added detailed logging for the entire 8-step POAP delivery process:
+- **Problem**: Tweet processing stopping silently without error logs, impossible to diagnose failures
+- **Solution**: Added [Step 1-8] prefixed logs for every critical step in `processSingleTweet()`
+- **Steps Logged**:
+  - Step 1: Delivery check (already delivered?)
+  - Step 2: Reply check (already replied?)
+  - Step 3: Multiple claims policy and user claim check
+  - Step 4: Mint link reservation attempt and result
+  - Step 5: App URL retrieval and reply attempt
+  - Step 6: QR hash extraction from mint link
+  - Step 7: Delivery recording
+  - Step 8: Hidden code marking (if applicable)
+- **Enhanced Error Handling**:
+  - Specific P2024 (connection pool timeout) error detection
+  - Full error details including code, type, and stack trace
+  - Differentiation between expected failures and actual errors
+- **Impact**: Can now pinpoint exact step where processing fails, easier diagnosis of connection pool issues
+- **Files**: `lib/bot/service.ts` (added comprehensive step logging and error detection)
+
 #### Added "No POAPs Available" Reply Message (2026-01-14)
 Implemented new configurable reply message for when POAPs are unavailable:
 - **Feature**: New `botReplyNoPoapsAvailable` field in project configuration
