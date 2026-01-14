@@ -191,6 +191,14 @@ export async function subscribeWebhook(
 
     if (!response.ok) {
       const error = await response.json();
+
+      // Check if subscription already exists (this is actually OK)
+      if (error.errors?.[0]?.message?.includes('DuplicateSubscriptionFailed') ||
+          error.errors?.[0]?.message?.includes('already exists')) {
+        console.log('✅ Webhook subscription already exists (this is fine)');
+        return true; // Treat as success since subscription exists
+      }
+
       console.error('Failed to subscribe webhook:', error);
       return false;
     }

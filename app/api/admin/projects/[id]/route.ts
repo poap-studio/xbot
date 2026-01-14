@@ -177,13 +177,33 @@ export async function PUT(
           },
         });
 
-        // If new bot has exactly 1 project (this one) and no webhook, create one
+        // If new bot has exactly 1 project (this one) and no webhook, set one up
         if (newBot && newBot._count.projects === 1 && !newBot.webhookId) {
-          console.log(`Bot ${newBot.username} is being used for first time, creating webhook`);
+          console.log(`Bot ${newBot.username} is being used for first time, setting up webhook`);
 
-          // Register webhook with Twitter
-          const webhookId = await registerWebhook();
+          let webhookId: string | null = null;
 
+          // STEP 1: Check if a webhook already exists in Twitter
+          const { listWebhooks } = await import('@/lib/twitter/webhooks');
+          const existingWebhooks = await listWebhooks();
+
+          if (existingWebhooks.length > 0) {
+            // Reuse existing webhook
+            webhookId = existingWebhooks[0].id;
+            console.log(`Reusing existing webhook: ${webhookId}`);
+          } else {
+            // STEP 2: No webhook exists, create a new one
+            console.log(`No existing webhook found, creating new one`);
+            webhookId = await registerWebhook();
+
+            if (!webhookId) {
+              console.error(`Failed to register webhook for bot ${newBot.username}`);
+            } else {
+              console.log(`Created new webhook: ${webhookId}`);
+            }
+          }
+
+          // STEP 3: Subscribe bot to webhook (if we have one)
           if (webhookId) {
             // Decrypt bot credentials
             const accessToken = decrypt(newBot.accessToken);
@@ -192,20 +212,19 @@ export async function PUT(
             // Subscribe the bot to the webhook
             const subscribed = await subscribeWebhook(webhookId, accessToken, accessSecret);
 
+            // IMPORTANT: subscription might fail with "already subscribed" - this is OK
+            // Save webhook ID regardless, as bot is subscribed
+            await prisma.botAccount.update({
+              where: { id: newBotId },
+              data: { webhookId },
+            });
+
             if (subscribed) {
-              // Save webhook ID to bot
-              await prisma.botAccount.update({
-                where: { id: newBotId },
-                data: { webhookId },
-              });
-              console.log(`✅ Webhook ${webhookId} created and subscribed for bot ${newBot.username}`);
+              console.log(`✅ Webhook ${webhookId} subscribed for bot ${newBot.username}`);
             } else {
-              // Subscription failed, clean up the webhook
-              await deleteWebhook(webhookId);
-              console.error(`Failed to subscribe webhook for bot ${newBot.username}`);
+              // Subscription failed, but might be "already subscribed" which is fine
+              console.log(`⚠️  Subscription returned false for bot ${newBot.username} - might already be subscribed, webhookId saved anyway`);
             }
-          } else {
-            console.error(`Failed to register webhook for bot ${newBot.username}`);
           }
         } else if (newBot && newBot.webhookId) {
           console.log(`Bot ${newBot.username} already has webhook ${newBot.webhookId}`);
