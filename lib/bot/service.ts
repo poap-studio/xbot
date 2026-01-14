@@ -218,7 +218,9 @@ export async function processSingleTweet(
     console.log(`Processing tweet ${tweetId} for project "${project.name}" (${projectId})`);
 
     // 1. Check if already delivered for this project
+    console.log(`[Step 1] Checking if tweet ${tweetId} already delivered for project ${projectId}`);
     const alreadyDelivered = await hasDelivery(tweetId, projectId);
+    console.log(`[Step 1] Already delivered: ${alreadyDelivered}`);
     if (alreadyDelivered) {
       // Silently skip - already processed
       return {
@@ -230,7 +232,9 @@ export async function processSingleTweet(
     }
 
     // 2. Check if already replied (safety check)
+    console.log(`[Step 2] Checking if tweet ${tweetId} already replied`);
     const alreadyReplied = await hasBeenRepliedTo(tweetId);
+    console.log(`[Step 2] Already replied: ${alreadyReplied}`);
     if (alreadyReplied) {
       // Silently skip - already processed
       return {
@@ -243,15 +247,19 @@ export async function processSingleTweet(
 
     // 3. Check if multiple claims are allowed for this project
     // If multiple claims are NOT allowed, check if user already has a delivery for this project
+    console.log(`[Step 3] Checking multiple claims policy (allowMultipleClaims: ${project.allowMultipleClaims})`);
     if (!project.allowMultipleClaims) {
+      console.log(`[Step 3] Checking if user ${twitterUserId} already claimed for project ${projectId}`);
       const userAlreadyClaimed = await prisma.delivery.findFirst({
         where: {
           twitterUser: { twitterId: twitterUserId },
           projectId,
         },
       });
+      console.log(`[Step 3] User already claimed: ${Boolean(userAlreadyClaimed)}`);
 
       if (userAlreadyClaimed) {
+        console.log(`[Step 3] Replying with "already claimed" message to @${username}`);
         // Reply with "already claimed" message
         const replyId = await replyWithAlreadyClaimed(tweetId, project.botAccountId || undefined, projectId);
 
@@ -266,7 +274,9 @@ export async function processSingleTweet(
     }
 
     // 4. Reserve mint link for this project
+    console.log(`[Step 4] Attempting to reserve mint link for user ${twitterUserId}, project ${projectId}`);
     const mintLink = await reserveMintLink(twitterUserId, projectId);
+    console.log(`[Step 4] Mint link reserved: ${mintLink ? 'YES (' + mintLink + ')' : 'NO - none available'}`);
     if (!mintLink) {
       // No mint links available - reply to user with error message
       console.log(`No mint links available for project ${projectId}, replying to user @${username}`);
@@ -296,23 +306,35 @@ export async function processSingleTweet(
     }
 
     // 5. Reply to tweet with claim URL (using website URL instead of direct mint link)
+    console.log(`[Step 5] Getting app URL for claim link`);
     const { getAppUrl } = await import('@/lib/config/app-url');
     const websiteUrl = getAppUrl();
+    console.log(`[Step 5] App URL: ${websiteUrl}`);
+    console.log(`[Step 5] Replying to tweet ${tweetId} with claim URL`);
     const replyId = await replyWithClaimUrl(tweetId, websiteUrl, project.botAccountId || undefined, projectId);
+    console.log(`[Step 5] Reply sent with ID: ${replyId}`);
 
     // 6. Extract qrHash from mint link
     // Format: https://poap.xyz/claim/abc123 or https://app.poap.xyz/claim/abc123
+    console.log(`[Step 6] Extracting qrHash from mint link: ${mintLink}`);
     const qrHash = mintLink.split('/claim/')[1];
     if (!qrHash) {
       throw new Error('Invalid mint link format');
     }
+    console.log(`[Step 6] Extracted qrHash: ${qrHash}`);
 
     // 7. Record delivery with project ID
+    console.log(`[Step 7] Recording delivery for user ${twitterUserId}, tweet ${tweetId}, project ${projectId}`);
     await recordDelivery(twitterUserId, username, tweetId, mintLink, qrHash, projectId);
+    console.log(`[Step 7] Delivery recorded successfully`);
 
     // 8. Mark hidden code as used (only if code was provided)
     if (tweet.hiddenCode && validCode) {
+      console.log(`[Step 8] Marking hidden code "${tweet.hiddenCode}" as used by ${twitterUserId}`);
       await markHiddenCodeAsUsed(tweet.hiddenCode, twitterUserId, projectId);
+      console.log(`[Step 8] Hidden code marked as used`);
+    } else {
+      console.log(`[Step 8] No hidden code to mark (hiddenCode: ${tweet.hiddenCode}, validCode: ${Boolean(validCode)})`);
     }
 
     console.log(
@@ -326,15 +348,31 @@ export async function processSingleTweet(
       mintLink,
       replyId,
     };
-  } catch (error) {
+  } catch (error: any) {
     const errorMessage =
       error instanceof Error ? error.message : 'Unknown error';
 
+    // Check for database connection pool errors
+    if (error?.code === 'P2024') {
+      console.error(
+        `❌ DATABASE CONNECTION POOL TIMEOUT processing tweet ${tweetId} from @${username}`,
+        {
+          code: error.code,
+          message: errorMessage,
+          meta: error.meta,
+        }
+      );
+    }
     // Only log actual errors (not expected failures like missing codes)
-    if (!errorMessage.includes('hidden code') && !errorMessage.includes('Invalid code')) {
+    else if (!errorMessage.includes('hidden code') && !errorMessage.includes('Invalid code')) {
       console.error(
         `❌ Failed to process tweet ${tweetId} from @${username}:`,
-        errorMessage
+        errorMessage,
+        {
+          errorType: error?.constructor?.name,
+          errorCode: error?.code,
+          stack: error?.stack,
+        }
       );
     }
 
