@@ -308,20 +308,33 @@ Implemented automatic validation and cleanup of invalid bot accounts:
   - `scripts/delete-all-bot-accounts.ts` (new manual cleanup script)
   - `app/api/admin/bot-accounts/route.ts` (added validation and auto-delete logic)
 
-#### Fixed Connection Pool Exhaustion in Serverless (2026-01-14)
-Fixed critical database connection pool exhaustion issue causing webhook failures:
-- **Bug Fix**: Connection pool timeout errors (P2024) during webhook processing
-- **Root Cause**: Default connection limit (5) too low for serverless environment with concurrent requests
-- **Solution**: Increased connection_limit from 5 to 10 per lambda instance
-- **Solution**: Increased pool_timeout from 10s to 20s to handle high load
+#### Optimized Database Connection Pooling for High Concurrency (2026-01-14)
+Fixed critical database connection pool exhaustion issue and optimized webhook processing:
+- **Bug Fix**: Connection pool timeout errors (P2024) during high webhook volume
+- **Root Cause**:
+  - Previous limits (10 connections, 20s timeout) insufficient for concurrent webhooks
+  - N queries in loops causing connection saturation (one query per code per project)
+- **Solution 1 - Increased Pool Limits**:
+  - connection_limit: 10 → 100 (handle concurrent webhook bursts)
+  - pool_timeout: 20s → 60s (prevent timeout errors under load)
+  - Added statement_cache_size=0 (recommended for serverless environments)
+- **Solution 2 - Batch Query Optimization**:
+  - Replaced N queries in loop with single batch query using `prisma.validCode.findMany()`
+  - Fetch all valid codes for all matching projects in one query with IN clause
+  - Reduced database round trips from O(codes × projects) to O(1)
+  - Pre-build validCodesMap for O(1) lookup per project
 - **Enhancement**: Automatic injection of optimized connection pool parameters to DATABASE_URL
 - **Enhancement**: Added detailed logging for connection pool errors with diagnostic information
 - **Enhancement**: Added try-catch wrapper in webhook processor to detect and log P2024 errors
-- **Impact**: Webhooks now process reliably under high load without connection timeouts
+- **Impact**:
+  - Dramatically reduced connection pool pressure
+  - Faster webhook processing with batch queries
+  - Better handling of concurrent webhook bursts
+  - Webhooks now process reliably under extreme load
 - **Technical**: Connection parameters are automatically added if not present in DATABASE_URL
 - **Files**:
-  - `lib/prisma.ts` (added getOptimizedDatabaseUrl() and datasources config)
-  - `lib/twitter/webhook-processor.ts` (added connection pool error detection)
+  - `lib/prisma.ts` (increased limits and added statement_cache_size)
+  - `lib/twitter/webhook-processor.ts` (batch query optimization and error detection)
 
 #### Enhanced Webhook Logging (2026-01-14)
 Improved logging for Twitter webhook events to facilitate debugging and monitoring:
