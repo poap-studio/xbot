@@ -42,18 +42,39 @@ export async function replyToTweet(
     console.log(`Replying to tweet ${tweetId} with text: "${text}"${botAccountId ? ` using bot ${botAccountId}` : ''}`);
 
     // Post reply
-    const response = await client.v2.reply(text, tweetId);
+    let response;
+    try {
+      response = await client.v2.reply(text, tweetId);
+      console.log(`Twitter API response:`, JSON.stringify(response, null, 2));
+    } catch (apiError: any) {
+      console.error(`❌ Twitter API reply failed:`, {
+        error: apiError.message || apiError,
+        code: apiError.code,
+        data: apiError.data,
+        errors: apiError.errors,
+        stack: apiError.stack,
+      });
+      throw apiError;
+    }
 
     if (!response.data?.id) {
+      console.error(`❌ Reply response missing tweet ID. Full response:`, response);
       throw new Error('Reply response missing tweet ID');
     }
 
     const replyId = response.data.id;
 
-    console.log(`Successfully replied to tweet ${tweetId}, reply ID: ${replyId}`);
+    console.log(`✅ Successfully replied to tweet ${tweetId}, reply ID: ${replyId}`);
 
     return replyId;
-  } catch (error) {
+  } catch (error: any) {
+    console.error(`❌ Reply to tweet ${tweetId} failed:`, {
+      error: error.message || error,
+      type: error.constructor?.name,
+      code: error.code,
+      data: error.data,
+    });
+
     if (error instanceof Error) {
       // Check for specific Twitter API errors
       if (error.message.includes('429')) {
