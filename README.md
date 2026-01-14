@@ -271,6 +271,22 @@ npm run prisma:generate
 
 ### Recent Changes
 
+#### Automatic Bot Account Validation and Cleanup (2026-01-14)
+Implemented automatic validation and cleanup of invalid bot accounts:
+- **Feature**: Bot accounts are automatically validated when loading the bot selection dropdown
+- **Feature**: Invalid or disconnected bot accounts are automatically deleted from database
+- **Enhancement**: Added detailed logging for bot account validation and deletion
+- **Script**: New `delete-all-bot-accounts.ts` script for manual cleanup
+- **API Enhancement**: `/api/admin/bot-accounts` now validates credentials via Twitter API v2
+- **User Experience**: Only valid, working bot accounts appear in the selection dropdown
+- **Validation**: Each bot account's OAuth credentials are verified by calling Twitter API `v2.me()`
+- **Auto-cleanup**: Accounts with revoked or invalid credentials are removed automatically
+- **Response**: API now returns `deleted` count and `deletedAccounts` array for transparency
+- **Impact**: Prevents webhook failures due to invalid bot credentials
+- **Files**:
+  - `scripts/delete-all-bot-accounts.ts` (new manual cleanup script)
+  - `app/api/admin/bot-accounts/route.ts` (added validation and auto-delete logic)
+
 #### Fixed Connection Pool Exhaustion in Serverless (2026-01-14)
 Fixed critical database connection pool exhaustion issue causing webhook failures:
 - **Bug Fix**: Connection pool timeout errors (P2024) during webhook processing
